@@ -1,0 +1,60 @@
+@import "tailwindcss";
+
+@layer base {
+  :root {
+    --bg-primary: #F8F9FB;
+    --bg-secondary: #FFFFFF;
+    --border-color: #E2E8F0;
+    --text-primary: #0F172A;
+  }
+
+  body {
+    @apply transition-colors duration-300;
+  }
+}
+
+.scrollbar-hide::-webkit-scrollbar {
+  display: none;
+}
+
+.scrollbar-hide {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+@keyframes huggy-caret {
+  0%,
+  45% {
+    opacity: 1;
+  }
+  50%,
+  100% {
+    opacity: 0;
+  }
+}
+
+.huggy-stream-caret {
+  animation: huggy-caret 1.05s steps(1, end) infinite;
+}
+
+@keyframes huggy-shimmer {
+  0% {
+    background-position: -120% 0;
+  }
+  100% {
+    background-position: 120% 0;
+  }
+}
+
+.huggy-thinking-shimmer {
+  background: linear-gradient(
+    90deg,
+    rgb(241 245 249) 0%,
+    rgb(248 250 252) 45%,
+    rgb(226 232 240) 50%,
+    rgb(248 250 252) 55%,
+    rgb(241 245 249) 100%
+  );
+  background-size: 200% 100%;
+  animation: huggy-shimmer 1.4s ease-in-out infinite;
+}

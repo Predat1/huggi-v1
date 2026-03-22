@@ -1,0 +1,97 @@
+import { randomSlug } from './slug.mjs';
+
+export const PREVIEW_ENTRY = 'src/App.tsx';
+
+/** @param {import('pg').Pool} pool */
+export async function createProject(pool, name = 'Sans titre') {
+  const slug = randomSlug(12);
+  const r = await pool.query(
+    `INSERT INTO projects (name, slug) VALUES ($1, $2) RETURNING id, name, slug, created_at`,
+    [name, slug],
+  );
+  return r.rows[0];
+}
+
+/** @param {import('pg').Pool} pool */
+export async function getProject(pool, id) {
+  const r = await pool.query(
+    `SELECT id, name, slug, created_at FROM projects WHERE id = $1`,
+    [id],
+  );
+  return r.rows[0] || null;
+}
+
+/** @param {import('pg').Pool} pool */
+export async function getProjectBySlug(pool, slug) {
+  const r = await pool.query(
+    `SELECT id, name, slug, created_at FROM projects WHERE slug = $1`,
+    [slug],
+  );
+  return r.rows[0] || null;
+}
+
+/** @param {import('pg').Pool} pool */
+export async function listFiles(pool, projectId) {
+  const r = await pool.query(
+    `SELECT path, content, updated_at FROM project_files WHERE project_id = $1 ORDER BY path ASC`,
+    [projectId],
+  );
+  return r.rows;
+}
+
+/** @param {import('pg').Pool} pool */
+export async function upsertFile(pool, projectId, filePath, content) {
+  await pool.query(
+    `INSERT INTO project_files (project_id, path, content, updated_at)
+     VALUES ($1, $2, $3, now())
+     ON CONFLICT (project_id, path) DO UPDATE SET content = $3, updated_at = now()`,
+    [projectId, filePath, content],
+  );
+}
+
+/** @param {import('pg').Pool} pool */
+export async function deleteFile(pool, projectId, filePath) {
+  await pool.query(
+    `DELETE FROM project_files WHERE project_id = $1 AND path = $2`,
+    [projectId, filePath],
+  );
+}
+
+/** @param {import('pg').Pool} pool */
+export async function seedDefaultFiles(pool, projectId, defaultAppCode) {
+  await upsertFile(pool, projectId, PREVIEW_ENTRY, defaultAppCode);
+  await upsertFile(
+    pool,
+    projectId,
+    'README.md',
+    '# Projet Huggy\n\nFichier d\'aperçu : `src/App.tsx`.\n',
+  );
+}
+
+/** @param {import('pg').Pool} pool */
+export async function createDeployment(pool, projectId) {
+  const slug = randomSlug(10);
+  const r = await pool.query(
+    `INSERT INTO deployments (project_id, slug, status) VALUES ($1, $2, 'pending') RETURNING id, slug, status, created_at`,
+    [projectId, slug],
+  );
+  return r.rows[0];
+}
+
+/** @param {import('pg').Pool} pool */
+export async function updateDeploymentStatus(pool, id, status, error = null) {
+  const builtAt = status === 'live' ? new Date() : null;
+  await pool.query(
+    `UPDATE deployments SET status = $2, error = $3, built_at = COALESCE($4::timestamptz, built_at) WHERE id = $1`,
+    [id, status, error, builtAt],
+  );
+}
+
+/** @param {import('pg').Pool} pool */
+export async function listDeployments(pool, projectId, limit = 20) {
+  const r = await pool.query(
+    `SELECT id, slug, status, error, created_at, built_at FROM deployments WHERE project_id = $1 ORDER BY created_at DESC LIMIT $2`,
+    [projectId, limit],
+  );
+  return r.rows;
+}

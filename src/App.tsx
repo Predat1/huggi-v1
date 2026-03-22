@@ -1,0 +1,1796 @@
+import React, { useState, useRef, useEffect } from 'react';
+import Editor, { DiffEditor } from '@monaco-editor/react';
+import { 
+  Zap, 
+  ChevronDown, 
+  Box, 
+  Layout, 
+  Download, 
+  Plus, 
+  Eye, 
+  Mic, 
+  MessageSquare, 
+  ArrowUp, 
+  Monitor, 
+  Smartphone, 
+  Tablet as TabletIcon,
+  Cloud,
+  Palette,
+  BarChart3,
+  MoreHorizontal,
+  Terminal as TerminalIcon,
+  Code2,
+  Undo,
+  Redo,
+  Maximize2,
+  RotateCcw,
+  RotateCw,
+  ExternalLink,
+  ChevronUp,
+  Search,
+  Check,
+  Loader2,
+  Settings,
+  Save,
+  History,
+  FileCode,
+  RefreshCw,
+  ClipboardList,
+  Copy,
+  FolderOpen,
+  Users,
+  Sparkles
+} from 'lucide-react';
+import { motion, AnimatePresence } from 'motion/react';
+import { LiveProvider, LivePreview, LiveError } from 'react-live';
+import * as LucideIcons from 'lucide-react';
+import { DEFAULT_PREVIEW_CODE } from './defaultPreviewCode';
+import { generateAppUpdate } from './services/geminiService';
+import { streamChatText } from './utils/streamChatText';
+
+type Message = {
+  id: string;
+  sender: 'VOUS' | 'HUGGY';
+  text: string;
+  timestamp: Date;
+  changedFiles?: { path: string; original: string; current: string }[];
+  durationMs?: number;
+};
+
+type PreviewMode = 'desktop' | 'tablet' | 'mobile';
+type TerminalTheme = 'default' | 'dark' | 'matrix' | 'ocean';
+type SidebarTab = 'chat' | 'history';
+
+interface TerminalTab {
+  id: string;
+  name: string;
+  lines: string[];
+}
+
+interface AgentTask {
+  id: string;
+  label: string;
+  status: 'pending' | 'running' | 'success' | 'error';
+  type: 'read' | 'edit' | 'install' | 'compile' | 'lint' | 'search';
+}
+
+const TERMINAL_THEMES: Record<TerminalTheme, { bg: string; text: string; prompt: string; border: string; accent: string }> = {
+  default: { bg: 'bg-white', text: 'text-slate-600', prompt: 'text-blue-600', border: 'border-slate-200', accent: 'bg-slate-50/50' },
+  dark: { bg: 'bg-zinc-900', text: 'text-zinc-300', prompt: 'text-emerald-500', border: 'border-zinc-800', accent: 'bg-zinc-800/50' },
+  matrix: { bg: 'bg-black', text: 'text-green-500', prompt: 'text-green-400', border: 'border-green-900/30', accent: 'bg-green-900/10' },
+  ocean: { bg: 'bg-[#0f172a]', text: 'text-blue-200', prompt: 'text-cyan-400', border: 'border-blue-900/30', accent: 'bg-blue-900/20' },
+};
+
+const PreviewContent = ({ mode, code }: { mode: PreviewMode; code: string }) => {
+  const isMobile = mode === 'mobile';
+  const isTablet = mode === 'tablet';
+
+  const scope = { 
+    React, 
+    ...LucideIcons, 
+    motion, 
+    AnimatePresence 
+  };
+
+  return (
+    <div className="w-full h-full bg-slate-50 flex flex-col overflow-hidden relative">
+      <LiveProvider code={code} scope={scope} noInline={false}>
+        <div className="w-full h-full overflow-y-auto scrollbar-hide">
+          <LivePreview />
+          <LiveError className="p-4 bg-red-50 text-red-600 text-xs font-mono whitespace-pre-wrap border-t border-red-100" />
+        </div>
+      </LiveProvider>
+    </div>
+  );
+};
+
+const INITIAL_MESSAGES: Message[] = [
+  {
+    id: '1',
+    sender: 'HUGGY',
+    text: "Bonjour ! Je suis Huggy, votre assistant de design intelligent. Que souhaitez-vous construire aujourd'hui ?",
+    timestamp: new Date()
+  }
+];
+
+const PREVIEW_ENTRY = 'src/App.tsx';
+
+export default function App() {
+  const [messages, setMessages] = useState<Message[]>(INITIAL_MESSAGES);
+  const [inputValue, setInputValue] = useState('');
+  const [previewMode, setPreviewMode] = useState<PreviewMode>('desktop');
+  const [activeSidebarTab, setActiveSidebarTab] = useState<SidebarTab>('chat');
+  const [activeBottomTab, setActiveBottomTab] = useState<'terminal' | 'code'>('terminal');
+  const editorRef = useRef<any>(null);
+
+  const handleEditorDidMount = (editor: any) => {
+    editorRef.current = editor;
+  };
+
+  const handleRedo = () => {
+    if (editorRef.current) {
+      editorRef.current.trigger('keyboard', 'redo', null);
+      editorRef.current.focus();
+    }
+  };
+
+  const handleUndo = () => {
+    if (editorRef.current) {
+      editorRef.current.trigger('keyboard', 'undo', null);
+      editorRef.current.focus();
+    }
+  };
+
+  const [autoSaveEnabled, setAutoSaveEnabled] = useState(true);
+  const [autoSaveInterval, setAutoSaveInterval] = useState(5000); // 5 seconds
+  const [isSaving, setIsSaving] = useState(false);
+  const [showAutoSaveSettings, setShowAutoSaveSettings] = useState(false);
+  const [lastSaved, setLastSaved] = useState<Date | null>(null);
+  const [projectId, setProjectId] = useState<string | null>(null);
+  const [databaseEnabled, setDatabaseEnabled] = useState(false);
+  const [filesMap, setFilesMap] = useState<Record<string, string>>(() => ({
+    [PREVIEW_ENTRY]: DEFAULT_PREVIEW_CODE,
+  }));
+  const [activeFilePath, setActiveFilePath] = useState(PREVIEW_ENTRY);
+  const [editorLanguage, setEditorLanguage] = useState('typescript');
+  const [editorTheme, setEditorTheme] = useState('vs-light');
+  const [showMinimap, setShowMinimap] = useState(true);
+  const [isPublishing, setIsPublishing] = useState(false);
+  const [publishProgress, setPublishProgress] = useState(0);
+  const [publishedUrl, setPublishedUrl] = useState<string | null>(null);
+  const [deployments, setDeployments] = useState<{id: string, url: string, date: Date}[]>([]);
+
+  // SaaS UI States
+  const [isVisualMode, setIsVisualMode] = useState(false);
+  const [isRecording, setIsRecording] = useState(false);
+  const [activeAccentColor, setActiveAccentColor] = useState<'blue' | 'purple' | 'emerald' | 'rose'>('blue');
+  const [showCloudMenu, setShowCloudMenu] = useState(false);
+  const [showAnalyticsMenu, setShowAnalyticsMenu] = useState(false);
+  const [showMoreMenu, setShowMoreMenu] = useState(false);
+  const [showProjectMenu, setShowProjectMenu] = useState(false);
+  const [toast, setToast] = useState<{message: string, type: 'success' | 'info'} | null>(null);
+
+  const showToast = (message: string, type: 'success' | 'info' = 'success') => {
+    setToast({ message, type });
+    setTimeout(() => setToast(null), 3000);
+  };
+
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      try {
+        const h = await fetch('/api/health').then((r) => r.json());
+        if (cancelled) return;
+        setDatabaseEnabled(h.database === 'connected');
+        if (h.database !== 'connected') return;
+
+        const params = new URLSearchParams(window.location.search);
+        const pid = params.get('project');
+        if (pid) {
+          const res = await fetch(`/api/projects/${pid}`);
+          if (!res.ok) throw new Error('load');
+          const data = await res.json();
+          if (cancelled) return;
+          const map: Record<string, string> = {};
+          for (const f of data.files) map[f.path] = f.content;
+          setProjectId(pid);
+          setFilesMap(map);
+          setActiveFilePath(PREVIEW_ENTRY);
+          if (data.deployments?.length) {
+            setDeployments(
+              data.deployments.map(
+                (d: { id: string; slug: string; created_at: string }) => ({
+                  id: d.id,
+                  url: `${window.location.origin}/live/${d.slug}/`,
+                  date: new Date(d.created_at),
+                }),
+              ),
+            );
+          }
+          return;
+        }
+
+        const created = await fetch('/api/projects', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ name: 'Nouveau projet' }),
+        }).then((r) => r.json());
+        if (cancelled) return;
+        setProjectId(created.project.id);
+        const map: Record<string, string> = {};
+        for (const f of created.files) map[f.path] = f.content;
+        setFilesMap(map);
+        setActiveFilePath(PREVIEW_ENTRY);
+        window.history.replaceState(
+          {},
+          '',
+          `?project=${created.project.id}`,
+        );
+      } catch {
+        if (!cancelled) showToast('Mode local : sans PostgreSQL', 'info');
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  useEffect(() => {
+    if (!projectId || !databaseEnabled) return;
+    const path = activeFilePath;
+    const content = filesMap[path];
+    if (content === undefined) return;
+    const t = setTimeout(() => {
+      fetch(`/api/projects/${projectId}/files`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ path, content }),
+      })
+        .then(() => setLastSaved(new Date()))
+        .catch(() => showToast('Sauvegarde échouée', 'info'));
+    }, 900);
+    return () => clearTimeout(t);
+  }, [filesMap, activeFilePath, projectId, databaseEnabled]);
+
+  const openProjectFile = (path: string) => {
+    if (path === activeFilePath) return;
+    setActiveFilePath(path);
+  };
+
+  const addProjectFile = () => {
+    const p = window.prompt('Chemin du fichier (ex. src/Utils.tsx)', 'src/Utils.tsx');
+    if (!p || filesMap[p]) return;
+    setFilesMap((f) => ({
+      ...f,
+      [p]: `import React from 'react';\n\nexport function Utils() {\n  return <div className="p-2 text-sm">Nouveau module</div>;\n}\n`,
+    }));
+    setActiveFilePath(p);
+  };
+
+  const handleNewProject = () => {
+    if (
+      !window.confirm(
+        'Nouveau projet ? Le non sauvegardé restera dans l’URL actuelle si vous annulez.',
+      )
+    )
+      return;
+    setShowProjectMenu(false);
+    if (!databaseEnabled) {
+      setMessages(INITIAL_MESSAGES);
+      setAgentTasks([]);
+      setFilesMap({ [PREVIEW_ENTRY]: DEFAULT_PREVIEW_CODE });
+      setActiveFilePath(PREVIEW_ENTRY);
+      setDeployments([]);
+      setLastSaved(null);
+      showToast('Projet réinitialisé (sans base)', 'success');
+      return;
+    }
+    (async () => {
+      try {
+        const created = await fetch('/api/projects', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ name: 'Nouveau projet' }),
+        }).then((r) => r.json());
+        setProjectId(created.project.id);
+        const map: Record<string, string> = {};
+        for (const f of created.files) map[f.path] = f.content;
+        setFilesMap(map);
+        setActiveFilePath(PREVIEW_ENTRY);
+        setMessages(INITIAL_MESSAGES);
+        setAgentTasks([]);
+        setDeployments([]);
+        setLastSaved(null);
+        window.history.replaceState(
+          {},
+          '',
+          `?project=${created.project.id}`,
+        );
+        showToast('Nouveau projet créé', 'success');
+      } catch {
+        showToast('Impossible de créer le projet', 'info');
+      }
+    })();
+  };
+
+  const handlePublish = () => {
+    if (!projectId || !databaseEnabled) {
+      showToast('PostgreSQL requis pour publier', 'info');
+      return;
+    }
+    setIsPublishing(true);
+    setPublishProgress(5);
+    setPublishedUrl(null);
+    (async () => {
+      try {
+        setPublishProgress(40);
+        const res = await fetch(`/api/projects/${projectId}/deploy`, {
+          method: 'POST',
+        });
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.error || res.statusText);
+        setPublishProgress(100);
+        setPublishedUrl(data.url);
+        setDeployments((prev) => [
+          {
+            id: data.deploymentId,
+            url: data.url,
+            date: new Date(),
+          },
+          ...prev,
+        ]);
+        showToast('Déploiement terminé', 'success');
+      } catch (e) {
+        showToast(
+          e instanceof Error ? e.message : 'Publication échouée',
+          'info',
+        );
+        setIsPublishing(false);
+      }
+    })();
+  };
+
+  // Auto-save logic
+  useEffect(() => {
+    let intervalId: NodeJS.Timeout;
+
+    if (autoSaveEnabled && activeBottomTab === 'code') {
+      intervalId = setInterval(() => {
+        setIsSaving(true);
+        // Simulate saving
+        setTimeout(() => {
+          setIsSaving(false);
+          setLastSaved(new Date());
+        }, 800);
+      }, autoSaveInterval);
+    }
+
+    return () => {
+      if (intervalId) clearInterval(intervalId);
+    };
+  }, [autoSaveEnabled, autoSaveInterval, activeBottomTab]);
+  const [isTerminalOpen, setIsTerminalOpen] = useState(false);
+  const [isGenerating, setIsGenerating] = useState(false);
+  const [isRestoring, setIsRestoring] = useState(false);
+  const [streamingMessage, setStreamingMessage] = useState<string>('');
+  const [agentTasks, setAgentTasks] = useState<AgentTask[]>([]);
+  const streamCancelRef = useRef<(() => void) | null>(null);
+
+  useEffect(() => {
+    return () => {
+      streamCancelRef.current?.();
+      streamCancelRef.current = null;
+    };
+  }, []);
+
+  // Terminal State
+  const [terminalTabs, setTerminalTabs] = useState<TerminalTab[]>([
+    { id: '1', name: 'Terminal 1', lines: ['Welcome to Huggy Terminal', 'Connecting to container sandbox...', 'Ready.'] }
+  ]);
+  const [activeTabId, setActiveTabId] = useState('1');
+  const [terminalTheme, setTerminalTheme] = useState<TerminalTheme>('default');
+  const [commandInput, setCommandInput] = useState('');
+  const [commandHistory, setCommandHistory] = useState<string[]>([]);
+  const [historyIndex, setHistoryIndex] = useState(-1);
+  const [isHistorySearchOpen, setIsHistorySearchOpen] = useState(false);
+  const [historySearchQuery, setHistorySearchQuery] = useState('');
+
+  const activeTab = terminalTabs.find(t => t.id === activeTabId) || terminalTabs[0];
+
+  const chatEndRef = useRef<HTMLDivElement>(null);
+  const terminalEndRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    chatEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+  }, [messages, streamingMessage, agentTasks]);
+
+  useEffect(() => {
+    terminalEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+  }, [activeTab.lines]);
+
+  const addTerminalTab = () => {
+    const newId = (terminalTabs.length + 1).toString();
+    setTerminalTabs(prev => [...prev, { 
+      id: newId, 
+      name: `Terminal ${newId}`, 
+      lines: [`Terminal ${newId} started.`, 'Ready.'] 
+    }]);
+    setActiveTabId(newId);
+  };
+
+  const removeTerminalTab = (id: string, e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (terminalTabs.length === 1) return;
+    const newTabs = terminalTabs.filter(t => t.id !== id);
+    setTerminalTabs(newTabs);
+    if (activeTabId === id) {
+      setActiveTabId(newTabs[0].id);
+    }
+  };
+
+  const updateTerminalLines = (newLines: string[]) => {
+    setTerminalTabs(prev => prev.map(t => t.id === activeTabId ? { ...t, lines: [...t.lines, ...newLines] } : t));
+  };
+
+  const clearTerminal = () => {
+    setTerminalTabs(prev => prev.map(t => t.id === activeTabId ? { ...t, lines: ['Terminal cleared.'] } : t));
+  };
+
+  const handleRestore = async (msg: Message) => {
+    if (!msg.changedFiles || msg.changedFiles.length === 0) return;
+    
+    setIsRestoring(true);
+    const file = msg.changedFiles[0];
+    
+    // Simulate restore process
+    await new Promise(r => setTimeout(r, 1000));
+    
+    setFilesMap((prev) => ({
+      ...prev,
+      [file.path || PREVIEW_ENTRY]: file.current,
+    }));
+    
+    setIsRestoring(false);
+    
+    // Add terminal log
+    updateTerminalLines([`[SYSTEM] Restored to version from ${msg.timestamp.toLocaleTimeString()}`, `[SYSTEM] src/App.tsx reverted.`]);
+  };
+
+  const handleSendMessage = () => {
+    if (!inputValue.trim()) return;
+
+    const newUserMsg: Message = {
+      id: Date.now().toString(),
+      sender: 'VOUS',
+      text: inputValue,
+      timestamp: new Date()
+    };
+
+    setMessages(prev => [...prev, newUserMsg]);
+    setInputValue('');
+    streamCancelRef.current?.();
+    streamCancelRef.current = null;
+    setIsGenerating(true);
+    setStreamingMessage('');
+    setAgentTasks([]);
+
+    const startTime = Date.now();
+
+    // Simulate Agent Workflow (Google AI Studio Build style)
+    const runAgentWorkflow = async () => {
+      const tasks: AgentTask[] = [
+        { id: '1', label: 'Analyzing project structure...', status: 'running', type: 'search' },
+      ];
+      setAgentTasks(tasks);
+
+      // Step 1: Search/Analyze
+      await new Promise(r => setTimeout(r, 400));
+      setAgentTasks(prev => prev.map(t => t.id === '1' ? { ...t, status: 'success' } : t));
+      
+      // Step 2: Read file
+      const readTask: AgentTask = { id: '2', label: 'Reading src/App.tsx...', status: 'running', type: 'read' };
+      setAgentTasks(prev => [...prev, readTask]);
+      await new Promise(r => setTimeout(r, 300));
+      setAgentTasks(prev => prev.map(t => t.id === '2' ? { ...t, status: 'success' } : t));
+
+      // Step 3: Edit file
+      const editTask: AgentTask = { id: '3', label: 'Generating high-quality code...', status: 'running', type: 'edit' };
+      setAgentTasks(prev => [...prev, editTask]);
+      
+      const originalCode = filesMap[PREVIEW_ENTRY] || DEFAULT_PREVIEW_CODE;
+      let updatedMap = { ...filesMap };
+      let fullResponse = '';
+
+      try {
+        const gen = await generateAppUpdate(newUserMsg.text, {
+          currentCode: originalCode,
+          projectId,
+        });
+        if (gen.files.length) {
+          for (const f of gen.files) {
+            updatedMap[f.path] = f.content;
+          }
+          fullResponse =
+            gen.reply ||
+            `Mise à jour appliquée (${gen.files.length} fichier(s)) — ${gen.provider || 'IA'}.`;
+        } else if (gen.code) {
+          updatedMap[PREVIEW_ENTRY] = gen.code;
+          fullResponse =
+            gen.reply ||
+            `J'ai conçu une interface pour : « ${newUserMsg.text} ».`;
+        } else {
+          throw new Error('Réponse vide');
+        }
+      } catch (error) {
+        console.error('IA:', error);
+        const fallback = originalCode.replace(
+          'Bienvenue',
+          newUserMsg.text.substring(0, 24),
+        );
+        updatedMap[PREVIEW_ENTRY] = fallback;
+        fullResponse = `[Simulation] ${newUserMsg.text.slice(0, 80)}… — configurez ANTHROPIC_API_KEY ou GEMINI_API_KEY sur le serveur.`;
+      }
+
+      setFilesMap(updatedMap);
+      const updatedCode = updatedMap[PREVIEW_ENTRY] || '';
+
+      setAgentTasks(prev => prev.map(t => t.id === '3' ? { ...t, status: 'success' } : t));
+
+      // Step 4: Compile
+      const compileTask: AgentTask = { id: '4', label: 'Optimizing and Compiling...', status: 'running', type: 'compile' };
+      setAgentTasks(prev => [...prev, compileTask]);
+      await new Promise(r => setTimeout(r, 500));
+      setAgentTasks(prev => prev.map(t => t.id === '4' ? { ...t, status: 'success' } : t));
+
+      streamCancelRef.current?.();
+      streamCancelRef.current = streamChatText(
+        fullResponse,
+        (partial) => setStreamingMessage(partial),
+        () => {
+          streamCancelRef.current = null;
+          const huggyMsg: Message = {
+            id: (Date.now() + 1).toString(),
+            sender: 'HUGGY',
+            text: fullResponse,
+            timestamp: new Date(),
+            changedFiles: [
+              {
+                path: PREVIEW_ENTRY,
+                original: originalCode,
+                current: updatedCode,
+              },
+            ],
+            durationMs: Date.now() - startTime,
+          };
+          setMessages((prev) => [...prev, huggyMsg]);
+          setStreamingMessage('');
+          setIsGenerating(false);
+          setAgentTasks([]);
+          setTerminalTabs((prev) =>
+            prev.map((t) =>
+              t.id === activeTabId
+                ? {
+                    ...t,
+                    lines: [
+                      ...t.lines,
+                      `[HUGGY] Tâche terminée : ${newUserMsg.text.substring(0, 40)}…`,
+                      '[HUGGY] Build OK — aperçu mis à jour.',
+                    ],
+                  }
+                : t,
+            ),
+          );
+        },
+      );
+    };
+
+    runAgentWorkflow();
+  };
+
+  const handleTerminalCommand = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!commandInput.trim()) return;
+
+    const cmd = commandInput.trim();
+    updateTerminalLines([`$ ${cmd}`]);
+    setCommandHistory(prev => [cmd, ...prev.filter(h => h !== cmd)].slice(0, 50));
+    setHistoryIndex(-1);
+    
+    if (cmd === 'clear') {
+      clearTerminal();
+    } else if (cmd === 'ls') {
+      updateTerminalLines(['src/  public/  package.json  vite.config.ts  index.html']);
+    } else if (cmd === 'help') {
+      updateTerminalLines(['Available commands:', '  ls      - List files', '  clear   - Clear terminal', '  help    - Show this help', '  theme   - Show current theme']);
+    } else if (cmd === 'theme') {
+      updateTerminalLines([`Current theme: ${terminalTheme}`]);
+    } else {
+      updateTerminalLines([`Command not found: ${cmd}`]);
+    }
+    
+    setCommandInput('');
+  };
+
+  const handleKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key === 'ArrowUp') {
+      e.preventDefault();
+      if (historyIndex < commandHistory.length - 1) {
+        const nextIndex = historyIndex + 1;
+        setHistoryIndex(nextIndex);
+        setCommandInput(commandHistory[nextIndex]);
+      }
+    } else if (e.key === 'ArrowDown') {
+      e.preventDefault();
+      if (historyIndex > 0) {
+        const nextIndex = historyIndex - 1;
+        setHistoryIndex(nextIndex);
+        setCommandInput(commandHistory[nextIndex]);
+      } else if (historyIndex === 0) {
+        setHistoryIndex(-1);
+        setCommandInput('');
+      }
+    }
+  };
+
+  const getPreviewSize = () => {
+    switch (previewMode) {
+      case 'mobile': return { 
+        container: 'w-[390px] h-[844px] scale-[0.75] origin-center', 
+        frame: 'rounded-[3.5rem] border-[14px] border-slate-900 shadow-2xl ring-1 ring-slate-800',
+        inner: 'rounded-[2.5rem]'
+      };
+      case 'tablet': return { 
+        container: 'w-[820px] h-[1180px] scale-[0.45] origin-center', 
+        frame: 'rounded-[3rem] border-[18px] border-slate-900 shadow-2xl ring-1 ring-slate-800',
+        inner: 'rounded-[2rem]'
+      };
+      default: return { 
+        container: 'w-full h-full', 
+        frame: 'border-none',
+        inner: 'rounded-none'
+      };
+    }
+  };
+
+  const ACCENT_COLORS = {
+    blue: { bg: 'bg-blue-600', text: 'text-blue-600', border: 'border-blue-600', light: 'bg-blue-50', ring: 'ring-blue-100' },
+    purple: { bg: 'bg-purple-600', text: 'text-purple-600', border: 'border-purple-600', light: 'bg-purple-50', ring: 'ring-purple-100' },
+    emerald: { bg: 'bg-emerald-600', text: 'text-emerald-600', border: 'border-emerald-600', light: 'bg-emerald-50', ring: 'ring-emerald-100' },
+    rose: { bg: 'bg-rose-600', text: 'text-rose-600', border: 'border-rose-600', light: 'bg-rose-50', ring: 'ring-rose-100' },
+  };
+
+  return (
+    <div className={`flex flex-col h-screen bg-[#F8F9FB] text-slate-900 font-sans overflow-hidden ${activeAccentColor}`}>
+      {/* Toast Notification */}
+      <AnimatePresence>
+        {toast && (
+          <motion.div 
+            initial={{ opacity: 0, y: -20, x: '-50%' }}
+            animate={{ opacity: 1, y: 20, x: '-50%' }}
+            exit={{ opacity: 0, y: -20, x: '-50%' }}
+            className="fixed top-0 left-1/2 z-[200] px-6 py-3 bg-slate-900 text-white rounded-2xl shadow-2xl flex items-center gap-3 min-w-[300px]"
+          >
+            <div className={`w-2 h-2 rounded-full ${toast.type === 'success' ? 'bg-emerald-400' : 'bg-blue-400'} animate-pulse`} />
+            <span className="text-sm font-bold">{toast.message}</span>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* Top Navigation Bar */}
+      <header className="h-14 border-b border-slate-200 bg-white flex items-center justify-between px-4 z-10">
+        <div className="flex items-center gap-4">
+          <div className={`w-8 h-8 ${ACCENT_COLORS[activeAccentColor].bg} rounded-lg flex items-center justify-center text-white shadow-lg`}>
+            <Zap size={20} fill="currentColor" />
+          </div>
+          <div className="h-6 w-[1px] bg-slate-200" />
+          <div className="flex items-center gap-2">
+            <span className="text-sm font-black tracking-tighter text-slate-900">HUGGY</span>
+            <span className="px-2 py-0.5 bg-slate-100 text-[10px] font-black text-slate-400 rounded-full uppercase tracking-widest">Studio</span>
+          </div>
+        </div>
+
+        <div className="flex items-center gap-3">
+          <div className="flex items-center gap-1 bg-slate-100 p-1 rounded-xl border border-slate-200 mr-2">
+            <button className="px-3 py-1.5 text-[11px] font-bold text-slate-500 hover:text-slate-900 transition-colors">Docs</button>
+            <button className="px-3 py-1.5 text-[11px] font-bold text-slate-500 hover:text-slate-900 transition-colors">Feedback</button>
+          </div>
+          <button 
+            onClick={handlePublish}
+            disabled={isPublishing}
+            className={`flex items-center gap-2 px-4 py-2 ${ACCENT_COLORS[activeAccentColor].bg} hover:opacity-90 disabled:opacity-50 text-white rounded-lg text-sm font-bold transition-all active:scale-95 shadow-lg shadow-blue-600/20`}
+          >
+            <Cloud size={16} className={isPublishing ? 'animate-bounce' : ''} />
+            {isPublishing ? 'Publication...' : 'Publier'}
+            <ChevronDown size={16} />
+          </button>
+        </div>
+      </header>
+
+      <div className="flex flex-1 overflow-hidden">
+        {/* Left Sidebar */}
+        <aside className="w-[380px] border-r border-slate-200 bg-white flex flex-col shrink-0">
+          <div className="p-4 border-b border-slate-100 flex items-center justify-between relative">
+            <div 
+              onClick={() => setShowProjectMenu(!showProjectMenu)}
+              className="flex items-center gap-2 cursor-pointer hover:bg-slate-50 p-1 rounded transition-colors group"
+            >
+              <div className={`w-4 h-4 ${ACCENT_COLORS[activeAccentColor].bg} rounded-sm`} />
+              <span className="font-bold text-sm text-slate-700">New Project</span>
+              <ChevronDown size={14} className={`text-slate-400 transition-transform ${showProjectMenu ? 'rotate-180' : ''}`} />
+            </div>
+
+            <AnimatePresence>
+              {showProjectMenu && (
+                <motion.div 
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: 10 }}
+                  className="absolute top-full left-4 mt-1 w-48 bg-white rounded-xl border border-slate-200 shadow-xl p-2 z-50"
+                >
+                  <button 
+                    onClick={handleNewProject}
+                    className="w-full flex items-center gap-2 px-3 py-2 hover:bg-slate-50 rounded-lg text-xs font-bold text-slate-600 transition-colors"
+                  >
+                    <Plus size={14} />
+                    Start New Project
+                  </button>
+                  <button className="w-full flex items-center gap-2 px-3 py-2 hover:bg-slate-50 rounded-lg text-xs font-bold text-slate-600 transition-colors">
+                    <FolderOpen size={14} />
+                    Open Project...
+                  </button>
+                  <div className="h-[1px] bg-slate-100 my-1" />
+                  <button className="w-full flex items-center gap-2 px-3 py-2 hover:bg-rose-50 hover:text-rose-600 rounded-lg text-xs font-bold text-slate-600 transition-colors">
+                    <Plus size={14} className="rotate-45" />
+                    Delete Project
+                  </button>
+                </motion.div>
+              )}
+            </AnimatePresence>
+
+            <div className="flex items-center gap-3 text-slate-400">
+              <button 
+                onClick={() => setActiveSidebarTab('chat')}
+                className={`p-1.5 rounded transition-colors ${activeSidebarTab === 'chat' ? 'text-blue-600 bg-blue-50' : 'hover:text-slate-600'}`}
+                title="Chat"
+              >
+                <MessageSquare size={18} />
+              </button>
+              <button 
+                onClick={() => setActiveSidebarTab('history')}
+                className={`p-1.5 rounded transition-colors ${activeSidebarTab === 'history' ? 'text-blue-600 bg-blue-50' : 'hover:text-slate-600'}`}
+                title="History"
+              >
+                <History size={18} />
+              </button>
+            </div>
+          </div>
+
+          <div className="flex-1 overflow-y-auto p-4 space-y-6 scrollbar-hide">
+            {activeSidebarTab === 'chat' ? (
+              /* Chat History */
+              <div className="space-y-4">
+                <AnimatePresence initial={false}>
+                  {messages.map((msg) => (
+                    <motion.div 
+                      key={msg.id}
+                      initial={{ opacity: 0, y: 10 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      className="flex gap-3"
+                    >
+                      {msg.sender === 'VOUS' ? (
+                        <>
+                          <div className="w-8 h-8 rounded-full bg-slate-100 flex items-center justify-center text-slate-500 shrink-0 border border-slate-200">
+                            <span className="text-[10px] font-bold">VOUS</span>
+                          </div>
+                          <div className="flex-1 overflow-hidden">
+                            <p className="text-sm text-slate-700 mt-1.5 whitespace-pre-wrap break-words">{msg.text}</p>
+                            <div className="mt-2 flex justify-end">
+                              <Download size={14} className="text-slate-300 hover:text-slate-500 cursor-pointer" />
+                            </div>
+                          </div>
+                        </>
+                      ) : (
+                        <>
+                          <div className="w-8 h-8 rounded-lg bg-blue-50 flex items-center justify-center text-blue-600 shrink-0 border border-blue-100">
+                            <Zap size={16} fill="currentColor" />
+                          </div>
+                          <div className="flex-1 overflow-hidden">
+                            <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider flex items-center gap-2">
+                              Huggy
+                              {msg.durationMs && (
+                                <span className="text-[9px] font-medium text-slate-300 lowercase">
+                                  • { (msg.durationMs / 1000).toFixed(1) }s
+                                </span>
+                              )}
+                            </span>
+                            <div className="mt-1.5 p-3 bg-slate-50 rounded-xl border border-slate-100 shadow-sm">
+                              <p className="text-sm text-slate-700 leading-relaxed whitespace-pre-wrap break-words">
+                                {msg.text}
+                              </p>
+                            </div>
+                          </div>
+                        </>
+                      )}
+                    </motion.div>
+                  ))}
+                </AnimatePresence>
+                
+                {agentTasks.length > 0 && (
+                  <div className="space-y-2 ml-11 border-l-2 border-slate-100 pl-4 py-2">
+                    {agentTasks.map(task => (
+                      <motion.div 
+                        key={task.id}
+                        initial={{ opacity: 0, x: -10 }}
+                        animate={{ opacity: 1, x: 0 }}
+                        className="flex items-center gap-3"
+                      >
+                        <div className={`w-5 h-5 rounded-full flex items-center justify-center shrink-0 ${
+                          task.status === 'success' ? 'bg-emerald-50 text-emerald-500' : 
+                          task.status === 'running' ? 'bg-blue-50 text-blue-500' : 'bg-slate-50 text-slate-300'
+                        }`}>
+                          {task.status === 'running' ? (
+                            <Loader2 size={12} className="animate-spin" />
+                          ) : task.status === 'success' ? (
+                            <Check size={12} />
+                          ) : (
+                            <div className="w-1.5 h-1.5 rounded-full bg-current" />
+                          )}
+                        </div>
+                        <span className={`text-[11px] font-medium ${
+                          task.status === 'running' ? 'text-blue-600' : 
+                          task.status === 'success' ? 'text-slate-500' : 'text-slate-400'
+                        }`}>
+                          {task.label}
+                        </span>
+                      </motion.div>
+                    ))}
+                  </div>
+                )}
+
+                {streamingMessage && (
+                  <motion.div
+                    layout
+                    initial={{ opacity: 0, y: 8 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ duration: 0.22, ease: [0.22, 1, 0.36, 1] }}
+                    className="flex gap-3"
+                  >
+                    <div className="relative shrink-0">
+                      <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-blue-600 to-indigo-600 flex items-center justify-center text-white shadow-md shadow-blue-600/20 ring-2 ring-white">
+                        <Zap size={17} fill="currentColor" className="opacity-95" />
+                      </div>
+                      <span className="absolute -bottom-0.5 -right-0.5 flex h-2.5 w-2.5">
+                        <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-emerald-400 opacity-40" />
+                        <span className="relative inline-flex h-2.5 w-2.5 rounded-full bg-emerald-500 ring-2 ring-white" />
+                      </span>
+                    </div>
+                    <div className="flex-1 min-w-0 overflow-hidden">
+                      <div className="flex flex-wrap items-center gap-2 mb-1.5">
+                        <span className="text-[10px] font-bold uppercase tracking-[0.12em] text-slate-500">
+                          Huggy
+                        </span>
+                        <span className="inline-flex items-center gap-1 rounded-md border border-indigo-200/80 bg-indigo-50/90 px-2 py-0.5 text-[10px] font-semibold text-indigo-700 shadow-sm">
+                          <Sparkles size={11} className="text-indigo-500" />
+                          Rédaction
+                        </span>
+                      </div>
+                      <div className="relative overflow-hidden rounded-2xl border border-slate-200/90 bg-white shadow-md shadow-slate-200/40 ring-1 ring-slate-900/[0.04]">
+                        <div className="pointer-events-none absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-indigo-400/50 to-transparent" />
+                        <div className="p-3.5 sm:p-4">
+                          <p className="text-[13px] sm:text-sm text-slate-800 leading-[1.7] whitespace-pre-wrap break-words tracking-[-0.01em]">
+                            {streamingMessage}
+                            <span
+                              className="inline-block w-[2px] h-[1.15em] translate-y-[0.12em] rounded-sm bg-indigo-500 align-text-bottom ml-0.5 huggy-stream-caret"
+                              aria-hidden
+                            />
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+                  </motion.div>
+                )}
+                {isGenerating && !streamingMessage && (
+                  <motion.div
+                    initial={{ opacity: 0, y: 6 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    className="flex gap-3"
+                  >
+                    <div className="w-9 h-9 rounded-xl bg-slate-100 flex items-center justify-center text-slate-500 shrink-0 border border-slate-200/80">
+                      <Loader2 size={17} className="animate-spin text-indigo-500" />
+                    </div>
+                    <div className="flex-1 min-w-0 space-y-2">
+                      <div className="flex flex-wrap items-center gap-2">
+                        <span className="text-[10px] font-bold uppercase tracking-[0.12em] text-slate-500">
+                          Huggy
+                        </span>
+                        <span className="flex items-center gap-1 rounded-md border border-slate-200 bg-white px-2 py-0.5 text-[10px] font-semibold text-slate-600 shadow-sm">
+                          <span className="flex gap-0.5">
+                            {[0, 1, 2].map((i) => (
+                              <span
+                                key={i}
+                                className="h-1 w-1 rounded-full bg-indigo-400 animate-bounce"
+                                style={{ animationDelay: `${i * 120}ms` }}
+                              />
+                            ))}
+                          </span>
+                          Analyse
+                        </span>
+                      </div>
+                      <div className="rounded-2xl border border-slate-200/90 bg-white p-4 shadow-sm ring-1 ring-slate-900/[0.03]">
+                        <div className="space-y-2.5">
+                          <div className="h-2.5 huggy-thinking-shimmer rounded-md w-[88%]" />
+                          <div className="h-2.5 huggy-thinking-shimmer rounded-md w-full" />
+                          <div className="h-2.5 huggy-thinking-shimmer rounded-md w-[72%]" />
+                        </div>
+                        <p className="mt-3 text-[11px] font-medium text-slate-400">
+                          Lecture du projet et préparation de la réponse…
+                        </p>
+                      </div>
+                    </div>
+                  </motion.div>
+                )}
+                <div ref={chatEndRef} />
+              </div>
+            ) : activeSidebarTab === 'history' ? (
+              /* History / Timeline */
+              <div className="space-y-6">
+                <div className="flex items-center justify-between">
+                  <h2 className="text-xs font-bold text-slate-400 uppercase tracking-widest">Timeline</h2>
+                  <div className="flex items-center gap-1">
+                    <button className="p-1.5 rounded hover:bg-slate-100 text-slate-400 transition-colors">
+                      <RotateCcw size={14} />
+                    </button>
+                  </div>
+                </div>
+
+                <div className="space-y-4 relative before:absolute before:left-[11px] before:top-2 before:bottom-2 before:w-[2px] before:bg-slate-100">
+                  {messages.filter(m => m.sender === 'VOUS' || m.changedFiles).map((m, i) => (
+                    <div key={m.id} className="relative pl-8 group">
+                      <div className={`absolute left-0 top-1.5 w-[24px] h-[24px] rounded-full border-4 border-white shadow-sm flex items-center justify-center z-10 ${
+                        m.sender === 'VOUS' ? 'bg-slate-200 text-slate-500' : 'bg-blue-500 text-white'
+                      }`}>
+                        {m.sender === 'VOUS' ? <Search size={10} /> : <Zap size={10} fill="currentColor" />}
+                      </div>
+                      <div className="space-y-1">
+                        <div className="flex items-center justify-between">
+                          <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">
+                            {m.sender === 'VOUS' ? 'User Request' : 'Agent Action'}
+                          </span>
+                          <span className="text-[9px] text-slate-300 font-medium">
+                            {m.timestamp.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                          </span>
+                        </div>
+                        <p className="text-xs text-slate-600 font-medium line-clamp-2 group-hover:line-clamp-none transition-all break-words">
+                          {m.text}
+                        </p>
+                        {m.changedFiles && (
+                          <div className="flex items-center gap-2 mt-2">
+                            <div className="flex items-center gap-1 px-2 py-0.5 bg-emerald-50 text-emerald-600 rounded-full text-[9px] font-bold border border-emerald-100">
+                              <FileCode size={10} />
+                              {m.changedFiles.length} file modified
+                            </div>
+                            <button 
+                              onClick={() => handleRestore(m)}
+                              disabled={isRestoring}
+                              className="flex items-center gap-1 px-2 py-0.5 bg-blue-50 text-blue-600 rounded-full text-[9px] font-bold border border-blue-100 hover:bg-blue-100 transition-colors disabled:opacity-50"
+                            >
+                              <RotateCcw size={10} className={isRestoring ? 'animate-spin' : ''} />
+                              Restore
+                            </button>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            ) : (
+              <div className="flex-1 flex items-center justify-center text-slate-400 text-xs italic">
+                No other tabs available.
+              </div>
+            )}
+          </div>
+
+          {/* Chat Input Area */}
+          <div className="p-4 border-t border-slate-100 bg-white">
+            <div className="mb-3 flex items-center gap-2">
+              <div className="w-2 h-2 rounded-full bg-blue-500 animate-pulse" />
+              <span className="text-xs text-slate-500 font-medium">619.50 credits</span>
+            </div>
+            <div className="bg-white border border-slate-200 rounded-2xl p-3 shadow-sm focus-within:border-blue-400 focus-within:ring-2 focus-within:ring-blue-100 transition-all">
+              <textarea 
+                value={inputValue}
+                onChange={(e) => {
+                  setInputValue(e.target.value);
+                  e.target.style.height = 'auto';
+                  e.target.style.height = `${Math.min(e.target.scrollHeight, 200)}px`;
+                }}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter' && !e.shiftKey) {
+                    e.preventDefault();
+                    handleSendMessage();
+                    (e.target as HTMLTextAreaElement).style.height = 'auto';
+                  }
+                }}
+                placeholder="Ask Huggy to build something..."
+                className="w-full text-sm resize-none outline-none text-slate-700 min-h-[60px] max-h-[200px] placeholder:text-slate-400 overflow-y-auto"
+              />
+              <div className="flex items-center justify-between mt-2">
+                <div className="flex items-center gap-1">
+                  <button 
+                    onClick={() => showToast('File upload simulated', 'info')}
+                    className="p-2 hover:bg-slate-100 rounded-lg text-slate-400 transition-colors"
+                  >
+                    <Plus size={18} />
+                  </button>
+                  <button 
+                    onClick={() => {
+                      setIsVisualMode(!isVisualMode);
+                      showToast(`Visual mode ${!isVisualMode ? 'enabled' : 'disabled'}`, 'info');
+                    }}
+                    className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-bold transition-all border ${isVisualMode ? 'bg-indigo-50 border-indigo-200 text-indigo-600' : 'bg-slate-50 border-slate-200 text-slate-600 hover:bg-slate-100'}`}
+                  >
+                    <Zap size={14} className={isVisualMode ? 'text-indigo-600' : 'text-slate-400'} />
+                    Visuel
+                  </button>
+                  <button 
+                    onClick={() => {
+                      setIsRecording(!isRecording);
+                      if (!isRecording) showToast('Recording started...', 'info');
+                      else showToast('Recording finished', 'success');
+                    }}
+                    className={`p-2 rounded-lg transition-all ${isRecording ? 'bg-rose-50 text-rose-600 animate-pulse' : 'hover:bg-slate-100 text-slate-400'}`}
+                  >
+                    <Mic size={18} />
+                  </button>
+                </div>
+                <div className="flex items-center gap-1">
+                  <button className="flex items-center gap-1.5 px-3 py-1.5 hover:bg-slate-100 rounded-full text-xs font-medium text-slate-500 transition-colors">
+                    <MessageSquare size={14} />
+                    Chat
+                  </button>
+                  <button 
+                    onClick={handleSendMessage}
+                    disabled={!inputValue.trim() || isGenerating}
+                    className={`p-2 rounded-lg transition-all ${inputValue.trim() && !isGenerating ? 'bg-blue-600 text-white shadow-md hover:bg-blue-700' : 'bg-slate-100 text-slate-400'}`}
+                  >
+                    <ArrowUp size={18} />
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </aside>
+
+        {/* Main Content Area */}
+        <main className="flex-1 flex flex-col overflow-hidden relative bg-[#F8F9FB]">
+          {/* Main Toolbar */}
+          <div className="h-14 px-4 flex items-center justify-between bg-white border-b border-slate-200 shrink-0">
+            <div className="flex items-center gap-1 bg-slate-100 p-1 rounded-xl border border-slate-200">
+              <button 
+                onClick={() => setPreviewMode('desktop')}
+                className={`flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${
+                  previewMode === 'desktop' 
+                    ? 'bg-blue-600 text-white shadow-sm' 
+                    : 'hover:bg-white text-slate-500'
+                }`}
+              >
+                <Monitor size={14} />
+                Desktop
+              </button>
+              <button 
+                onClick={() => setPreviewMode('tablet')}
+                className={`flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${
+                  previewMode === 'tablet' 
+                    ? 'bg-blue-600 text-white shadow-sm' 
+                    : 'hover:bg-white text-slate-500'
+                }`}
+              >
+                <TabletIcon size={14} />
+                Tablet
+              </button>
+              <button 
+                onClick={() => setPreviewMode('mobile')}
+                className={`flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${
+                  previewMode === 'mobile' 
+                    ? 'bg-blue-600 text-white shadow-sm' 
+                    : 'hover:bg-white text-slate-500'
+                }`}
+              >
+                <Smartphone size={14} />
+                Mobile
+              </button>
+            </div>
+
+            <div className="flex items-center gap-4">
+              <div className="flex items-center gap-1 bg-slate-100 p-1 rounded-xl border border-slate-200">
+                <button 
+                  onClick={() => {
+                    setIsSaving(true);
+                    setTimeout(() => {
+                      setIsSaving(false);
+                      setLastSaved(new Date());
+                      showToast('Preview refreshed', 'success');
+                    }, 1000);
+                  }}
+                  className={`p-1.5 rounded-lg transition-all ${isSaving ? ACCENT_COLORS[activeAccentColor].text + ' bg-white' : 'text-slate-400 hover:text-blue-600 hover:bg-white'}`}
+                  title="Refresh Preview"
+                >
+                  <RotateCw size={14} className={isSaving ? 'animate-spin' : ''} />
+                </button>
+                <button 
+                  onClick={() => window.open(window.location.href, '_blank')}
+                  className="p-1.5 text-slate-400 hover:text-blue-600 hover:bg-white rounded-lg transition-all"
+                  title="Open in New Tab"
+                >
+                  <ExternalLink size={14} />
+                </button>
+              </div>
+              <div className="h-6 w-[1px] bg-slate-200 mx-1" />
+              <div className="flex items-center gap-1">
+                <button className={`p-2 ${ACCENT_COLORS[activeAccentColor].bg} text-white rounded-lg shadow-lg active:scale-95 transition-transform`}>
+                  <Monitor size={18} />
+                </button>
+                
+                {/* Cloud Menu */}
+                <div className="relative">
+                  <button 
+                    onClick={() => setShowCloudMenu(!showCloudMenu)}
+                    className={`p-2 rounded-lg transition-colors ${showCloudMenu ? 'bg-blue-50 text-blue-600' : 'text-slate-400 hover:bg-slate-100'}`}
+                  >
+                    <Cloud size={18} />
+                  </button>
+                  <AnimatePresence>
+                    {showCloudMenu && (
+                      <motion.div 
+                        initial={{ opacity: 0, y: 10, scale: 0.95 }}
+                        animate={{ opacity: 1, y: 0, scale: 1 }}
+                        exit={{ opacity: 0, y: 10, scale: 0.95 }}
+                        className="absolute top-full right-0 mt-2 w-64 bg-white rounded-2xl border border-slate-200 shadow-2xl p-4 z-50"
+                      >
+                        <h4 className="text-xs font-black text-slate-400 uppercase tracking-widest mb-4">Deployment History</h4>
+                        <div className="space-y-3">
+                          {deployments.length === 0 ? (
+                            <p className="text-[11px] text-slate-400 italic">No deployments yet.</p>
+                          ) : (
+                            deployments.map(dep => (
+                              <div key={dep.id} className="p-2 rounded-xl border border-slate-50 bg-slate-50/50 hover:bg-white hover:border-slate-200 transition-all cursor-pointer group">
+                                <div className="flex items-center justify-between mb-1">
+                                  <span className="text-[10px] font-bold text-blue-600 truncate max-w-[120px]">{dep.url}</span>
+                                  <span className="text-[9px] text-slate-400">{dep.date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
+                                </div>
+                                <div className="flex items-center gap-2">
+                                  <div className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
+                                  <span className="text-[9px] font-bold text-slate-500 uppercase tracking-widest">Production</span>
+                                </div>
+                              </div>
+                            ))
+                          )}
+                        </div>
+                      </motion.div>
+                    )}
+                  </AnimatePresence>
+                </div>
+
+                {/* Palette Menu */}
+                <div className="relative">
+                  <button 
+                    onClick={() => setShowMoreMenu(false) || setShowAnalyticsMenu(false) || setShowCloudMenu(false) || setShowProjectMenu(false)}
+                    className="p-2 text-slate-400 hover:bg-slate-100 rounded-lg transition-colors group"
+                  >
+                    <Palette size={18} />
+                    <div className="absolute top-full right-0 mt-2 hidden group-hover:block w-32 bg-white rounded-xl border border-slate-200 shadow-xl p-2 z-50">
+                      <div className="grid grid-cols-2 gap-2">
+                        {(Object.keys(ACCENT_COLORS) as Array<keyof typeof ACCENT_COLORS>).map(color => (
+                          <button 
+                            key={color}
+                            onClick={() => {
+                              setActiveAccentColor(color);
+                              showToast(`Theme changed to ${color}`, 'info');
+                            }}
+                            className={`w-full h-8 rounded-lg ${ACCENT_COLORS[color].bg} border-2 ${activeAccentColor === color ? 'border-slate-900' : 'border-transparent'} transition-all`}
+                          />
+                        ))}
+                      </div>
+                    </div>
+                  </button>
+                </div>
+
+                {/* Analytics Menu */}
+                <div className="relative">
+                  <button 
+                    onClick={() => setShowAnalyticsMenu(!showAnalyticsMenu)}
+                    className={`p-2 rounded-lg transition-colors ${showAnalyticsMenu ? 'bg-emerald-50 text-emerald-600' : 'text-slate-400 hover:bg-slate-100'}`}
+                  >
+                    <BarChart3 size={18} />
+                  </button>
+                  <AnimatePresence>
+                    {showAnalyticsMenu && (
+                      <motion.div 
+                        initial={{ opacity: 0, y: 10, scale: 0.95 }}
+                        animate={{ opacity: 1, y: 0, scale: 1 }}
+                        exit={{ opacity: 0, y: 10, scale: 0.95 }}
+                        className="absolute top-full right-0 mt-2 w-64 bg-white rounded-2xl border border-slate-200 shadow-2xl p-4 z-50"
+                      >
+                        <h4 className="text-xs font-black text-slate-400 uppercase tracking-widest mb-4">AI Usage Analytics</h4>
+                        <div className="space-y-4">
+                          <div className="space-y-2">
+                            <div className="flex justify-between text-[10px] font-bold text-slate-500 uppercase tracking-widest">
+                              <span>Credits Remaining</span>
+                              <span className="text-blue-600">619.50 / 1000</span>
+                            </div>
+                            <div className="h-1.5 bg-slate-100 rounded-full overflow-hidden">
+                              <div className="h-full bg-blue-500 w-[62%]" />
+                            </div>
+                          </div>
+                          <div className="grid grid-cols-2 gap-3">
+                            <div className="p-3 bg-slate-50 rounded-xl border border-slate-100">
+                              <p className="text-[9px] font-bold text-slate-400 uppercase mb-1">Tokens</p>
+                              <p className="text-sm font-black text-slate-700">12.4k</p>
+                            </div>
+                            <div className="p-3 bg-slate-50 rounded-xl border border-slate-100">
+                              <p className="text-[9px] font-bold text-slate-400 uppercase mb-1">Requests</p>
+                              <p className="text-sm font-black text-slate-700">142</p>
+                            </div>
+                          </div>
+                        </div>
+                      </motion.div>
+                    )}
+                  </AnimatePresence>
+                </div>
+
+                {/* More Menu */}
+                <div className="relative">
+                  <button 
+                    onClick={() => setShowMoreMenu(!showMoreMenu)}
+                    className={`p-2 rounded-lg transition-colors ${showMoreMenu ? 'bg-slate-100 text-slate-900' : 'text-slate-400 hover:bg-slate-100'}`}
+                  >
+                    <MoreHorizontal size={18} />
+                  </button>
+                  <AnimatePresence>
+                    {showMoreMenu && (
+                      <motion.div 
+                        initial={{ opacity: 0, y: 10, scale: 0.95 }}
+                        animate={{ opacity: 1, y: 0, scale: 1 }}
+                        exit={{ opacity: 0, y: 10, scale: 0.95 }}
+                        className="absolute top-full right-0 mt-2 w-48 bg-white rounded-2xl border border-slate-200 shadow-2xl p-2 z-50"
+                      >
+                        <button className="w-full flex items-center gap-2 px-3 py-2 hover:bg-slate-50 rounded-lg text-xs font-bold text-slate-600 transition-colors">
+                          <Download size={14} />
+                          Export Code
+                        </button>
+                        <button className="w-full flex items-center gap-2 px-3 py-2 hover:bg-slate-50 rounded-lg text-xs font-bold text-slate-600 transition-colors">
+                          <Settings size={14} />
+                          Project Settings
+                        </button>
+                        <div className="h-[1px] bg-slate-100 my-1" />
+                        <button className="w-full flex items-center gap-2 px-3 py-2 hover:bg-slate-50 rounded-lg text-xs font-bold text-slate-600 transition-colors">
+                          <MessageSquare size={14} />
+                          Support
+                        </button>
+                      </motion.div>
+                    )}
+                  </AnimatePresence>
+                </div>
+              </div>
+              <div className="h-6 w-[1px] bg-slate-200 mx-1" />
+              <div className="flex items-center gap-1 bg-slate-100 p-1 rounded-xl border border-slate-200">
+                <button 
+                  onClick={() => setIsTerminalOpen(!isTerminalOpen)}
+                  className={`flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${isTerminalOpen ? 'bg-blue-600 text-white shadow-sm' : 'hover:bg-white text-slate-500'}`}
+                >
+                  <TerminalIcon size={14} />
+                  Terminal
+                </button>
+                <button 
+                  onClick={() => setActiveBottomTab(activeBottomTab === 'code' ? 'terminal' : 'code')}
+                  className={`flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${activeBottomTab === 'code' ? 'bg-blue-600 text-white shadow-sm' : 'hover:bg-white text-slate-500'}`}
+                >
+                  <Code2 size={14} />
+                  Code
+                  <ChevronDown size={14} />
+                </button>
+                <button className="p-1.5 hover:bg-white rounded-lg text-slate-500 transition-all">
+                  <Maximize2 size={14} />
+                </button>
+              </div>
+            </div>
+          </div>
+
+          {/* Preview & Terminal Area */}
+          <div className="flex-1 flex flex-col p-4 gap-4 overflow-hidden bg-[#F8F9FB] relative">
+            <p className="shrink-0 text-[10px] font-medium leading-relaxed text-slate-400 px-0.5">
+              Aperçu live · l’application <span className="font-bold text-slate-500">NEXUS</span> dans le cadre ci-dessous est une{' '}
+              <span className="italic">démo simulée</span> générée par Huggy (le SaaS, c’est Huggy — pas NEXUS).
+            </p>
+            {/* Preview Window */}
+            <div className="flex-1 flex items-center justify-center overflow-hidden relative min-h-0">
+              <motion.div 
+                layout
+                className={`relative transition-all duration-500 ease-in-out ${getPreviewSize().container} ${getPreviewSize().frame} overflow-hidden bg-white flex flex-col shadow-2xl`}
+              >
+                {/* Device Camera/Notch simulation for mobile */}
+                {previewMode === 'mobile' && (
+                  <div className="absolute top-0 left-1/2 -translate-x-1/2 w-32 h-6 bg-slate-900 rounded-b-2xl z-50 flex items-center justify-center gap-2">
+                    <div className="w-1 h-1 rounded-full bg-slate-800" />
+                    <div className="w-8 h-1 rounded-full bg-slate-800" />
+                  </div>
+                )}
+
+                {previewMode === 'desktop' && (
+                  <div className="h-10 border-b border-slate-100 flex items-center px-4 gap-4 bg-slate-50/50 shrink-0 z-20">
+                    <div className="flex gap-1.5">
+                      <div className="w-3 h-3 rounded-full bg-red-400/50" />
+                      <div className="w-3 h-3 rounded-full bg-yellow-400/50" />
+                      <div className="w-3 h-3 rounded-full bg-green-400/50" />
+                    </div>
+                    <div className="flex-1 bg-white border border-slate-200 rounded-lg h-7 flex items-center gap-2 px-3 text-[11px] text-slate-400 font-mono overflow-hidden whitespace-nowrap">
+                      <span className="truncate">nexus.app/preview</span>
+                      <span className="shrink-0 text-[9px] font-sans font-semibold text-slate-300 uppercase tracking-tighter">
+                        démo
+                      </span>
+                    </div>
+                  </div>
+                )}
+                
+                <div className={`flex-1 ${getPreviewSize().inner} overflow-hidden relative`}>
+                  <PreviewContent
+                    mode={previewMode}
+                    code={filesMap[PREVIEW_ENTRY] ?? DEFAULT_PREVIEW_CODE}
+                  />
+                </div>
+              </motion.div>
+
+              {/* Floating Terminal Overlay */}
+              <AnimatePresence>
+                {isTerminalOpen && (
+                  <motion.div 
+                    initial={{ y: '100%' }}
+                    animate={{ y: 0 }}
+                    exit={{ y: '100%' }}
+                    transition={{ type: 'spring', damping: 25, stiffness: 200 }}
+                    className={`absolute bottom-0 left-0 right-0 h-[300px] ${TERMINAL_THEMES[terminalTheme].bg} border-t ${TERMINAL_THEMES[terminalTheme].border} shadow-2xl z-30 flex flex-col overflow-hidden`}
+                  >
+                    {/* Terminal Header */}
+                    <div className={`h-10 border-b ${TERMINAL_THEMES[terminalTheme].border} flex items-center justify-between px-4 ${TERMINAL_THEMES[terminalTheme].accent}`}>
+                      <div className="flex items-center gap-2 h-full overflow-x-auto scrollbar-hide">
+                        {terminalTabs.map(tab => (
+                          <div 
+                            key={tab.id}
+                            onClick={() => setActiveTabId(tab.id)}
+                            className={`flex items-center gap-2 h-full px-3 cursor-pointer transition-all border-b-2 text-xs font-medium ${activeTabId === tab.id ? 'border-blue-600 text-blue-600' : 'border-transparent text-slate-400 hover:text-slate-600'}`}
+                          >
+                            <TerminalIcon size={12} />
+                            <span>{tab.name}</span>
+                            {terminalTabs.length > 1 && (
+                              <button 
+                                onClick={(e) => removeTerminalTab(tab.id, e)}
+                                className="hover:bg-slate-200 rounded p-0.5"
+                              >
+                                <Plus size={10} className="rotate-45" />
+                              </button>
+                            )}
+                          </div>
+                        ))}
+                        <button 
+                          onClick={addTerminalTab}
+                          className="p-1 hover:bg-slate-200 rounded text-slate-400 transition-colors"
+                        >
+                          <Plus size={14} />
+                        </button>
+                      </div>
+
+                      <div className="flex items-center gap-3">
+                        {/* Theme Switcher */}
+                        <div className="flex items-center gap-1 bg-slate-200/50 p-0.5 rounded-lg">
+                          {(Object.keys(TERMINAL_THEMES) as TerminalTheme[]).map(t => (
+                            <button
+                              key={t}
+                              onClick={() => setTerminalTheme(t)}
+                              className={`w-4 h-4 rounded-full border border-white/20 transition-all ${t === terminalTheme ? 'ring-2 ring-blue-500 scale-110' : 'opacity-50 hover:opacity-100'} ${TERMINAL_THEMES[t].bg}`}
+                              title={t}
+                            />
+                          ))}
+                        </div>
+                        <div className="h-4 w-[1px] bg-slate-300" />
+                        <button 
+                          onClick={() => setIsHistorySearchOpen(!isHistorySearchOpen)}
+                          className={`p-1.5 rounded hover:bg-slate-200 transition-colors ${isHistorySearchOpen ? 'text-blue-600' : 'text-slate-400'}`}
+                        >
+                          <Search size={14} />
+                        </button>
+                        <button 
+                          onClick={() => setIsTerminalOpen(false)}
+                          className="p-1.5 rounded hover:bg-slate-200 text-slate-400 transition-colors"
+                        >
+                          <ChevronDown size={16} />
+                        </button>
+                      </div>
+                    </div>
+
+                    {/* History Search Bar */}
+                    <AnimatePresence>
+                      {isHistorySearchOpen && (
+                        <motion.div 
+                          initial={{ height: 0, opacity: 0 }}
+                          animate={{ height: 'auto', opacity: 1 }}
+                          exit={{ height: 0, opacity: 0 }}
+                          className={`px-4 py-2 border-b ${TERMINAL_THEMES[terminalTheme].border} ${TERMINAL_THEMES[terminalTheme].accent} flex items-center gap-2`}
+                        >
+                          <Search size={12} className="text-slate-400" />
+                          <input 
+                            type="text"
+                            value={historySearchQuery}
+                            onChange={(e) => setHistorySearchQuery(e.target.value)}
+                            placeholder="Search command history..."
+                            className="bg-transparent outline-none text-[11px] text-slate-500 flex-1"
+                            autoFocus
+                          />
+                          {historySearchQuery && (
+                          <div className="absolute top-full left-0 right-0 max-h-32 overflow-y-auto bg-white border border-slate-200 shadow-xl z-40 rounded-b-xl">
+                            {commandHistory
+                              .filter(h => h.toLowerCase().includes(historySearchQuery.toLowerCase()))
+                              .map((h, i) => (
+                                <div 
+                                  key={i}
+                                  onClick={() => {
+                                    setCommandInput(h);
+                                    setIsHistorySearchOpen(false);
+                                    setHistorySearchQuery('');
+                                  }}
+                                  className="px-4 py-2 text-xs text-slate-600 hover:bg-blue-50 cursor-pointer border-b border-slate-50 last:border-0"
+                                >
+                                  {h}
+                                </div>
+                              ))
+                            }
+                          </div>
+                          )}
+                        </motion.div>
+                      )}
+                    </AnimatePresence>
+
+                    {/* Terminal Content */}
+                    <div className={`flex-1 p-4 font-mono text-sm ${TERMINAL_THEMES[terminalTheme].text} space-y-1 overflow-y-auto scrollbar-hide`}>
+                      {activeTab.lines.map((line, i) => (
+                        <p key={i} className={line.startsWith('$') ? `font-bold ${TERMINAL_THEMES[terminalTheme].text.replace('text-', 'text-opacity-100 ')}` : 'italic opacity-60'}>
+                          {line}
+                        </p>
+                      ))}
+                      <div ref={terminalEndRef} />
+                    </div>
+
+                    {/* Terminal Input */}
+                    <form onSubmit={handleTerminalCommand} className={`h-10 border-t ${TERMINAL_THEMES[terminalTheme].border} flex items-center justify-between px-4 ${TERMINAL_THEMES[terminalTheme].accent}`}>
+                      <div className="flex items-center gap-2 flex-1">
+                        <span className={`${TERMINAL_THEMES[terminalTheme].prompt} font-bold`}>$</span>
+                        <input 
+                          type="text" 
+                          value={commandInput}
+                          onChange={(e) => setCommandInput(e.target.value)}
+                          onKeyDown={handleKeyDown}
+                          placeholder="Type a command..." 
+                          className={`flex-1 bg-transparent outline-none text-xs ${TERMINAL_THEMES[terminalTheme].text} placeholder:text-slate-500`}
+                        />
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Local</span>
+                        <div className="w-2 h-2 rounded-full bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.5)]" />
+                      </div>
+                    </form>
+                  </motion.div>
+                )}
+              </AnimatePresence>
+
+              {/* Floating Code Overlay */}
+              <AnimatePresence>
+                {activeBottomTab === 'code' && (
+                  <motion.div 
+                    initial={{ y: '100%' }}
+                    animate={{ y: 0 }}
+                    exit={{ y: '100%' }}
+                    className="absolute bottom-0 left-0 right-0 h-[min(420px,55vh)] bg-white border-t border-slate-200 shadow-2xl z-30 flex flex-col overflow-hidden"
+                  >
+                    <div className="h-10 border-b border-slate-100 flex items-center justify-between px-2 sm:px-4 bg-slate-50/50 gap-2 overflow-x-auto scrollbar-hide">
+                      <div className="flex items-center gap-2 h-full min-w-0">
+                        <div className="flex items-center gap-2 h-full border-b-2 border-blue-600 px-1 shrink-0">
+                          <Code2 size={14} className="text-slate-400" />
+                          <span className="text-xs font-medium text-slate-700 truncate max-w-[140px] sm:max-w-[220px]" title={activeFilePath}>
+                            {activeFilePath}
+                          </span>
+                        </div>
+                        <button
+                          type="button"
+                          onClick={addProjectFile}
+                          className="shrink-0 p-1 rounded text-slate-400 hover:text-blue-600 hover:bg-blue-50"
+                          title="Nouveau fichier"
+                        >
+                          <Plus size={16} />
+                        </button>
+                        
+                        <div className="flex items-center gap-1 bg-slate-200/50 p-0.5 rounded-md">
+                          <button 
+                            onClick={() => setEditorTheme('vs-light')}
+                            className={`px-2 py-0.5 rounded text-[10px] font-medium transition-colors ${editorTheme === 'vs-light' ? 'bg-white text-blue-600 shadow-sm' : 'text-slate-500'}`}
+                          >
+                            Light
+                          </button>
+                          <button 
+                            onClick={() => setEditorTheme('vs-dark')}
+                            className={`px-2 py-0.5 rounded text-[10px] font-medium transition-colors ${editorTheme === 'vs-dark' ? 'bg-slate-800 text-white shadow-sm' : 'text-slate-500'}`}
+                          >
+                            Dark
+                          </button>
+                        </div>
+
+                        <div className="h-4 w-[1px] bg-slate-200 mx-1" />
+
+                        <div className="flex items-center gap-1">
+                          <button 
+                            onClick={handleUndo}
+                            className="p-1.5 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded-md transition-all"
+                            title="Undo (Ctrl+Z)"
+                          >
+                            <Undo size={14} />
+                          </button>
+                          <button 
+                            onClick={handleRedo}
+                            className="p-1.5 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded-md transition-all"
+                            title="Redo (Ctrl+Y)"
+                          >
+                            <Redo size={14} />
+                          </button>
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        {isSaving ? (
+                          <div className="flex items-center gap-1.5 text-[10px] text-blue-500 font-medium">
+                            <Loader2 size={10} className="animate-spin" />
+                            Saving...
+                          </div>
+                        ) : lastSaved ? (
+                          <div className="flex items-center gap-1.5 text-[10px] text-slate-400 font-medium">
+                            <Check size={10} className="text-emerald-500" />
+                            Saved {lastSaved.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' })}
+                          </div>
+                        ) : null}
+                        
+                        <div className="relative">
+                          <button 
+                            onClick={() => setShowAutoSaveSettings(!showAutoSaveSettings)}
+                            className={`p-1.5 rounded hover:bg-slate-200 transition-colors ${showAutoSaveSettings ? 'text-blue-600 bg-slate-200' : 'text-slate-400'}`}
+                            title="Auto-save Settings"
+                          >
+                            <Settings size={14} />
+                          </button>
+                          
+                          <AnimatePresence>
+                            {showAutoSaveSettings && (
+                              <motion.div 
+                                initial={{ opacity: 0, y: 10, scale: 0.95 }}
+                                animate={{ opacity: 1, y: 0, scale: 1 }}
+                                exit={{ opacity: 0, y: 10, scale: 0.95 }}
+                                className="absolute bottom-full right-0 mb-2 w-48 bg-white rounded-xl border border-slate-200 shadow-xl p-3 z-50"
+                              >
+                                <div className="space-y-3">
+                                  <div className="flex items-center justify-between">
+                                    <span className="text-[11px] font-semibold text-slate-700">Auto-save</span>
+                                    <button 
+                                      onClick={() => setAutoSaveEnabled(!autoSaveEnabled)}
+                                      className={`w-8 h-4 rounded-full transition-colors relative ${autoSaveEnabled ? 'bg-blue-500' : 'bg-slate-300'}`}
+                                    >
+                                      <div className={`absolute top-0.5 w-3 h-3 bg-white rounded-full transition-all ${autoSaveEnabled ? 'left-4.5' : 'left-0.5'}`} />
+                                    </button>
+                                  </div>
+                                  
+                                  <div className="flex items-center justify-between">
+                                    <span className="text-[11px] font-semibold text-slate-700">Minimap</span>
+                                    <button 
+                                      onClick={() => setShowMinimap(!showMinimap)}
+                                      className={`w-8 h-4 rounded-full transition-colors relative ${showMinimap ? 'bg-blue-500' : 'bg-slate-300'}`}
+                                    >
+                                      <div className={`absolute top-0.5 w-3 h-3 bg-white rounded-full transition-all ${showMinimap ? 'left-4.5' : 'left-0.5'}`} />
+                                    </button>
+                                  </div>
+                                  
+                                  <div className="space-y-1.5">
+                                    <span className="text-[10px] text-slate-500 font-medium">Interval</span>
+                                    <div className="grid grid-cols-2 gap-1">
+                                      {[1000, 5000, 10000, 30000].map(interval => (
+                                        <button
+                                          key={interval}
+                                          onClick={() => setAutoSaveInterval(interval)}
+                                          className={`px-2 py-1 rounded text-[10px] font-medium border transition-all ${autoSaveInterval === interval ? 'bg-blue-50 border-blue-200 text-blue-600' : 'bg-slate-50 border-slate-100 text-slate-500 hover:bg-slate-100'}`}
+                                        >
+                                          {interval / 1000}s
+                                        </button>
+                                      ))}
+                                    </div>
+                                  </div>
+                                </div>
+                              </motion.div>
+                            )}
+                          </AnimatePresence>
+                        </div>
+
+                        <div className="h-4 w-[1px] bg-slate-200 mx-1" />
+                        <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest hidden sm:inline">
+                          {databaseEnabled ? 'Sync Postgres' : 'Local'}
+                        </span>
+                        <button 
+                          onClick={() => setActiveBottomTab('terminal')}
+                          className="p-1.5 rounded hover:bg-slate-200 text-slate-400 transition-colors"
+                        >
+                          <ChevronDown size={16} />
+                        </button>
+                      </div>
+                    </div>
+                    <div className="flex gap-0.5 px-2 py-1 border-b border-slate-100 overflow-x-auto scrollbar-hide bg-slate-50/80 shrink-0">
+                      {Object.keys(filesMap)
+                        .sort()
+                        .map((p) => (
+                          <button
+                            key={p}
+                            type="button"
+                            onClick={() => openProjectFile(p)}
+                            className={`shrink-0 max-w-[160px] truncate px-2 py-1 rounded-md text-[10px] font-bold transition-colors ${
+                              p === activeFilePath
+                                ? 'bg-blue-600 text-white'
+                                : 'bg-white text-slate-500 border border-slate-200 hover:border-blue-200'
+                            }`}
+                            title={p}
+                          >
+                            {p.replace(/^src\//, '')}
+                          </button>
+                        ))}
+                    </div>
+                    <div className="flex-1 relative bg-white min-h-0">
+                      <Editor
+                        height="100%"
+                        language={editorLanguage}
+                        theme={editorTheme}
+                        value={filesMap[activeFilePath] ?? ''}
+                        onMount={handleEditorDidMount}
+                        onChange={(value) =>
+                          setFilesMap((f) => ({
+                            ...f,
+                            [activeFilePath]: value || '',
+                          }))
+                        }
+                        options={{
+                          minimap: { enabled: showMinimap },
+                          fontSize: 12,
+                          fontFamily: "'JetBrains Mono', monospace",
+                          folding: true,
+                          bracketPairColorization: { enabled: true },
+                          automaticLayout: true,
+                          scrollBeyondLastLine: false,
+                          lineNumbers: 'on',
+                          renderLineHighlight: 'all',
+                          padding: { top: 10, bottom: 10 }
+                        }}
+                      />
+                    </div>
+                  </motion.div>
+                )}
+              </AnimatePresence>
+            </div>
+          </div>
+
+          {/* Resize Handle (Visual only) */}
+          <div className="absolute left-0 top-1/2 -translate-y-1/2 w-1 h-8 bg-slate-200 rounded-full -ml-0.5 cursor-col-resize hover:bg-blue-400 transition-colors z-20" />
+        </main>
+      </div>
+
+      {/* Publishing Modal */}
+      <AnimatePresence>
+        {isPublishing && (
+          <div className="fixed inset-0 z-[110] flex items-center justify-center p-8 bg-slate-900/60 backdrop-blur-md">
+            <motion.div 
+              initial={{ opacity: 0, scale: 0.9, y: 40 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.9, y: 40 }}
+              className="w-full max-w-md bg-white rounded-[2.5rem] shadow-2xl p-8 flex flex-col items-center text-center space-y-6"
+            >
+              <div className="w-20 h-20 bg-blue-50 rounded-3xl flex items-center justify-center text-blue-600 relative">
+                <Cloud size={40} className={publishProgress < 100 ? 'animate-pulse' : ''} />
+                {publishProgress < 100 && (
+                  <svg className="absolute inset-0 w-full h-full -rotate-90">
+                    <circle
+                      cx="40"
+                      cy="40"
+                      r="36"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth="4"
+                      className="text-blue-100"
+                    />
+                    <circle
+                      cx="40"
+                      cy="40"
+                      r="36"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth="4"
+                      strokeDasharray={226}
+                      strokeDashoffset={226 - (226 * publishProgress) / 100}
+                      className="text-blue-600 transition-all duration-300"
+                    />
+                  </svg>
+                )}
+                {publishProgress === 100 && publishedUrl && (
+                  <motion.div 
+                    initial={{ scale: 0 }}
+                    animate={{ scale: 1 }}
+                    className="absolute -top-2 -right-2 w-8 h-8 bg-emerald-500 text-white rounded-full flex items-center justify-center shadow-lg"
+                  >
+                    <Check size={18} />
+                  </motion.div>
+                )}
+              </div>
+
+              <div className="space-y-2">
+                <h3 className="text-xl font-black text-slate-800 tracking-tight">
+                  {publishProgress < 100 ? 'Publication en cours...' : 'Application publiée !'}
+                </h3>
+                <p className="text-sm text-slate-500 font-medium">
+                  {publishProgress < 100 
+                    ? 'Nous préparons vos serveurs et déployons votre code sur le cloud.' 
+                    : 'Votre application est maintenant en ligne et prête à être partagée.'}
+                </p>
+              </div>
+
+              {publishProgress < 100 ? (
+                <div className="w-full space-y-2">
+                  <div className="h-2 w-full bg-slate-100 rounded-full overflow-hidden">
+                    <motion.div 
+                      className="h-full bg-blue-600"
+                      initial={{ width: 0 }}
+                      animate={{ width: `${publishProgress}%` }}
+                    />
+                  </div>
+                  <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">{publishProgress}% terminé</span>
+                </div>
+              ) : publishedUrl ? (
+                <motion.div 
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  className="w-full space-y-4"
+                >
+                  <div className="flex items-center gap-2 p-3 bg-slate-50 rounded-2xl border border-slate-100 group">
+                    <span className="text-xs text-blue-600 font-bold truncate flex-1">{publishedUrl}</span>
+                    <button 
+                      onClick={() => {
+                        navigator.clipboard.writeText(publishedUrl);
+                        // Simple visual feedback could be added here
+                      }}
+                      className="p-2 hover:bg-white rounded-xl text-slate-400 hover:text-blue-600 transition-all shadow-sm border border-transparent hover:border-slate-100"
+                    >
+                      <Copy size={16} />
+                    </button>
+                  </div>
+                  <div className="flex gap-3">
+                    <button 
+                      onClick={() => window.open(publishedUrl, '_blank')}
+                      className="flex-1 py-3 bg-slate-900 text-white rounded-2xl text-xs font-bold hover:bg-slate-800 transition-all shadow-lg shadow-slate-900/20"
+                    >
+                      Ouvrir le site
+                    </button>
+                    <button 
+                      onClick={() => setIsPublishing(false)}
+                      className="flex-1 py-3 bg-slate-100 text-slate-600 rounded-2xl text-xs font-bold hover:bg-slate-200 transition-all"
+                    >
+                      Fermer
+                    </button>
+                  </div>
+                </motion.div>
+              ) : (
+                <Loader2 size={24} className="animate-spin text-blue-600" />
+              )}
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
+    </div>
+  );
+}

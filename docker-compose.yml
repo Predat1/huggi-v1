@@ -1,0 +1,24 @@
+# PostgreSQL local pour Huggy (développement uniquement).
+# Démarrage : docker compose up -d
+# URL : postgresql://huggy:huggy_local_dev@localhost:5432/huggy
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: huggy-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: huggy
+      POSTGRES_PASSWORD: huggy_local_dev
+      POSTGRES_DB: huggy
+    ports:
+      - '5432:5432'
+    volumes:
+      - huggy_pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U huggy -d huggy']
+      interval: 5s
+      timeout: 5s
+      retries: 8
+
+volumes:
+  huggy_pgdata:
