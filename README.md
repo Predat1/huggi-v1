@@ -15,6 +15,7 @@ Voir [.env.example](.env.example). Principales :
 | Variable | Rôle |
 |----------|------|
 | `DATABASE_URL` | PostgreSQL (obligatoire pour projets / sauvegarde / déploiement) |
+| `DATABASE_SSL` | Optionnel : force SSL si requis par l'hôte (sinon via `sslmode=require` dans l'URL) |
 | `ANTHROPIC_API_KEY` | Claude (prioritaire pour `/api/generate-app`) |
 | `ANTHROPIC_MODEL` | Optionnel (défaut : `claude-3-5-sonnet-20241022`) |
 | `GEMINI_API_KEY` | Secours si pas de clé Anthropic |

@@ -18,6 +18,9 @@ import {
   Palette,
   BarChart3,
   MoreHorizontal,
+  Database,
+  Shield,
+  HardDrive,
   Terminal as TerminalIcon,
   Code2,
   Undo,
@@ -148,6 +151,12 @@ export default function App() {
   const [lastSaved, setLastSaved] = useState<Date | null>(null);
   const [projectId, setProjectId] = useState<string | null>(null);
   const [databaseEnabled, setDatabaseEnabled] = useState(false);
+  // Landing par défaut : si aucun `?project=` n'est présent, on affiche une page marketing.
+  const [studioMode, setStudioMode] = useState<boolean>(() => {
+    if (typeof window === 'undefined') return false;
+    const params = new URLSearchParams(window.location.search);
+    return Boolean(params.get('project'));
+  });
   const [filesMap, setFilesMap] = useState<Record<string, string>>(() => ({
     [PREVIEW_ENTRY]: DEFAULT_PREVIEW_CODE,
   }));
@@ -182,11 +191,11 @@ export default function App() {
         const h = await fetch('/api/health').then((r) => r.json());
         if (cancelled) return;
         setDatabaseEnabled(h.database === 'connected');
-        if (h.database !== 'connected') return;
 
         const params = new URLSearchParams(window.location.search);
         const pid = params.get('project');
         if (pid) {
+          if (h.database !== 'connected') return;
           const res = await fetch(`/api/projects/${pid}`);
           if (!res.ok) throw new Error('load');
           const data = await res.json();
@@ -209,6 +218,10 @@ export default function App() {
           }
           return;
         }
+
+        // Pas de `?project=` : on ne crée rien automatiquement tant que l'utilisateur n'a pas ouvert le Studio.
+        if (!studioMode) return;
+        if (h.database !== 'connected') return;
 
         const created = await fetch('/api/projects', {
           method: 'POST',
@@ -233,7 +246,7 @@ export default function App() {
     return () => {
       cancelled = true;
     };
-  }, []);
+  }, [studioMode]);
 
   useEffect(() => {
     if (!projectId || !databaseEnabled) return;
@@ -658,6 +671,150 @@ export default function App() {
     emerald: { bg: 'bg-emerald-600', text: 'text-emerald-600', border: 'border-emerald-600', light: 'bg-emerald-50', ring: 'ring-emerald-100' },
     rose: { bg: 'bg-rose-600', text: 'text-rose-600', border: 'border-rose-600', light: 'bg-rose-50', ring: 'ring-rose-100' },
   };
+
+  if (!studioMode) {
+    return (
+      <div className={`min-h-screen bg-[#F8F9FB] text-slate-900 font-sans overflow-hidden ${activeAccentColor}`}>
+        <header className="h-16 border-b border-slate-200 bg-white flex items-center justify-between px-6 z-10">
+          <div className="flex items-center gap-3">
+            <div className={`w-9 h-9 ${ACCENT_COLORS[activeAccentColor].bg} rounded-lg flex items-center justify-center text-white shadow-lg`}>
+              <Zap size={20} fill="currentColor" />
+            </div>
+            <div className="flex items-center gap-2">
+              <span className="text-sm font-black tracking-tighter text-slate-900">HUGGY</span>
+              <span className="px-2 py-0.5 bg-slate-100 text-[10px] font-black text-slate-400 rounded-full uppercase tracking-widest">Studio</span>
+            </div>
+          </div>
+          <button
+            type="button"
+            onClick={() => setStudioMode(true)}
+            className={`flex items-center gap-2 px-5 py-2.5 ${ACCENT_COLORS[activeAccentColor].bg} hover:opacity-90 text-white rounded-xl text-sm font-bold transition-all shadow-lg shadow-blue-600/20`}
+          >
+            <Cloud size={16} />
+            Lancer le Studio
+          </button>
+        </header>
+
+        <main className="max-w-6xl mx-auto px-6 py-14">
+          <div className="grid lg:grid-cols-2 gap-10 items-center">
+            <div>
+              <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white border border-slate-200 shadow-sm">
+                <span className="w-2 h-2 rounded-full bg-emerald-500 shadow-[0_0_10px_rgba(16,185,129,0.5)]" />
+                <span className="text-xs font-bold text-slate-700">
+                  {databaseEnabled ? 'PostgreSQL connecté' : 'Mode SaaS (attente DB)'}
+                </span>
+              </div>
+
+              <h1 className="mt-5 text-4xl sm:text-5xl font-black tracking-tight text-slate-900">
+                Générez, éditez et déployez des apps React.
+              </h1>
+              <p className="mt-4 text-slate-600 text-base leading-relaxed max-w-xl">
+                Huggy Studio transforme vos idées en projets multi-fichiers sauvegardés en PostgreSQL, avec prévisualisation live et
+                publication statique par slug.
+              </p>
+
+              <div className="mt-7 flex flex-col sm:flex-row gap-3">
+                <button
+                  type="button"
+                  onClick={() => setStudioMode(true)}
+                  className={`flex items-center justify-center gap-2 px-6 py-3 ${ACCENT_COLORS[activeAccentColor].bg} hover:opacity-90 text-white rounded-xl text-sm font-bold transition-all shadow-lg shadow-blue-600/20`}
+                >
+                  <Sparkles size={18} />
+                  Démarrer maintenant
+                </button>
+                <a
+                  href="https://github.com/Predat1/huggi-v1"
+                  target="_blank"
+                  rel="noreferrer"
+                  className="flex items-center justify-center gap-2 px-6 py-3 border border-slate-200 bg-white hover:bg-slate-50 rounded-xl text-sm font-bold text-slate-700 transition-all"
+                >
+                  <ExternalLink size={18} />
+                  Voir le projet
+                </a>
+              </div>
+
+              <div className="mt-10 grid sm:grid-cols-2 gap-4">
+                <div className="p-5 bg-white border border-slate-200 rounded-2xl shadow-sm">
+                  <Database size={20} className={`${ACCENT_COLORS[activeAccentColor].text}`} />
+                  <p className="mt-2 text-sm font-black text-slate-900">Projets persistés</p>
+                  <p className="mt-1 text-xs text-slate-500 leading-relaxed">PostgreSQL pour sauvegarder fichiers et déploiements.</p>
+                </div>
+                <div className="p-5 bg-white border border-slate-200 rounded-2xl shadow-sm">
+                  <Monitor size={20} className={`${ACCENT_COLORS[activeAccentColor].text}`} />
+                  <p className="mt-2 text-sm font-black text-slate-900">Preview live</p>
+                  <p className="mt-1 text-xs text-slate-500 leading-relaxed">Rendu instantané, mode desktop/tablet/mobile.</p>
+                </div>
+                <div className="p-5 bg-white border border-slate-200 rounded-2xl shadow-sm">
+                  <HardDrive size={20} className={`${ACCENT_COLORS[activeAccentColor].text}`} />
+                  <p className="mt-2 text-sm font-black text-slate-900">Publication par slug</p>
+                  <p className="mt-1 text-xs text-slate-500 leading-relaxed">Déploiement statique dans `SITES_DIR/{`{slug}`}`.</p>
+                </div>
+                <div className="p-5 bg-white border border-slate-200 rounded-2xl shadow-sm">
+                  <Shield size={20} className={`${ACCENT_COLORS[activeAccentColor].text}`} />
+                  <p className="mt-2 text-sm font-black text-slate-900">IA multi-fichiers</p>
+                  <p className="mt-1 text-xs text-slate-500 leading-relaxed">Claude en priorité, Gemini en secours.</p>
+                </div>
+              </div>
+            </div>
+
+            <div className="relative">
+              <div className="absolute -inset-1 bg-gradient-to-r from-blue-500/20 via-violet-500/20 to-emerald-500/20 blur-2xl rounded-[2rem]" />
+              <div className="relative bg-white border border-slate-200 rounded-[2rem] shadow-xl overflow-hidden">
+                <div className={`h-16 flex items-center justify-between px-5 bg-slate-50 border-b border-slate-100`}>
+                  <div className="flex gap-2">
+                    <div className="w-3 h-3 rounded-full bg-red-400/60" />
+                    <div className="w-3 h-3 rounded-full bg-yellow-400/60" />
+                    <div className="w-3 h-3 rounded-full bg-green-400/60" />
+                  </div>
+                  <div className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">
+                    Huggy · Studio
+                  </div>
+                </div>
+                <div className="p-6">
+                  <div className="bg-[#F8F9FB] border border-slate-200 rounded-2xl p-4">
+                    <p className="text-xs font-black text-slate-700">Exemple</p>
+                    <pre className="mt-2 text-xs text-slate-600 font-mono whitespace-pre-wrap">
+{`// Décrivez votre app en français
+// Huggy génère les fichiers puis vous publie par slug
+
+export default function App() {
+  return (
+    <div className="p-6">
+      <h1 className="text-2xl font-bold">Hello Huggy</h1>
+    </div>
+  );
+}`}
+                    </pre>
+                  </div>
+
+                  <div className="mt-4 grid sm:grid-cols-3 gap-3">
+                    <div className="p-3 bg-slate-50 border border-slate-200 rounded-2xl">
+                      <p className="text-[10px] font-bold uppercase tracking-widest text-slate-400">1</p>
+                      <p className="mt-1 text-xs font-black text-slate-700">Générer</p>
+                    </div>
+                    <div className="p-3 bg-slate-50 border border-slate-200 rounded-2xl">
+                      <p className="text-[10px] font-bold uppercase tracking-widest text-slate-400">2</p>
+                      <p className="mt-1 text-xs font-black text-slate-700">Éditer</p>
+                    </div>
+                    <div className="p-3 bg-slate-50 border border-slate-200 rounded-2xl">
+                      <p className="text-[10px] font-bold uppercase tracking-widest text-slate-400">3</p>
+                      <p className="mt-1 text-xs font-black text-slate-700">Publier</p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+              <div className="absolute -bottom-6 -left-6 w-24 h-24 bg-blue-500/10 rounded-full blur-xl" />
+              <div className="absolute -top-8 -right-8 w-28 h-28 bg-emerald-500/10 rounded-full blur-xl" />
+            </div>
+          </div>
+        </main>
+
+        <footer className="pb-10 px-6 text-center text-xs text-slate-400">
+          Astuce : ajoute `?project=...` pour ouvrir directement un projet existant.
+        </footer>
+      </div>
+    );
+  }
 
   return (
     <div className={`flex flex-col h-screen bg-[#F8F9FB] text-slate-900 font-sans overflow-hidden ${activeAccentColor}`}>
@@ -1114,29 +1271,39 @@ export default function App() {
                     }, 1000);
                   }}
                   className={`p-1.5 rounded-lg transition-all ${isSaving ? ACCENT_COLORS[activeAccentColor].text + ' bg-white' : 'text-slate-400 hover:text-blue-600 hover:bg-white'}`}
-                  title="Refresh Preview"
+                  title="Rafraîchir l’aperçu Huggy"
+                  aria-label="Rafraîchir l’aperçu"
                 >
                   <RotateCw size={14} className={isSaving ? 'animate-spin' : ''} />
                 </button>
                 <button 
                   onClick={() => window.open(window.location.href, '_blank')}
                   className="p-1.5 text-slate-400 hover:text-blue-600 hover:bg-white rounded-lg transition-all"
-                  title="Open in New Tab"
+                  title="Ouvrir l’aperçu dans un nouvel onglet"
+                  aria-label="Ouvrir dans un nouvel onglet"
                 >
                   <ExternalLink size={14} />
                 </button>
               </div>
               <div className="h-6 w-[1px] bg-slate-200 mx-1" />
               <div className="flex items-center gap-1">
-                <button className={`p-2 ${ACCENT_COLORS[activeAccentColor].bg} text-white rounded-lg shadow-lg active:scale-95 transition-transform`}>
+                <button
+                  type="button"
+                  title="Aperçu — vue principale du rendu live (NEXUS dans Huggy Studio)"
+                  aria-label="Aperçu — rendu live"
+                  className={`p-2 ${ACCENT_COLORS[activeAccentColor].bg} text-white rounded-lg shadow-lg active:scale-95 transition-transform`}
+                >
                   <Monitor size={18} />
                 </button>
                 
                 {/* Cloud Menu */}
                 <div className="relative">
                   <button 
+                    type="button"
                     onClick={() => setShowCloudMenu(!showCloudMenu)}
                     className={`p-2 rounded-lg transition-colors ${showCloudMenu ? 'bg-blue-50 text-blue-600' : 'text-slate-400 hover:bg-slate-100'}`}
+                    title="Cloud Huggy — base de données, auth, stockage, backend et déploiement"
+                    aria-label="Espace Cloud — infrastructure et données"
                   >
                     <Cloud size={18} />
                   </button>
@@ -1148,10 +1315,32 @@ export default function App() {
                         exit={{ opacity: 0, y: 10, scale: 0.95 }}
                         className="absolute top-full right-0 mt-2 w-64 bg-white rounded-2xl border border-slate-200 shadow-2xl p-4 z-50"
                       >
-                        <h4 className="text-xs font-black text-slate-400 uppercase tracking-widest mb-4">Deployment History</h4>
+                        <h4 className="text-xs font-black text-slate-400 uppercase tracking-widest mb-2">Espace Cloud · Huggy</h4>
+                        <p className="text-[11px] text-slate-500 leading-relaxed mb-4">
+                          La partie « serveur + données » de votre app : connectez la base, l’auth et le stockage, vérifiez le backend — sans config serveur lourde.
+                        </p>
+                        <div className="rounded-xl bg-slate-50 border border-slate-100 p-3 space-y-3 mb-4">
+                          <div className="flex gap-2.5 text-[11px] text-slate-600 leading-snug">
+                            <Database size={14} className="shrink-0 text-blue-500 mt-0.5" aria-hidden />
+                            <div><span className="font-bold text-slate-700">Base de données</span> — modèles et persistance (PostgreSQL / API projet).</div>
+                          </div>
+                          <div className="flex gap-2.5 text-[11px] text-slate-600 leading-snug">
+                            <Shield size={14} className="shrink-0 text-blue-500 mt-0.5" aria-hidden />
+                            <div><span className="font-bold text-slate-700">Authentification</span> — utilisateurs et sessions (à brancher dans le code).</div>
+                          </div>
+                          <div className="flex gap-2.5 text-[11px] text-slate-600 leading-snug">
+                            <HardDrive size={14} className="shrink-0 text-blue-500 mt-0.5" aria-hidden />
+                            <div><span className="font-bold text-slate-700">Stockage</span> — fichiers et médias pour votre SaaS.</div>
+                          </div>
+                          <div className="flex gap-2.5 text-[11px] text-slate-600 leading-snug">
+                            <Cloud size={14} className="shrink-0 text-blue-500 mt-0.5" aria-hidden />
+                            <div><span className="font-bold text-slate-700">Backend & déploiement</span> — état des déploiements et URL de prod ci-dessous.</div>
+                          </div>
+                        </div>
+                        <h4 className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-3">Historique des déploiements</h4>
                         <div className="space-y-3">
                           {deployments.length === 0 ? (
-                            <p className="text-[11px] text-slate-400 italic">No deployments yet.</p>
+                            <p className="text-[11px] text-slate-400 italic">Aucun déploiement pour l’instant.</p>
                           ) : (
                             deployments.map(dep => (
                               <div key={dep.id} className="p-2 rounded-xl border border-slate-50 bg-slate-50/50 hover:bg-white hover:border-slate-200 transition-all cursor-pointer group">
@@ -1161,7 +1350,7 @@ export default function App() {
                                 </div>
                                 <div className="flex items-center gap-2">
                                   <div className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
-                                  <span className="text-[9px] font-bold text-slate-500 uppercase tracking-widest">Production</span>
+                                  <span className="text-[9px] font-bold text-slate-500 uppercase tracking-widest">Production Huggy</span>
                                 </div>
                               </div>
                             ))
@@ -1175,11 +1364,21 @@ export default function App() {
                 {/* Palette Menu */}
                 <div className="relative">
                   <button 
-                    onClick={() => setShowMoreMenu(false) || setShowAnalyticsMenu(false) || setShowCloudMenu(false) || setShowProjectMenu(false)}
-                    className="p-2 text-slate-400 hover:bg-slate-100 rounded-lg transition-colors group"
+                    type="button"
+                    onClick={() => {
+                      setShowMoreMenu(false);
+                      setShowAnalyticsMenu(false);
+                      setShowCloudMenu(false);
+                      setShowProjectMenu(false);
+                    }}
+                    className="p-2 text-slate-400 hover:bg-slate-100 rounded-lg transition-colors group relative"
+                    title="Design — couleurs d’accent, textes visuels et thème Studio (édition visuelle)"
+                    aria-label="Design — thème et couleurs"
                   >
                     <Palette size={18} />
-                    <div className="absolute top-full right-0 mt-2 hidden group-hover:block w-32 bg-white rounded-xl border border-slate-200 shadow-xl p-2 z-50">
+                    <div className="absolute top-full right-0 mt-2 hidden group-hover:block w-44 bg-white rounded-xl border border-slate-200 shadow-xl p-3 z-50">
+                      <p className="text-[10px] font-black text-slate-500 uppercase tracking-wider mb-0.5">Design · Huggy</p>
+                      <p className="text-[10px] text-slate-400 leading-snug mb-3">Palette d’accent pour l’interface Studio — rapprochez le visuel de votre marque.</p>
                       <div className="grid grid-cols-2 gap-2">
                         {(Object.keys(ACCENT_COLORS) as Array<keyof typeof ACCENT_COLORS>).map(color => (
                           <button 
@@ -1196,11 +1395,31 @@ export default function App() {
                   </button>
                 </div>
 
+                {/* Code — raccourci vers l’éditeur (même onglet Code du bas) */}
+                <button
+                  type="button"
+                  onClick={() => {
+                    setActiveBottomTab('code');
+                    setShowCloudMenu(false);
+                    setShowAnalyticsMenu(false);
+                    setShowMoreMenu(false);
+                    setShowProjectMenu(false);
+                  }}
+                  className={`p-2 rounded-lg transition-colors ${activeBottomTab === 'code' ? 'bg-violet-50 text-violet-600' : 'text-slate-400 hover:bg-slate-100'}`}
+                  title="Code — fichiers, composants, logique et corrections techniques (Huggy)"
+                  aria-label="Code — éditeur de fichiers"
+                >
+                  <Code2 size={18} />
+                </button>
+
                 {/* Analytics Menu */}
                 <div className="relative">
                   <button 
+                    type="button"
                     onClick={() => setShowAnalyticsMenu(!showAnalyticsMenu)}
                     className={`p-2 rounded-lg transition-colors ${showAnalyticsMenu ? 'bg-emerald-50 text-emerald-600' : 'text-slate-400 hover:bg-slate-100'}`}
+                    title="Aperçu & analytique — suivi Huggy, crédits IA et métriques du projet"
+                    aria-label="Analytique et suivi du projet"
                   >
                     <BarChart3 size={18} />
                   </button>
@@ -1212,12 +1431,16 @@ export default function App() {
                         exit={{ opacity: 0, y: 10, scale: 0.95 }}
                         className="absolute top-full right-0 mt-2 w-64 bg-white rounded-2xl border border-slate-200 shadow-2xl p-4 z-50"
                       >
-                        <h4 className="text-xs font-black text-slate-400 uppercase tracking-widest mb-4">AI Usage Analytics</h4>
+                        <h4 className="text-xs font-black text-slate-400 uppercase tracking-widest mb-2">Aperçu & analytique · Huggy</h4>
+                        <p className="text-[11px] text-slate-500 leading-relaxed mb-4">
+                          Tableau de bord orienté usage : testez le rendu, suivez la consommation IA et l’activité sur le projet.
+                        </p>
+                        <h5 className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-3">Consommation IA</h5>
                         <div className="space-y-4">
                           <div className="space-y-2">
                             <div className="flex justify-between text-[10px] font-bold text-slate-500 uppercase tracking-widest">
-                              <span>Credits Remaining</span>
-                              <span className="text-blue-600">619.50 / 1000</span>
+                              <span>Crédits restants</span>
+                              <span className="text-blue-600">619,50 / 1000</span>
                             </div>
                             <div className="h-1.5 bg-slate-100 rounded-full overflow-hidden">
                               <div className="h-full bg-blue-500 w-[62%]" />
@@ -1225,11 +1448,11 @@ export default function App() {
                           </div>
                           <div className="grid grid-cols-2 gap-3">
                             <div className="p-3 bg-slate-50 rounded-xl border border-slate-100">
-                              <p className="text-[9px] font-bold text-slate-400 uppercase mb-1">Tokens</p>
-                              <p className="text-sm font-black text-slate-700">12.4k</p>
+                              <p className="text-[9px] font-bold text-slate-400 uppercase mb-1">Jetons</p>
+                              <p className="text-sm font-black text-slate-700">12,4k</p>
                             </div>
                             <div className="p-3 bg-slate-50 rounded-xl border border-slate-100">
-                              <p className="text-[9px] font-bold text-slate-400 uppercase mb-1">Requests</p>
+                              <p className="text-[9px] font-bold text-slate-400 uppercase mb-1">Requêtes</p>
                               <p className="text-sm font-black text-slate-700">142</p>
                             </div>
                           </div>
@@ -1242,8 +1465,11 @@ export default function App() {
                 {/* More Menu */}
                 <div className="relative">
                   <button 
+                    type="button"
                     onClick={() => setShowMoreMenu(!showMoreMenu)}
                     className={`p-2 rounded-lg transition-colors ${showMoreMenu ? 'bg-slate-100 text-slate-900' : 'text-slate-400 hover:bg-slate-100'}`}
+                    title="Plus d’options Huggy — export, paramètres avancés, partage et support"
+                    aria-label="Plus d’options"
                   >
                     <MoreHorizontal size={18} />
                   </button>
@@ -1253,20 +1479,30 @@ export default function App() {
                         initial={{ opacity: 0, y: 10, scale: 0.95 }}
                         animate={{ opacity: 1, y: 0, scale: 1 }}
                         exit={{ opacity: 0, y: 10, scale: 0.95 }}
-                        className="absolute top-full right-0 mt-2 w-48 bg-white rounded-2xl border border-slate-200 shadow-2xl p-2 z-50"
+                        className="absolute top-full right-0 mt-2 w-56 bg-white rounded-2xl border border-slate-200 shadow-2xl p-2 z-50"
                       >
-                        <button className="w-full flex items-center gap-2 px-3 py-2 hover:bg-slate-50 rounded-lg text-xs font-bold text-slate-600 transition-colors">
-                          <Download size={14} />
-                          Export Code
+                        <p className="px-3 pt-1 pb-2 text-[10px] font-bold text-slate-400 uppercase tracking-wider">Projet Huggy</p>
+                        <button type="button" className="w-full flex flex-col items-start gap-0.5 px-3 py-2 hover:bg-slate-50 rounded-lg text-left transition-colors">
+                          <span className="flex items-center gap-2 text-xs font-bold text-slate-700">
+                            <Download size={14} className="shrink-0" aria-hidden />
+                            Exporter le code
+                          </span>
+                          <span className="text-[10px] text-slate-400 pl-[22px]">Archive ou copie des fichiers du projet</span>
                         </button>
-                        <button className="w-full flex items-center gap-2 px-3 py-2 hover:bg-slate-50 rounded-lg text-xs font-bold text-slate-600 transition-colors">
-                          <Settings size={14} />
-                          Project Settings
+                        <button type="button" className="w-full flex flex-col items-start gap-0.5 px-3 py-2 hover:bg-slate-50 rounded-lg text-left transition-colors">
+                          <span className="flex items-center gap-2 text-xs font-bold text-slate-700">
+                            <Settings size={14} className="shrink-0" aria-hidden />
+                            Paramètres du projet
+                          </span>
+                          <span className="text-[10px] text-slate-400 pl-[22px]">Réglages avancés et préférences Studio</span>
                         </button>
                         <div className="h-[1px] bg-slate-100 my-1" />
-                        <button className="w-full flex items-center gap-2 px-3 py-2 hover:bg-slate-50 rounded-lg text-xs font-bold text-slate-600 transition-colors">
-                          <MessageSquare size={14} />
-                          Support
+                        <button type="button" className="w-full flex flex-col items-start gap-0.5 px-3 py-2 hover:bg-slate-50 rounded-lg text-left transition-colors">
+                          <span className="flex items-center gap-2 text-xs font-bold text-slate-700">
+                            <MessageSquare size={14} className="shrink-0" aria-hidden />
+                            Support Huggy
+                          </span>
+                          <span className="text-[10px] text-slate-400 pl-[22px]">Aide, retours et questions sur le SaaS</span>
                         </button>
                       </motion.div>
                     )}

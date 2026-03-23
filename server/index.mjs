@@ -28,7 +28,9 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const root = path.join(__dirname, '..');
 
 dotenv.config({ path: path.join(root, '.env') });
-dotenv.config({ path: path.join(root, '.env.local'), override: true });
+// Important for production: never overwrite environment variables injected by the host/platform.
+// Local `.env.local` should still apply when env vars are not already set.
+dotenv.config({ path: path.join(root, '.env.local') });
 
 const isProd = process.env.NODE_ENV === 'production';
 const PORT = Number(process.env.PORT || (isProd ? 8080 : 3001));
@@ -316,7 +318,34 @@ if (isProd) {
 
 async function main() {
   if (pool) {
-    await initSchema(pool);
+    // In production, the DB may not be ready immediately (Railway/containers).
+    // Retry instead of crashing the whole server.
+    let lastErr = null;
+    const maxAttempts = 12;
+    const baseDelayMs = 500;
+
+    for (let attempt = 1; attempt <= maxAttempts; attempt++) {
+      try {
+        await initSchema(pool);
+        lastErr = null;
+        break;
+      } catch (e) {
+        lastErr = e;
+        console.error(
+          `[Huggy] initSchema failed (attempt ${attempt}/${maxAttempts}). Retrying...`,
+          e instanceof Error ? e.message : e,
+        );
+        const delay = baseDelayMs * attempt;
+        await new Promise((r) => setTimeout(r, delay));
+      }
+    }
+
+    if (lastErr) {
+      console.error(
+        '[Huggy] initSchema ultimately failed. Server will still start; DB-dependent endpoints may error.',
+        lastErr instanceof Error ? lastErr.message : lastErr,
+      );
+    }
   }
   app.listen(PORT, () => {
     console.log(
