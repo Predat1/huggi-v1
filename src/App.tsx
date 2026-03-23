@@ -674,7 +674,125 @@ export default function App() {
 
   if (!studioMode) {
     return (
-      <div className={`min-h-screen bg-[#F8F9FB] text-slate-900 font-sans overflow-hidden ${activeAccentColor}`}>
+      <div className={`min-h-screen bg-[#F8F9FB] text-slate-900 font-sans overflow-hidden relative ${activeAccentColor}`}>
+        {/* Landing (replacement) - overlay to match the provided screenshot */}
+        <div className="absolute inset-0 bg-white z-[100] overflow-y-auto">
+          <div className="max-w-6xl mx-auto px-6">
+            <header className="h-16 flex items-center justify-between">
+              <div className="flex items-center gap-4">
+                <div className="flex items-center gap-2">
+                  <div className={`w-9 h-9 ${ACCENT_COLORS[activeAccentColor].bg} rounded-xl flex items-center justify-center text-white shadow-lg`}>
+                    <Zap size={18} fill="currentColor" />
+                  </div>
+                  <span className="text-sm font-black tracking-tight text-slate-900">Huggy</span>
+                </div>
+                <nav className="hidden md:flex items-center gap-6 text-sm font-bold text-slate-600">
+                  <a className="hover:text-slate-900" href="#features">Features</a>
+                  <a className="hover:text-slate-900" href="#how-it-works">How it works</a>
+                  <a className="hover:text-slate-900" href="#community">Community</a>
+                  <a className="hover:text-slate-900" href="#pricing">Pricing</a>
+                  <a className="hover:text-slate-900" href="#about">About</a>
+                </nav>
+              </div>
+
+              <div className="flex items-center gap-3">
+                <a className="hidden sm:inline-block text-sm font-bold text-slate-600 hover:text-slate-900" href="#signin">
+                  Sign in
+                </a>
+                <button
+                  type="button"
+                  onClick={() => setStudioMode(true)}
+                  className={`flex items-center gap-2 px-5 py-2.5 ${ACCENT_COLORS[activeAccentColor].bg} hover:opacity-90 text-white rounded-xl text-sm font-bold transition-all shadow-lg shadow-blue-600/20`}
+                >
+                  <Sparkles size={16} />
+                  Get started
+                </button>
+              </div>
+            </header>
+
+            <main className="pt-10 pb-14">
+              <div className="text-center">
+                <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-blue-50 border border-blue-100 text-blue-600 text-xs font-black tracking-wide">
+                  <Sparkles size={14} />
+                  AI-POWERED APP BUILDER
+                </div>
+
+                <h1 className="mt-10 text-[64px] sm:text-[76px] leading-none font-black tracking-tight">
+                  <span className="block text-slate-900">Build any SaaS</span>
+                  <span className="block text-blue-600 italic">instantly.</span>
+                </h1>
+
+                <p className="mt-6 mx-auto max-w-xl text-slate-500 text-base leading-relaxed">
+                  Describe your project, Huggy does the rest. AI-generated code, UI, dashboards, and data tables in seconds.
+                </p>
+
+                <div className="mt-10 max-w-3xl mx-auto">
+                  <div className="relative rounded-3xl border border-slate-200 bg-white shadow-sm overflow-hidden">
+                    <div className="p-10">
+                      <p className="text-2xl font-bold text-slate-300/90">
+                        Build a CRM for real estate with client tracking...
+                      </p>
+                      <div className="mt-16 flex items-center justify-between">
+                        <div className="flex items-center gap-3 text-xs text-slate-400">
+                          <div className="w-10 h-10 rounded-2xl bg-blue-50 flex items-center justify-center text-blue-600 font-black">+</div>
+                          <div className="font-black uppercase tracking-widest text-slate-400">
+                            Advanced model active
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+
+                    <button
+                      type="button"
+                      onClick={() => setStudioMode(true)}
+                      className="absolute right-6 bottom-6 w-12 h-12 rounded-2xl bg-blue-600 text-white flex items-center justify-center shadow-lg shadow-blue-600/20 hover:opacity-90 transition-all"
+                      aria-label="Start"
+                    >
+                      <ArrowUp size={18} />
+                    </button>
+                  </div>
+                </div>
+
+                <div className="mt-10 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                  <div className="p-5 bg-white border border-slate-200 rounded-2xl shadow-sm text-left">
+                    <div className="w-10 h-10 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center">
+                      <FileCode size={18} />
+                    </div>
+                    <p className="mt-4 text-sm font-black text-slate-800">AI Landing Page Builder</p>
+                    <p className="mt-1 text-xs text-slate-500">Turn ideas into shippable UIs.</p>
+                  </div>
+                  <div className="p-5 bg-white border border-slate-200 rounded-2xl shadow-sm text-left">
+                    <div className="w-10 h-10 rounded-xl bg-indigo-50 text-indigo-600 flex items-center justify-center">
+                      <BarChart3 size={18} />
+                    </div>
+                    <p className="mt-4 text-sm font-black text-slate-800">SaaS Dashboard for Analytics</p>
+                    <p className="mt-1 text-xs text-slate-500">Charts, tables, and insights.</p>
+                  </div>
+                  <div className="p-5 bg-white border border-slate-200 rounded-2xl shadow-sm text-left">
+                    <div className="w-10 h-10 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center">
+                      <ClipboardList size={18} />
+                    </div>
+                    <p className="mt-4 text-sm font-black text-slate-800">Booking System for Doctors</p>
+                    <p className="mt-1 text-xs text-slate-500">Scheduling and appointments.</p>
+                  </div>
+                  <div className="p-5 bg-white border border-slate-200 rounded-2xl shadow-sm text-left">
+                    <div className="w-10 h-10 rounded-xl bg-slate-50 text-slate-700 flex items-center justify-center">
+                      <HardDrive size={18} />
+                    </div>
+                    <p className="mt-4 text-sm font-black text-slate-800">Project Management Tool</p>
+                    <p className="mt-1 text-xs text-slate-500">Tasks, files, and workflows.</p>
+                  </div>
+                </div>
+
+                <div className="mt-6 text-center text-xs text-slate-400">
+                  More ideas
+                </div>
+              </div>
+            </main>
+          </div>
+        </div>
+
+        <div className="hidden">
         <header className="h-16 border-b border-slate-200 bg-white flex items-center justify-between px-6 z-10">
           <div className="flex items-center gap-3">
             <div className={`w-9 h-9 ${ACCENT_COLORS[activeAccentColor].bg} rounded-lg flex items-center justify-center text-white shadow-lg`}>
@@ -812,6 +930,7 @@ export default function App() {
         <footer className="pb-10 px-6 text-center text-xs text-slate-400">
           Astuce : ajoute `?project=...` pour ouvrir directement un projet existant.
         </footer>
+      </div>
       </div>
     );
   }
