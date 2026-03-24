@@ -59,6 +59,39 @@ Crée une base PostgreSQL, copie la variable `DATABASE_URL` (souvent avec `sslmo
 4. `npm run dev` → Vite **:3000** + API **:3001** (proxy `/api` et `/live`)
 5. Vérifier `GET /api/health` → `"database": "connected"`
 
+### Intégrer ta clé API Claude (sécurisé)
+
+Ne mets jamais la clé dans le frontend ni dans une table PostgreSQL.
+
+1. Ouvre `.env.local` (non versionné) :
+
+```env
+ANTHROPIC_API_KEY=ta_cle_claude
+GEMINI_API_KEY=ta_cle_gemini_optionnelle
+```
+
+2. Garde la clé côté serveur uniquement (`server/index.mjs` + `server/lib/aiGenerate.mjs`).
+3. Vérifie la santé:
+
+```bash
+curl http://localhost:3001/api/health
+```
+
+Tu dois voir `anthropic: true`.
+
+### Connecter Supabase (PostgreSQL)
+
+Utilise la chaîne de connexion PostgreSQL Supabase dans `DATABASE_URL`.
+Recommandé en production: SSL actif (`sslmode=require`).
+
+```env
+DATABASE_URL=postgresql://postgres.xxxxx:[PASSWORD]@aws-0-region.pooler.supabase.com:6543/postgres?sslmode=require
+DATABASE_SSL=true
+DATABASE_SSL_INSECURE=false
+```
+
+`DATABASE_SSL_INSECURE` doit rester `false` (ou absent) sauf cas exceptionnel.
+
 ## Production (Railway)
 
 1. Créer un service **PostgreSQL** et copier `DATABASE_URL` dans les variables du service **web**.

@@ -753,7 +753,7 @@ export default function App() {
                   </div>
                 </div>
 
-                <div className="mt-10 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                <div id="features" className="mt-10 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 scroll-mt-24">
                   <div className="p-5 bg-white border border-slate-200 rounded-2xl shadow-sm text-left">
                     <div className="w-10 h-10 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center">
                       <FileCode size={18} />
@@ -788,7 +788,133 @@ export default function App() {
                   More ideas
                 </div>
               </div>
+
+              <section id="how-it-works" className="mt-20 scroll-mt-24">
+                <div className="text-center">
+                  <p className="text-xs font-black tracking-widest text-slate-500 uppercase">How it works</p>
+                  <h2 className="mt-3 text-3xl sm:text-4xl font-black tracking-tight text-slate-900">
+                    Du prompt au site en ligne.
+                  </h2>
+                </div>
+                <div className="mt-8 grid md:grid-cols-3 gap-4">
+                  <div className="p-6 bg-white border border-slate-200 rounded-3xl shadow-sm">
+                    <p className="text-[10px] font-black text-slate-400 tracking-widest uppercase">Step 1</p>
+                    <p className="mt-2 text-lg font-black text-slate-900">Décris ton SaaS</p>
+                    <p className="mt-2 text-sm text-slate-500">Tu donnes l’idée, la cible et les fonctionnalités clés.</p>
+                  </div>
+                  <div className="p-6 bg-white border border-slate-200 rounded-3xl shadow-sm">
+                    <p className="text-[10px] font-black text-slate-400 tracking-widest uppercase">Step 2</p>
+                    <p className="mt-2 text-lg font-black text-slate-900">Huggy construit</p>
+                    <p className="mt-2 text-sm text-slate-500">Code multi-fichiers, UI, logique et itérations guidées.</p>
+                  </div>
+                  <div className="p-6 bg-white border border-slate-200 rounded-3xl shadow-sm">
+                    <p className="text-[10px] font-black text-slate-400 tracking-widest uppercase">Step 3</p>
+                    <p className="mt-2 text-lg font-black text-slate-900">Tu publies</p>
+                    <p className="mt-2 text-sm text-slate-500">Un clic pour déployer ton preview et partager le lien.</p>
+                  </div>
+                </div>
+              </section>
+
+              <section id="community" className="mt-16 scroll-mt-24">
+                <div className="grid lg:grid-cols-3 gap-4">
+                  <div className="lg:col-span-2 p-7 rounded-3xl border border-slate-200 bg-gradient-to-br from-blue-50 via-white to-indigo-50">
+                    <p className="text-xs font-black uppercase tracking-widest text-blue-600">Community</p>
+                    <h3 className="mt-2 text-2xl font-black text-slate-900">Créateurs, agences et startups.</h3>
+                    <p className="mt-3 text-sm text-slate-600 max-w-2xl">
+                      Huggy est pensé pour shipper rapidement: MVP, landing, dashboard client, espace admin, et workflows business.
+                    </p>
+                  </div>
+                  <div className="p-7 rounded-3xl border border-slate-200 bg-white shadow-sm">
+                    <p className="text-xs font-black uppercase tracking-widest text-slate-500">Stats</p>
+                    <p className="mt-3 text-3xl font-black text-slate-900">24/7</p>
+                    <p className="text-sm text-slate-500">Assistant dispo pour itérer ton produit.</p>
+                  </div>
+                </div>
+              </section>
+
+              <section id="pricing" className="mt-16 scroll-mt-24">
+                <div className="text-center">
+                  <p className="text-xs font-black tracking-widest text-slate-500 uppercase">Pricing</p>
+                  <h3 className="mt-3 text-3xl font-black tracking-tight text-slate-900">Commence gratuitement.</h3>
+                </div>
+                <div className="mt-8 grid md:grid-cols-2 gap-4">
+                  <div className="p-7 rounded-3xl border border-slate-200 bg-white shadow-sm">
+                    <p className="text-sm font-black text-slate-900">Starter</p>
+                    <p className="mt-2 text-4xl font-black text-slate-900">0€</p>
+                    <p className="mt-1 text-sm text-slate-500">Pour tester le studio et prototyper vite.</p>
+                    <ul className="mt-5 space-y-2 text-sm text-slate-600">
+                      <li>Editeur complet</li>
+                      <li>Preview live</li>
+                      <li>Publication par slug</li>
+                    </ul>
+                  </div>
+                  <div className="p-7 rounded-3xl border border-blue-200 bg-blue-600 text-white shadow-lg shadow-blue-600/20">
+                    <p className="text-sm font-black">Pro</p>
+                    <p className="mt-2 text-4xl font-black">Bientot</p>
+                    <p className="mt-1 text-sm text-blue-100">Pour les équipes qui itèrent en continu.</p>
+                    <ul className="mt-5 space-y-2 text-sm text-blue-50">
+                      <li>Environnements multiples</li>
+                      <li>Historique étendu</li>
+                      <li>Collaboration avancée</li>
+                    </ul>
+                  </div>
+                </div>
+              </section>
+
+              <section id="about" className="mt-16 scroll-mt-24">
+                <div className="rounded-3xl border border-slate-200 bg-white p-7 shadow-sm">
+                  <p className="text-xs font-black uppercase tracking-widest text-slate-500">FAQ</p>
+                  <div className="mt-5 grid md:grid-cols-2 gap-4 text-sm">
+                    <div className="p-4 rounded-2xl bg-slate-50 border border-slate-200">
+                      <p className="font-black text-slate-900">Je peux utiliser Supabase ?</p>
+                      <p className="mt-1 text-slate-600">Oui, via `DATABASE_URL` PostgreSQL (SSL recommandé).</p>
+                    </div>
+                    <div className="p-4 rounded-2xl bg-slate-50 border border-slate-200">
+                      <p className="font-black text-slate-900">L’app est-elle prête production ?</p>
+                      <p className="mt-1 text-slate-600">Oui pour MVP, avec durcissement sécurité déjà appliqué côté API.</p>
+                    </div>
+                  </div>
+                </div>
+              </section>
             </main>
+            <footer className="border-t border-slate-200 py-10">
+              <div className="grid md:grid-cols-4 gap-6 text-sm">
+                <div>
+                  <p className="font-black text-slate-900">Huggy</p>
+                  <p className="mt-2 text-slate-500">
+                    Builder SaaS assisté par IA pour shipper vite.
+                  </p>
+                </div>
+                <div>
+                  <p className="font-black text-slate-800">Produit</p>
+                  <div className="mt-2 space-y-1 text-slate-500">
+                    <a className="block hover:text-slate-900" href="#features">Features</a>
+                    <a className="block hover:text-slate-900" href="#how-it-works">How it works</a>
+                    <a className="block hover:text-slate-900" href="#pricing">Pricing</a>
+                  </div>
+                </div>
+                <div>
+                  <p className="font-black text-slate-800">Ressources</p>
+                  <div className="mt-2 space-y-1 text-slate-500">
+                    <a className="block hover:text-slate-900" href="https://github.com/Predat1/huggi-v1" target="_blank" rel="noreferrer">GitHub</a>
+                    <a className="block hover:text-slate-900" href="#about">FAQ</a>
+                  </div>
+                </div>
+                <div>
+                  <p className="font-black text-slate-800">Lancer le studio</p>
+                  <button
+                    type="button"
+                    onClick={() => setStudioMode(true)}
+                    className={`mt-2 px-4 py-2 rounded-xl text-white text-sm font-bold ${ACCENT_COLORS[activeAccentColor].bg} hover:opacity-90`}
+                  >
+                    Ouvrir Huggy
+                  </button>
+                </div>
+              </div>
+              <p className="mt-8 text-xs text-slate-400 text-center">
+                Astuce : ajoute `?project=...` pour ouvrir directement un projet existant.
+              </p>
+            </footer>
           </div>
         </div>
 
@@ -927,9 +1053,6 @@ export default function App() {
           </div>
         </main>
 
-        <footer className="pb-10 px-6 text-center text-xs text-slate-400">
-          Astuce : ajoute `?project=...` pour ouvrir directement un projet existant.
-        </footer>
       </div>
       </div>
     );
