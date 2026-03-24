@@ -8,12 +8,22 @@ export function createPool() {
   if (!url) return null;
   const needSsl =
     url.includes('sslmode=require') ||
+    url.includes('ssl=true') ||
+    url.includes('supabase.co') ||
     url.includes('railway.app') ||
     process.env.DATABASE_SSL === 'true';
+
+  // Default to secure TLS verification when SSL is enabled.
+  // Only disable verification if the operator explicitly opts in (not recommended).
+  const insecure =
+    process.env.DATABASE_SSL_INSECURE === 'true' ||
+    process.env.DATABASE_SSL === 'insecure';
   return new Pool({
     connectionString: url,
-    ssl: needSsl ? { rejectUnauthorized: false } : undefined,
+    ssl: needSsl ? { rejectUnauthorized: !insecure } : undefined,
     max: 10,
+    connectionTimeoutMillis: 10_000,
+    idleTimeoutMillis: 30_000,
   });
 }
 

@@ -39,6 +39,23 @@ const previewRootDomain = process.env.PREVIEW_ROOT_DOMAIN || '';
 
 const pool = createPool();
 
+function isUuid(v) {
+  return typeof v === 'string' && /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(v);
+}
+
+function normalizeAndValidateProjectPath(p) {
+  if (typeof p !== 'string') return null;
+  const normalized = p.replace(/\\/g, '/').trim();
+  if (!normalized) return null;
+  if (normalized.length > 500) return null;
+  if (normalized.includes('\u0000')) return null;
+  if (normalized.startsWith('/')) return null;
+  if (normalized.startsWith('./')) return null;
+  if (normalized.includes('../') || normalized === '..') return null;
+  if (!/^[A-Za-z0-9._/-]+$/.test(normalized)) return null;
+  return normalized;
+}
+
 function publicBaseUrl(req) {
   if (process.env.PUBLIC_APP_URL) {
     return process.env.PUBLIC_APP_URL.replace(/\/$/, '');
@@ -58,6 +75,14 @@ function liveUrl(req, slug) {
 const app = express();
 app.disable('x-powered-by');
 app.use(express.json({ limit: '5mb' }));
+
+// Basic hardening without extra deps.
+app.use((req, res, next) => {
+  res.setHeader('X-Content-Type-Options', 'nosniff');
+  res.setHeader('Referrer-Policy', 'no-referrer');
+  res.setHeader('Permissions-Policy', 'geolocation=(), microphone=(), camera=()');
+  next();
+});
 
 /** Sous-domaines : {slug}.{PREVIEW_ROOT_DOMAIN} → fichiers statiques */
 if (previewRootDomain) {
@@ -125,6 +150,7 @@ app.post('/api/projects', async (req, res) => {
 app.get('/api/projects/:id', async (req, res) => {
   if (!pool) return res.status(503).json({ error: 'Pas de base.' });
   try {
+    if (!isUuid(req.params.id)) return res.status(400).json({ error: 'ID projet invalide.' });
     const project = await getProject(pool, req.params.id);
     if (!project) return res.status(404).json({ error: 'Projet introuvable.' });
     const files = await listFiles(pool, project.id);
@@ -138,6 +164,7 @@ app.get('/api/projects/:id', async (req, res) => {
 app.get('/api/projects/:id/files', async (req, res) => {
   if (!pool) return res.status(503).json({ error: 'Pas de base.' });
   try {
+    if (!isUuid(req.params.id)) return res.status(400).json({ error: 'ID projet invalide.' });
     const project = await getProject(pool, req.params.id);
     if (!project) return res.status(404).json({ error: 'Projet introuvable.' });
     const files = await listFiles(pool, project.id);
@@ -150,13 +177,16 @@ app.get('/api/projects/:id/files', async (req, res) => {
 app.put('/api/projects/:id/files', async (req, res) => {
   if (!pool) return res.status(503).json({ error: 'Pas de base.' });
   try {
+    if (!isUuid(req.params.id)) return res.status(400).json({ error: 'ID projet invalide.' });
     const project = await getProject(pool, req.params.id);
     if (!project) return res.status(404).json({ error: 'Projet introuvable.' });
     const { path: fpath, content } = req.body || {};
     if (typeof fpath !== 'string' || typeof content !== 'string') {
       return res.status(400).json({ error: 'path et content requis.' });
     }
-    const normalized = fpath.replace(/\\/g, '/');
+    const normalized = normalizeAndValidateProjectPath(fpath);
+    if (!normalized) return res.status(400).json({ error: 'path invalide.' });
+    if (content.length > 2_000_000) return res.status(413).json({ error: 'content trop volumineux.' });
     await upsertFile(pool, project.id, normalized, content);
     res.json({ ok: true });
   } catch (e) {
@@ -167,16 +197,19 @@ app.put('/api/projects/:id/files', async (req, res) => {
 app.delete('/api/projects/:id/files', async (req, res) => {
   if (!pool) return res.status(503).json({ error: 'Pas de base.' });
   try {
+    if (!isUuid(req.params.id)) return res.status(400).json({ error: 'ID projet invalide.' });
     const project = await getProject(pool, req.params.id);
     if (!project) return res.status(404).json({ error: 'Projet introuvable.' });
     const fpath = req.query.path;
     if (typeof fpath !== 'string') {
       return res.status(400).json({ error: 'query path requis.' });
     }
-    if (fpath.replace(/\\/g, '/') === PREVIEW_ENTRY) {
+    const normalized = normalizeAndValidateProjectPath(fpath);
+    if (!normalized) return res.status(400).json({ error: 'path invalide.' });
+    if (normalized === PREVIEW_ENTRY) {
       return res.status(400).json({ error: 'Impossible de supprimer le fichier d\'aperçu principal.' });
     }
-    await deleteFile(pool, project.id, fpath.replace(/\\/g, '/'));
+    await deleteFile(pool, project.id, normalized);
     res.json({ ok: true });
   } catch (e) {
     res.status(500).json({ error: e instanceof Error ? e.message : 'Erreur' });
@@ -186,6 +219,7 @@ app.delete('/api/projects/:id/files', async (req, res) => {
 app.post('/api/projects/:id/deploy', async (req, res) => {
   if (!pool) return res.status(503).json({ error: 'Pas de base.' });
   try {
+    if (!isUuid(req.params.id)) return res.status(400).json({ error: 'ID projet invalide.' });
     const project = await getProject(pool, req.params.id);
     if (!project) return res.status(404).json({ error: 'Projet introuvable.' });
     const rows = await listFiles(pool, project.id);
@@ -239,6 +273,7 @@ app.post('/api/generate-app', async (req, res) => {
 
     let allFiles = {};
     if (pool && projectId) {
+      if (!isUuid(projectId)) return res.status(400).json({ error: 'projectId invalide.' });
       const project = await getProject(pool, projectId);
       if (!project) return res.status(404).json({ error: 'Projet introuvable.' });
       const rows = await listFiles(pool, projectId);
@@ -262,6 +297,7 @@ app.post('/api/generate-app', async (req, res) => {
     });
 
     if (pool && projectId) {
+      if (!isUuid(projectId)) return res.status(400).json({ error: 'projectId invalide.' });
       const project = await getProject(pool, projectId);
       if (!project) return res.status(404).json({ error: 'Projet introuvable.' });
       for (const f of result.files) {
