@@ -42,7 +42,9 @@ import {
   Copy,
   FolderOpen,
   Users,
-  Sparkles
+  Sparkles,
+  Mail,
+  Instagram
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { LiveProvider, LivePreview, LiveError } from 'react-live';
@@ -717,37 +719,104 @@ export default function App() {
   if (routePath === '/signin' || routePath === '/signup') {
     const isSignup = routePath === '/signup';
     return (
-      <div className="min-h-screen bg-[#070a12] text-white flex items-center justify-center px-6">
-        <div className="w-full max-w-md rounded-3xl border border-white/15 bg-white/5 backdrop-blur-xl p-7">
-          <p className="text-xs uppercase tracking-widest text-blue-300 font-black">{isSignup ? 'Créer un compte' : 'Connexion'}</p>
-          <h1 className="mt-2 text-3xl font-black">{isSignup ? 'Bienvenue sur Huggy' : 'Heureux de te revoir'}</h1>
-          <p className="mt-2 text-sm text-white/75">
-            {isSignup
-              ? 'Configure ton espace SaaS et commence à créer tes projets IA.'
-              : 'Connecte-toi pour accéder à ton dashboard et à ton studio.'}
-          </p>
-          <form
-            className="mt-6 space-y-3"
-            onSubmit={(e) => {
-              e.preventDefault();
-              window.localStorage.setItem('huggy_auth', 'true');
-              setIsAuthenticated(true);
-              navigateTo('/dashboard');
-            }}
-          >
-            <input className="w-full px-4 py-3 rounded-xl bg-black/35 border border-white/20 text-sm outline-none" placeholder="Email" />
-            <input className="w-full px-4 py-3 rounded-xl bg-black/35 border border-white/20 text-sm outline-none" placeholder="Mot de passe" type="password" />
-            <button type="submit" className="w-full px-4 py-3 rounded-xl bg-blue-600 hover:bg-blue-500 font-bold">
-              {isSignup ? 'Créer mon compte' : 'Se connecter'}
-            </button>
-          </form>
-          <div className="mt-4 flex items-center justify-between text-xs text-white/70">
-            <button type="button" className="hover:text-white" onClick={() => navigateTo(isSignup ? '/signin' : '/signup')}>
-              {isSignup ? 'Déjà un compte ? Connexion' : 'Pas de compte ? Créer un compte'}
-            </button>
-            <button type="button" className="hover:text-white" onClick={() => navigateTo('/')}>
-              Retour accueil
-            </button>
+      <div className="min-h-screen bg-[#070a12] text-slate-900 flex items-center justify-center px-4 py-8 huggy-fade-up">
+        <div className="w-full max-w-6xl rounded-[24px] overflow-hidden shadow-2xl border border-white/10 bg-white transition-all duration-300">
+          <div className="grid lg:grid-cols-2">
+            <div className="relative min-h-[640px] p-10 lg:p-12 bg-[radial-gradient(circle_at_top_left,_rgba(90,89,255,0.65),_rgba(31,38,99,0.95)_45%,_rgba(8,11,35,1)_100%)] text-white">
+              <p className="text-sm font-black tracking-wide">huggy</p>
+              <div className="absolute inset-0 bg-[radial-gradient(circle_at_65%_35%,rgba(236,72,153,0.18),transparent_40%)]" />
+              <div className="relative h-full flex flex-col justify-end">
+                <p className="text-3xl leading-tight font-black max-w-md">
+                  Crée, teste et publie ton SaaS avec une expérience premium.
+                </p>
+                <p className="mt-4 text-sm text-white/80 max-w-sm">
+                  "Huggy m'aide à lancer mes produits plus vite, avec un vrai flow de création."
+                </p>
+                <p className="mt-2 text-xs text-white/60">Predat, fondateur de Shopredat</p>
+              </div>
+            </div>
+
+            <div className="p-8 lg:p-12 bg-[#f8fafc]">
+              <div className="max-w-md mx-auto">
+                <div className="flex items-center justify-between">
+                  <div className="w-9 h-9 rounded-xl bg-blue-600 text-white flex items-center justify-center font-black">H</div>
+                  <button
+                    type="button"
+                    className="text-xs text-slate-500 hover:text-slate-900"
+                    onClick={() => navigateTo('/')}
+                  >
+                    Retour accueil
+                  </button>
+                </div>
+
+                <h1 className="mt-8 text-4xl font-black text-slate-900">
+                  {isSignup ? 'Créez votre compte' : 'Connexion à Huggy'}
+                </h1>
+                <p className="mt-2 text-sm text-slate-500">
+                  {isSignup ? 'Vous avez déjà un compte ?' : 'Pas encore de compte ?'}{' '}
+                  <button
+                    type="button"
+                    className="text-blue-600 font-semibold hover:underline"
+                    onClick={() => navigateTo(isSignup ? '/signin' : '/signup')}
+                  >
+                    {isSignup ? 'Se connecter' : 'Créer mon compte'}
+                  </button>
+                </p>
+
+                <button
+                  type="button"
+                  className="mt-6 w-full h-11 rounded-xl border border-slate-200 bg-white text-sm font-semibold text-slate-700 hover:bg-slate-50"
+                >
+                  S'inscrire avec Google
+                </button>
+
+                <div className="mt-6 flex items-center gap-3 text-xs text-slate-400">
+                  <div className="h-px flex-1 bg-slate-200" />
+                  ou
+                  <div className="h-px flex-1 bg-slate-200" />
+                </div>
+
+                <form
+                  className="mt-6 space-y-3"
+                  onSubmit={(e) => {
+                    e.preventDefault();
+                    window.localStorage.setItem('huggy_auth', 'true');
+                    setIsAuthenticated(true);
+                    navigateTo('/dashboard');
+                  }}
+                >
+                  {isSignup && (
+                    <input
+                      className="w-full px-4 py-3 rounded-xl border border-slate-200 text-sm outline-none focus:ring-2 focus:ring-blue-500/30"
+                      placeholder="Nom complet"
+                    />
+                  )}
+                  <input
+                    className="w-full px-4 py-3 rounded-xl border border-slate-200 text-sm outline-none focus:ring-2 focus:ring-blue-500/30"
+                    placeholder="Adresse e-mail"
+                    type="email"
+                  />
+                  <input
+                    className="w-full px-4 py-3 rounded-xl border border-slate-200 text-sm outline-none focus:ring-2 focus:ring-blue-500/30"
+                    placeholder="Mot de passe"
+                    type="password"
+                  />
+                  {isSignup && (
+                    <input
+                      className="w-full px-4 py-3 rounded-xl border border-slate-200 text-sm outline-none focus:ring-2 focus:ring-blue-500/30"
+                      placeholder="Confirmer le mot de passe"
+                      type="password"
+                    />
+                  )}
+                  <button
+                    type="submit"
+                    className="w-full px-4 py-3 rounded-xl bg-blue-600 hover:bg-blue-500 text-white font-bold"
+                  >
+                    {isSignup ? 'Créer mon compte' : 'Se connecter'}
+                  </button>
+                </form>
+              </div>
+            </div>
           </div>
         </div>
       </div>
@@ -797,9 +866,13 @@ export default function App() {
               </div>
 
               <div className="flex items-center gap-3">
-                <a className="hidden sm:inline-block text-sm font-bold text-slate-600 hover:text-slate-900" href="/signin">
+                <button
+                  type="button"
+                  className="hidden sm:inline-block text-sm font-bold text-slate-600 hover:text-slate-900 transition-colors"
+                  onClick={() => navigateTo('/signin')}
+                >
                   Sign in
-                </a>
+                </button>
                 <button
                   type="button"
                   onClick={() => navigateTo('/signup')}
@@ -812,7 +885,7 @@ export default function App() {
             </header>
 
             <main className="pt-10 pb-14">
-              <div className="text-center">
+              <div className="text-center huggy-fade-up">
                 <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-blue-50 border border-blue-100 text-blue-600 text-xs font-black tracking-wide">
                   <Sparkles size={14} />
                   AI-POWERED APP BUILDER
@@ -846,7 +919,7 @@ export default function App() {
                     <button
                       type="button"
                       onClick={() => navigateTo('/signup')}
-                      className="absolute right-6 bottom-6 w-12 h-12 rounded-2xl bg-blue-600 text-white flex items-center justify-center shadow-lg shadow-blue-600/20 hover:opacity-90 transition-all"
+                    className="absolute right-6 bottom-6 w-12 h-12 rounded-2xl bg-blue-600 text-white flex items-center justify-center shadow-lg shadow-blue-600/20 hover:opacity-90 transition-all hover:-translate-y-0.5"
                       aria-label="Start"
                     >
                       <ArrowUp size={18} />
@@ -978,43 +1051,78 @@ export default function App() {
                 </div>
               </section>
             </main>
-            <footer className="border-t border-slate-200 py-10">
-              <div className="grid md:grid-cols-4 gap-6 text-sm">
-                <div>
-                  <p className="font-black text-slate-900">Huggy</p>
-                  <p className="mt-2 text-slate-500">
-                    Builder SaaS assisté par IA pour shipper vite.
-                  </p>
-                </div>
-                <div>
-                  <p className="font-black text-slate-800">Produit</p>
-                  <div className="mt-2 space-y-1 text-slate-500">
-                    <a className="block hover:text-slate-900" href="#features">Features</a>
-                    <a className="block hover:text-slate-900" href="#how-it-works">How it works</a>
-                    <a className="block hover:text-slate-900" href="#pricing">Pricing</a>
+            <footer className="mt-14 mb-10 rounded-[30px] overflow-hidden border border-slate-200 huggy-fade-up">
+              <div className="relative px-8 md:px-10 py-10 bg-[radial-gradient(circle_at_18%_5%,rgba(107,114,255,0.75),rgba(17,24,39,0.92)_38%,rgba(7,10,28,0.98)_68%)] text-white">
+                <div className="absolute inset-0 bg-[radial-gradient(circle_at_70%_20%,rgba(236,72,153,0.35),transparent_35%)]" />
+                <div className="relative grid lg:grid-cols-12 gap-8">
+                  <div className="lg:col-span-5">
+                    <h3 className="text-4xl leading-tight font-black max-w-md">Prêt à synchroniser et lancer ton SaaS ?</h3>
+                    <div className="mt-5 flex flex-wrap gap-3">
+                      <button
+                        type="button"
+                        onClick={() => navigateTo('/signup')}
+                        className="px-5 py-2.5 rounded-xl bg-white text-slate-900 text-sm font-bold hover:bg-slate-100"
+                      >
+                        Créer mon compte
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => navigateTo('/signin')}
+                        className="px-5 py-2.5 rounded-xl border border-white/30 text-sm font-semibold hover:bg-white/10"
+                      >
+                        Se connecter
+                      </button>
+                    </div>
+                    <div className="mt-10">
+                      <p className="text-xs uppercase tracking-widest text-white/70 font-black">Newsletter</p>
+                      <p className="mt-2 text-sm text-white/75 max-w-sm">
+                        Reçois nos conseils produit, growth et IA appliquée au SaaS chaque mois.
+                      </p>
+                      <div className="mt-4 flex gap-2 max-w-sm">
+                        <input
+                          className="flex-1 h-10 px-3 rounded-lg bg-white/15 border border-white/20 text-sm placeholder:text-white/60 outline-none"
+                          placeholder="Ton email"
+                        />
+                        <button type="button" className="h-10 px-4 rounded-lg bg-white text-slate-900 text-sm font-bold">
+                          S'abonner
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                  <div className="lg:col-span-7 grid sm:grid-cols-3 gap-6 text-sm">
+                    <div>
+                      <p className="font-black">Produit</p>
+                      <div className="mt-3 space-y-2 text-white/80">
+                        <a className="block hover:text-white" href="#features">Fonctionnalités</a>
+                        <a className="block hover:text-white" href="#how-it-works">Parcours</a>
+                        <a className="block hover:text-white" href="#pricing">Tarifs</a>
+                      </div>
+                    </div>
+                    <div>
+                      <p className="font-black">Plateforme</p>
+                      <div className="mt-3 space-y-2 text-white/80">
+                        <button className="block hover:text-white text-left" type="button" onClick={() => navigateTo('/dashboard')}>Dashboard</button>
+                        <button className="block hover:text-white text-left" type="button" onClick={() => navigateTo('/studio')}>Studio</button>
+                        <a className="block hover:text-white" href="#about">FAQ</a>
+                      </div>
+                    </div>
+                    <div>
+                      <p className="font-black">Contact</p>
+                      <div className="mt-3 space-y-2 text-white/80">
+                        <a className="block hover:text-white" href="https://github.com/Predat1/huggi-v1" target="_blank" rel="noreferrer">GitHub</a>
+                        <button className="block hover:text-white text-left" type="button" onClick={() => navigateTo('/dashboard/support')}>Support</button>
+                        <div className="pt-2 flex items-center gap-2">
+                          <span className="w-8 h-8 rounded-full bg-white/10 border border-white/20 inline-flex items-center justify-center"><Mail size={14} /></span>
+                          <span className="w-8 h-8 rounded-full bg-white/10 border border-white/20 inline-flex items-center justify-center"><Instagram size={14} /></span>
+                        </div>
+                      </div>
+                    </div>
                   </div>
                 </div>
-                <div>
-                  <p className="font-black text-slate-800">Ressources</p>
-                  <div className="mt-2 space-y-1 text-slate-500">
-                    <a className="block hover:text-slate-900" href="https://github.com/Predat1/huggi-v1" target="_blank" rel="noreferrer">GitHub</a>
-                    <a className="block hover:text-slate-900" href="#about">FAQ</a>
-                  </div>
-                </div>
-                <div>
-                  <p className="font-black text-slate-800">Lancer le studio</p>
-                  <button
-                    type="button"
-                    onClick={() => setStudioMode(true)}
-                    className={`mt-2 px-4 py-2 rounded-xl text-white text-sm font-bold ${ACCENT_COLORS[activeAccentColor].bg} hover:opacity-90`}
-                  >
-                    Ouvrir Huggy
-                  </button>
-                </div>
+                <p className="relative mt-8 text-center text-xs text-white/60">
+                  © {new Date().getFullYear()} Huggy. Tous droits réservés.
+                </p>
               </div>
-              <p className="mt-8 text-xs text-slate-400 text-center">
-                Astuce : ajoute `?project=...` pour ouvrir directement un projet existant.
-              </p>
             </footer>
           </div>
         </div>
