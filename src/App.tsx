@@ -50,6 +50,7 @@ import * as LucideIcons from 'lucide-react';
 import { DEFAULT_PREVIEW_CODE } from './defaultPreviewCode';
 import { generateAppUpdate } from './services/geminiService';
 import { streamChatText } from './utils/streamChatText';
+import UserDashboard from './components/UserDashboard';
 
 type Message = {
   id: string;
@@ -119,6 +120,14 @@ const INITIAL_MESSAGES: Message[] = [
 const PREVIEW_ENTRY = 'src/App.tsx';
 
 export default function App() {
+  const [routePath, setRoutePath] = useState<string>(() => {
+    if (typeof window === 'undefined') return '/';
+    return window.location.pathname || '/';
+  });
+  const [isAuthenticated, setIsAuthenticated] = useState<boolean>(() => {
+    if (typeof window === 'undefined') return false;
+    return window.localStorage.getItem('huggy_auth') === 'true';
+  });
   const [messages, setMessages] = useState<Message[]>(INITIAL_MESSAGES);
   const [inputValue, setInputValue] = useState('');
   const [previewMode, setPreviewMode] = useState<PreviewMode>('desktop');
@@ -155,7 +164,7 @@ export default function App() {
   const [studioMode, setStudioMode] = useState<boolean>(() => {
     if (typeof window === 'undefined') return false;
     const params = new URLSearchParams(window.location.search);
-    return Boolean(params.get('project'));
+    return Boolean(params.get('project')) || window.location.pathname.startsWith('/studio');
   });
   const [filesMap, setFilesMap] = useState<Record<string, string>>(() => ({
     [PREVIEW_ENTRY]: DEFAULT_PREVIEW_CODE,
@@ -183,6 +192,39 @@ export default function App() {
     setToast({ message, type });
     setTimeout(() => setToast(null), 3000);
   };
+
+  const navigateTo = (path: string) => {
+    if (typeof window === 'undefined') return;
+    if (window.location.pathname === path) return;
+    window.history.pushState({}, '', path);
+    setRoutePath(path);
+  };
+
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    const onPopState = () => {
+      const p = window.location.pathname || '/';
+      setRoutePath(p);
+      setStudioMode(p.startsWith('/studio') || Boolean(new URLSearchParams(window.location.search).get('project')));
+    };
+    window.addEventListener('popstate', onPopState);
+    return () => window.removeEventListener('popstate', onPopState);
+  }, []);
+
+  useEffect(() => {
+    if (routePath.startsWith('/dashboard') && !isAuthenticated) {
+      navigateTo('/signin');
+      return;
+    }
+    if ((routePath === '/signin' || routePath === '/signup') && isAuthenticated) {
+      navigateTo('/dashboard');
+      return;
+    }
+    const knownRoutes = ['/','/signin','/signup','/studio'];
+    if (!routePath.startsWith('/dashboard') && !knownRoutes.includes(routePath)) {
+      navigateTo('/');
+    }
+  }, [routePath, isAuthenticated]);
 
   useEffect(() => {
     let cancelled = false;
@@ -237,7 +279,7 @@ export default function App() {
         window.history.replaceState(
           {},
           '',
-          `?project=${created.project.id}`,
+          `${window.location.pathname}?project=${created.project.id}`,
         );
       } catch {
         if (!cancelled) showToast('Mode local : sans PostgreSQL', 'info');
@@ -317,7 +359,7 @@ export default function App() {
         window.history.replaceState(
           {},
           '',
-          `?project=${created.project.id}`,
+          `${window.location.pathname}?project=${created.project.id}`,
         );
         showToast('Nouveau projet créé', 'success');
       } catch {
@@ -672,6 +714,65 @@ export default function App() {
     rose: { bg: 'bg-rose-600', text: 'text-rose-600', border: 'border-rose-600', light: 'bg-rose-50', ring: 'ring-rose-100' },
   };
 
+  if (routePath === '/signin' || routePath === '/signup') {
+    const isSignup = routePath === '/signup';
+    return (
+      <div className="min-h-screen bg-[#070a12] text-white flex items-center justify-center px-6">
+        <div className="w-full max-w-md rounded-3xl border border-white/15 bg-white/5 backdrop-blur-xl p-7">
+          <p className="text-xs uppercase tracking-widest text-blue-300 font-black">{isSignup ? 'Créer un compte' : 'Connexion'}</p>
+          <h1 className="mt-2 text-3xl font-black">{isSignup ? 'Bienvenue sur Huggy' : 'Heureux de te revoir'}</h1>
+          <p className="mt-2 text-sm text-white/75">
+            {isSignup
+              ? 'Configure ton espace SaaS et commence à créer tes projets IA.'
+              : 'Connecte-toi pour accéder à ton dashboard et à ton studio.'}
+          </p>
+          <form
+            className="mt-6 space-y-3"
+            onSubmit={(e) => {
+              e.preventDefault();
+              window.localStorage.setItem('huggy_auth', 'true');
+              setIsAuthenticated(true);
+              navigateTo('/dashboard');
+            }}
+          >
+            <input className="w-full px-4 py-3 rounded-xl bg-black/35 border border-white/20 text-sm outline-none" placeholder="Email" />
+            <input className="w-full px-4 py-3 rounded-xl bg-black/35 border border-white/20 text-sm outline-none" placeholder="Mot de passe" type="password" />
+            <button type="submit" className="w-full px-4 py-3 rounded-xl bg-blue-600 hover:bg-blue-500 font-bold">
+              {isSignup ? 'Créer mon compte' : 'Se connecter'}
+            </button>
+          </form>
+          <div className="mt-4 flex items-center justify-between text-xs text-white/70">
+            <button type="button" className="hover:text-white" onClick={() => navigateTo(isSignup ? '/signin' : '/signup')}>
+              {isSignup ? 'Déjà un compte ? Connexion' : 'Pas de compte ? Créer un compte'}
+            </button>
+            <button type="button" className="hover:text-white" onClick={() => navigateTo('/')}>
+              Retour accueil
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  if (routePath.startsWith('/dashboard')) {
+    return (
+      <UserDashboard
+        route={routePath}
+        onNavigate={navigateTo}
+        onOpenStudio={() => {
+          setStudioMode(true);
+          navigateTo('/studio');
+        }}
+        onSignOut={() => {
+          window.localStorage.removeItem('huggy_auth');
+          setIsAuthenticated(false);
+          setStudioMode(false);
+          navigateTo('/');
+        }}
+      />
+    );
+  }
+
   if (!studioMode) {
     return (
       <div className={`min-h-screen bg-[#F8F9FB] text-slate-900 font-sans overflow-hidden relative ${activeAccentColor}`}>
@@ -696,12 +797,12 @@ export default function App() {
               </div>
 
               <div className="flex items-center gap-3">
-                <a className="hidden sm:inline-block text-sm font-bold text-slate-600 hover:text-slate-900" href="#signin">
+                <a className="hidden sm:inline-block text-sm font-bold text-slate-600 hover:text-slate-900" href="/signin">
                   Sign in
                 </a>
                 <button
                   type="button"
-                  onClick={() => setStudioMode(true)}
+                  onClick={() => navigateTo('/signup')}
                   className={`flex items-center gap-2 px-5 py-2.5 ${ACCENT_COLORS[activeAccentColor].bg} hover:opacity-90 text-white rounded-xl text-sm font-bold transition-all shadow-lg shadow-blue-600/20`}
                 >
                   <Sparkles size={16} />
@@ -744,7 +845,7 @@ export default function App() {
 
                     <button
                       type="button"
-                      onClick={() => setStudioMode(true)}
+                      onClick={() => navigateTo('/signup')}
                       className="absolute right-6 bottom-6 w-12 h-12 rounded-2xl bg-blue-600 text-white flex items-center justify-center shadow-lg shadow-blue-600/20 hover:opacity-90 transition-all"
                       aria-label="Start"
                     >
