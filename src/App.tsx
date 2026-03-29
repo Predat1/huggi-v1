@@ -43,8 +43,7 @@ import {
   FolderOpen,
   Users,
   Sparkles,
-  Mail,
-  Instagram
+  Home
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { LiveProvider, LivePreview, LiveError } from 'react-live';
@@ -52,7 +51,7 @@ import * as LucideIcons from 'lucide-react';
 import { DEFAULT_PREVIEW_CODE } from './defaultPreviewCode';
 import { generateAppUpdate } from './services/geminiService';
 import { streamChatText } from './utils/streamChatText';
-import UserDashboard from './components/UserDashboard';
+import LandingPage from './components/LandingPage';
 
 type Message = {
   id: string;
@@ -122,14 +121,6 @@ const INITIAL_MESSAGES: Message[] = [
 const PREVIEW_ENTRY = 'src/App.tsx';
 
 export default function App() {
-  const [routePath, setRoutePath] = useState<string>(() => {
-    if (typeof window === 'undefined') return '/';
-    return window.location.pathname || '/';
-  });
-  const [isAuthenticated, setIsAuthenticated] = useState<boolean>(() => {
-    if (typeof window === 'undefined') return false;
-    return window.localStorage.getItem('huggy_auth') === 'true';
-  });
   const [messages, setMessages] = useState<Message[]>(INITIAL_MESSAGES);
   const [inputValue, setInputValue] = useState('');
   const [previewMode, setPreviewMode] = useState<PreviewMode>('desktop');
@@ -166,7 +157,7 @@ export default function App() {
   const [studioMode, setStudioMode] = useState<boolean>(() => {
     if (typeof window === 'undefined') return false;
     const params = new URLSearchParams(window.location.search);
-    return Boolean(params.get('project')) || window.location.pathname.startsWith('/studio');
+    return Boolean(params.get('project'));
   });
   const [filesMap, setFilesMap] = useState<Record<string, string>>(() => ({
     [PREVIEW_ENTRY]: DEFAULT_PREVIEW_CODE,
@@ -194,39 +185,6 @@ export default function App() {
     setToast({ message, type });
     setTimeout(() => setToast(null), 3000);
   };
-
-  const navigateTo = (path: string) => {
-    if (typeof window === 'undefined') return;
-    if (window.location.pathname === path) return;
-    window.history.pushState({}, '', path);
-    setRoutePath(path);
-  };
-
-  useEffect(() => {
-    if (typeof window === 'undefined') return;
-    const onPopState = () => {
-      const p = window.location.pathname || '/';
-      setRoutePath(p);
-      setStudioMode(p.startsWith('/studio') || Boolean(new URLSearchParams(window.location.search).get('project')));
-    };
-    window.addEventListener('popstate', onPopState);
-    return () => window.removeEventListener('popstate', onPopState);
-  }, []);
-
-  useEffect(() => {
-    if (routePath.startsWith('/dashboard') && !isAuthenticated) {
-      navigateTo('/signin');
-      return;
-    }
-    if ((routePath === '/signin' || routePath === '/signup') && isAuthenticated) {
-      navigateTo('/dashboard');
-      return;
-    }
-    const knownRoutes = ['/','/signin','/signup','/studio'];
-    if (!routePath.startsWith('/dashboard') && !knownRoutes.includes(routePath)) {
-      navigateTo('/');
-    }
-  }, [routePath, isAuthenticated]);
 
   useEffect(() => {
     let cancelled = false;
@@ -281,7 +239,7 @@ export default function App() {
         window.history.replaceState(
           {},
           '',
-          `${window.location.pathname}?project=${created.project.id}`,
+          `?project=${created.project.id}`,
         );
       } catch {
         if (!cancelled) showToast('Mode local : sans PostgreSQL', 'info');
@@ -361,7 +319,7 @@ export default function App() {
         window.history.replaceState(
           {},
           '',
-          `${window.location.pathname}?project=${created.project.id}`,
+          `?project=${created.project.id}`,
         );
         showToast('Nouveau projet créé', 'success');
       } catch {
@@ -716,554 +674,16 @@ export default function App() {
     rose: { bg: 'bg-rose-600', text: 'text-rose-600', border: 'border-rose-600', light: 'bg-rose-50', ring: 'ring-rose-100' },
   };
 
-  if (routePath === '/signin' || routePath === '/signup') {
-    const isSignup = routePath === '/signup';
-    return (
-      <div className="min-h-screen bg-[#070a12] text-slate-900 flex items-center justify-center px-4 py-8 huggy-fade-up">
-        <div className="w-full max-w-6xl rounded-[24px] overflow-hidden shadow-2xl border border-white/10 bg-white transition-all duration-300">
-          <div className="grid lg:grid-cols-2">
-            <div className="relative min-h-[640px] p-10 lg:p-12 bg-[radial-gradient(circle_at_top_left,_rgba(90,89,255,0.65),_rgba(31,38,99,0.95)_45%,_rgba(8,11,35,1)_100%)] text-white">
-              <p className="text-sm font-black tracking-wide">huggy</p>
-              <div className="absolute inset-0 bg-[radial-gradient(circle_at_65%_35%,rgba(236,72,153,0.18),transparent_40%)]" />
-              <div className="relative h-full flex flex-col justify-end">
-                <p className="text-3xl leading-tight font-black max-w-md">
-                  Crée, teste et publie ton SaaS avec une expérience premium.
-                </p>
-                <p className="mt-4 text-sm text-white/80 max-w-sm">
-                  "Huggy m'aide à lancer mes produits plus vite, avec un vrai flow de création."
-                </p>
-                <p className="mt-2 text-xs text-white/60">Predat, fondateur de Shopredat</p>
-              </div>
-            </div>
-
-            <div className="p-8 lg:p-12 bg-[#f8fafc]">
-              <div className="max-w-md mx-auto">
-                <div className="flex items-center justify-between">
-                  <div className="w-9 h-9 rounded-xl bg-blue-600 text-white flex items-center justify-center font-black">H</div>
-                  <button
-                    type="button"
-                    className="text-xs text-slate-500 hover:text-slate-900"
-                    onClick={() => navigateTo('/')}
-                  >
-                    Retour accueil
-                  </button>
-                </div>
-
-                <h1 className="mt-8 text-4xl font-black text-slate-900">
-                  {isSignup ? 'Créez votre compte' : 'Connexion à Huggy'}
-                </h1>
-                <p className="mt-2 text-sm text-slate-500">
-                  {isSignup ? 'Vous avez déjà un compte ?' : 'Pas encore de compte ?'}{' '}
-                  <button
-                    type="button"
-                    className="text-blue-600 font-semibold hover:underline"
-                    onClick={() => navigateTo(isSignup ? '/signin' : '/signup')}
-                  >
-                    {isSignup ? 'Se connecter' : 'Créer mon compte'}
-                  </button>
-                </p>
-
-                <button
-                  type="button"
-                  className="mt-6 w-full h-11 rounded-xl border border-slate-200 bg-white text-sm font-semibold text-slate-700 hover:bg-slate-50"
-                >
-                  S'inscrire avec Google
-                </button>
-
-                <div className="mt-6 flex items-center gap-3 text-xs text-slate-400">
-                  <div className="h-px flex-1 bg-slate-200" />
-                  ou
-                  <div className="h-px flex-1 bg-slate-200" />
-                </div>
-
-                <form
-                  className="mt-6 space-y-3"
-                  onSubmit={(e) => {
-                    e.preventDefault();
-                    window.localStorage.setItem('huggy_auth', 'true');
-                    setIsAuthenticated(true);
-                    navigateTo('/dashboard');
-                  }}
-                >
-                  {isSignup && (
-                    <input
-                      className="w-full px-4 py-3 rounded-xl border border-slate-200 text-sm outline-none focus:ring-2 focus:ring-blue-500/30"
-                      placeholder="Nom complet"
-                    />
-                  )}
-                  <input
-                    className="w-full px-4 py-3 rounded-xl border border-slate-200 text-sm outline-none focus:ring-2 focus:ring-blue-500/30"
-                    placeholder="Adresse e-mail"
-                    type="email"
-                  />
-                  <input
-                    className="w-full px-4 py-3 rounded-xl border border-slate-200 text-sm outline-none focus:ring-2 focus:ring-blue-500/30"
-                    placeholder="Mot de passe"
-                    type="password"
-                  />
-                  {isSignup && (
-                    <input
-                      className="w-full px-4 py-3 rounded-xl border border-slate-200 text-sm outline-none focus:ring-2 focus:ring-blue-500/30"
-                      placeholder="Confirmer le mot de passe"
-                      type="password"
-                    />
-                  )}
-                  <button
-                    type="submit"
-                    className="w-full px-4 py-3 rounded-xl bg-blue-600 hover:bg-blue-500 text-white font-bold"
-                  >
-                    {isSignup ? 'Créer mon compte' : 'Se connecter'}
-                  </button>
-                </form>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-    );
-  }
-
-  if (routePath.startsWith('/dashboard')) {
-    return (
-      <UserDashboard
-        route={routePath}
-        onNavigate={navigateTo}
-        onOpenStudio={() => {
-          setStudioMode(true);
-          navigateTo('/studio');
-        }}
-        onSignOut={() => {
-          window.localStorage.removeItem('huggy_auth');
-          setIsAuthenticated(false);
-          setStudioMode(false);
-          navigateTo('/');
-        }}
-      />
-    );
-  }
-
   if (!studioMode) {
     return (
-      <div className={`min-h-screen bg-[#F8F9FB] text-slate-900 font-sans overflow-hidden relative ${activeAccentColor}`}>
-        {/* Landing (replacement) - overlay to match the provided screenshot */}
-        <div className="absolute inset-0 bg-white z-[100] overflow-y-auto">
-          <div className="max-w-6xl mx-auto px-6">
-            <header className="h-16 flex items-center justify-between">
-              <div className="flex items-center gap-4">
-                <div className="flex items-center gap-2">
-                  <div className={`w-9 h-9 ${ACCENT_COLORS[activeAccentColor].bg} rounded-xl flex items-center justify-center text-white shadow-lg`}>
-                    <Zap size={18} fill="currentColor" />
-                  </div>
-                  <span className="text-sm font-black tracking-tight text-slate-900">Huggy</span>
-                </div>
-                <nav className="hidden md:flex items-center gap-6 text-sm font-bold text-slate-600">
-                  <a className="hover:text-slate-900" href="#features">Features</a>
-                  <a className="hover:text-slate-900" href="#how-it-works">How it works</a>
-                  <a className="hover:text-slate-900" href="#community">Community</a>
-                  <a className="hover:text-slate-900" href="#pricing">Pricing</a>
-                  <a className="hover:text-slate-900" href="#about">About</a>
-                </nav>
-              </div>
-
-              <div className="flex items-center gap-3">
-                <button
-                  type="button"
-                  className="hidden sm:inline-block text-sm font-bold text-slate-600 hover:text-slate-900 transition-colors"
-                  onClick={() => navigateTo('/signin')}
-                >
-                  Sign in
-                </button>
-                <button
-                  type="button"
-                  onClick={() => navigateTo('/signup')}
-                  className={`flex items-center gap-2 px-5 py-2.5 ${ACCENT_COLORS[activeAccentColor].bg} hover:opacity-90 text-white rounded-xl text-sm font-bold transition-all shadow-lg shadow-blue-600/20`}
-                >
-                  <Sparkles size={16} />
-                  Get started
-                </button>
-              </div>
-            </header>
-
-            <main className="pt-10 pb-14">
-              <div className="text-center huggy-fade-up">
-                <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-blue-50 border border-blue-100 text-blue-600 text-xs font-black tracking-wide">
-                  <Sparkles size={14} />
-                  AI-POWERED APP BUILDER
-                </div>
-
-                <h1 className="mt-10 text-[64px] sm:text-[76px] leading-none font-black tracking-tight">
-                  <span className="block text-slate-900">Build any SaaS</span>
-                  <span className="block text-blue-600 italic">instantly.</span>
-                </h1>
-
-                <p className="mt-6 mx-auto max-w-xl text-slate-500 text-base leading-relaxed">
-                  Describe your project, Huggy does the rest. AI-generated code, UI, dashboards, and data tables in seconds.
-                </p>
-
-                <div className="mt-10 max-w-3xl mx-auto">
-                  <div className="relative rounded-3xl border border-slate-200 bg-white shadow-sm overflow-hidden">
-                    <div className="p-10">
-                      <p className="text-2xl font-bold text-slate-300/90">
-                        Build a CRM for real estate with client tracking...
-                      </p>
-                      <div className="mt-16 flex items-center justify-between">
-                        <div className="flex items-center gap-3 text-xs text-slate-400">
-                          <div className="w-10 h-10 rounded-2xl bg-blue-50 flex items-center justify-center text-blue-600 font-black">+</div>
-                          <div className="font-black uppercase tracking-widest text-slate-400">
-                            Advanced model active
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-
-                    <button
-                      type="button"
-                      onClick={() => navigateTo('/signup')}
-                    className="absolute right-6 bottom-6 w-12 h-12 rounded-2xl bg-blue-600 text-white flex items-center justify-center shadow-lg shadow-blue-600/20 hover:opacity-90 transition-all hover:-translate-y-0.5"
-                      aria-label="Start"
-                    >
-                      <ArrowUp size={18} />
-                    </button>
-                  </div>
-                </div>
-
-                <div id="features" className="mt-10 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 scroll-mt-24">
-                  <div className="p-5 bg-white border border-slate-200 rounded-2xl shadow-sm text-left">
-                    <div className="w-10 h-10 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center">
-                      <FileCode size={18} />
-                    </div>
-                    <p className="mt-4 text-sm font-black text-slate-800">AI Landing Page Builder</p>
-                    <p className="mt-1 text-xs text-slate-500">Turn ideas into shippable UIs.</p>
-                  </div>
-                  <div className="p-5 bg-white border border-slate-200 rounded-2xl shadow-sm text-left">
-                    <div className="w-10 h-10 rounded-xl bg-indigo-50 text-indigo-600 flex items-center justify-center">
-                      <BarChart3 size={18} />
-                    </div>
-                    <p className="mt-4 text-sm font-black text-slate-800">SaaS Dashboard for Analytics</p>
-                    <p className="mt-1 text-xs text-slate-500">Charts, tables, and insights.</p>
-                  </div>
-                  <div className="p-5 bg-white border border-slate-200 rounded-2xl shadow-sm text-left">
-                    <div className="w-10 h-10 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center">
-                      <ClipboardList size={18} />
-                    </div>
-                    <p className="mt-4 text-sm font-black text-slate-800">Booking System for Doctors</p>
-                    <p className="mt-1 text-xs text-slate-500">Scheduling and appointments.</p>
-                  </div>
-                  <div className="p-5 bg-white border border-slate-200 rounded-2xl shadow-sm text-left">
-                    <div className="w-10 h-10 rounded-xl bg-slate-50 text-slate-700 flex items-center justify-center">
-                      <HardDrive size={18} />
-                    </div>
-                    <p className="mt-4 text-sm font-black text-slate-800">Project Management Tool</p>
-                    <p className="mt-1 text-xs text-slate-500">Tasks, files, and workflows.</p>
-                  </div>
-                </div>
-
-                <div className="mt-6 text-center text-xs text-slate-400">
-                  More ideas
-                </div>
-              </div>
-
-              <section id="how-it-works" className="mt-20 scroll-mt-24">
-                <div className="text-center">
-                  <p className="text-xs font-black tracking-widest text-slate-500 uppercase">How it works</p>
-                  <h2 className="mt-3 text-3xl sm:text-4xl font-black tracking-tight text-slate-900">
-                    Du prompt au site en ligne.
-                  </h2>
-                </div>
-                <div className="mt-8 grid md:grid-cols-3 gap-4">
-                  <div className="p-6 bg-white border border-slate-200 rounded-3xl shadow-sm">
-                    <p className="text-[10px] font-black text-slate-400 tracking-widest uppercase">Step 1</p>
-                    <p className="mt-2 text-lg font-black text-slate-900">Décris ton SaaS</p>
-                    <p className="mt-2 text-sm text-slate-500">Tu donnes l’idée, la cible et les fonctionnalités clés.</p>
-                  </div>
-                  <div className="p-6 bg-white border border-slate-200 rounded-3xl shadow-sm">
-                    <p className="text-[10px] font-black text-slate-400 tracking-widest uppercase">Step 2</p>
-                    <p className="mt-2 text-lg font-black text-slate-900">Huggy construit</p>
-                    <p className="mt-2 text-sm text-slate-500">Code multi-fichiers, UI, logique et itérations guidées.</p>
-                  </div>
-                  <div className="p-6 bg-white border border-slate-200 rounded-3xl shadow-sm">
-                    <p className="text-[10px] font-black text-slate-400 tracking-widest uppercase">Step 3</p>
-                    <p className="mt-2 text-lg font-black text-slate-900">Tu publies</p>
-                    <p className="mt-2 text-sm text-slate-500">Un clic pour déployer ton preview et partager le lien.</p>
-                  </div>
-                </div>
-              </section>
-
-              <section id="community" className="mt-16 scroll-mt-24">
-                <div className="grid lg:grid-cols-3 gap-4">
-                  <div className="lg:col-span-2 p-7 rounded-3xl border border-slate-200 bg-gradient-to-br from-blue-50 via-white to-indigo-50">
-                    <p className="text-xs font-black uppercase tracking-widest text-blue-600">Community</p>
-                    <h3 className="mt-2 text-2xl font-black text-slate-900">Créateurs, agences et startups.</h3>
-                    <p className="mt-3 text-sm text-slate-600 max-w-2xl">
-                      Huggy est pensé pour shipper rapidement: MVP, landing, dashboard client, espace admin, et workflows business.
-                    </p>
-                  </div>
-                  <div className="p-7 rounded-3xl border border-slate-200 bg-white shadow-sm">
-                    <p className="text-xs font-black uppercase tracking-widest text-slate-500">Stats</p>
-                    <p className="mt-3 text-3xl font-black text-slate-900">24/7</p>
-                    <p className="text-sm text-slate-500">Assistant dispo pour itérer ton produit.</p>
-                  </div>
-                </div>
-              </section>
-
-              <section id="pricing" className="mt-16 scroll-mt-24">
-                <div className="text-center">
-                  <p className="text-xs font-black tracking-widest text-slate-500 uppercase">Pricing</p>
-                  <h3 className="mt-3 text-3xl font-black tracking-tight text-slate-900">Commence gratuitement.</h3>
-                </div>
-                <div className="mt-8 grid md:grid-cols-2 gap-4">
-                  <div className="p-7 rounded-3xl border border-slate-200 bg-white shadow-sm">
-                    <p className="text-sm font-black text-slate-900">Starter</p>
-                    <p className="mt-2 text-4xl font-black text-slate-900">0€</p>
-                    <p className="mt-1 text-sm text-slate-500">Pour tester le studio et prototyper vite.</p>
-                    <ul className="mt-5 space-y-2 text-sm text-slate-600">
-                      <li>Editeur complet</li>
-                      <li>Preview live</li>
-                      <li>Publication par slug</li>
-                    </ul>
-                  </div>
-                  <div className="p-7 rounded-3xl border border-blue-200 bg-blue-600 text-white shadow-lg shadow-blue-600/20">
-                    <p className="text-sm font-black">Pro</p>
-                    <p className="mt-2 text-4xl font-black">Bientot</p>
-                    <p className="mt-1 text-sm text-blue-100">Pour les équipes qui itèrent en continu.</p>
-                    <ul className="mt-5 space-y-2 text-sm text-blue-50">
-                      <li>Environnements multiples</li>
-                      <li>Historique étendu</li>
-                      <li>Collaboration avancée</li>
-                    </ul>
-                  </div>
-                </div>
-              </section>
-
-              <section id="about" className="mt-16 scroll-mt-24">
-                <div className="rounded-3xl border border-slate-200 bg-white p-7 shadow-sm">
-                  <p className="text-xs font-black uppercase tracking-widest text-slate-500">FAQ</p>
-                  <div className="mt-5 grid md:grid-cols-2 gap-4 text-sm">
-                    <div className="p-4 rounded-2xl bg-slate-50 border border-slate-200">
-                      <p className="font-black text-slate-900">Je peux utiliser Supabase ?</p>
-                      <p className="mt-1 text-slate-600">Oui, via `DATABASE_URL` PostgreSQL (SSL recommandé).</p>
-                    </div>
-                    <div className="p-4 rounded-2xl bg-slate-50 border border-slate-200">
-                      <p className="font-black text-slate-900">L’app est-elle prête production ?</p>
-                      <p className="mt-1 text-slate-600">Oui pour MVP, avec durcissement sécurité déjà appliqué côté API.</p>
-                    </div>
-                  </div>
-                </div>
-              </section>
-            </main>
-            <footer className="mt-14 mb-10 rounded-[30px] overflow-hidden border border-slate-200 huggy-fade-up">
-              <div className="relative px-8 md:px-10 py-10 bg-[radial-gradient(circle_at_18%_5%,rgba(107,114,255,0.75),rgba(17,24,39,0.92)_38%,rgba(7,10,28,0.98)_68%)] text-white">
-                <div className="absolute inset-0 bg-[radial-gradient(circle_at_70%_20%,rgba(236,72,153,0.35),transparent_35%)]" />
-                <div className="relative grid lg:grid-cols-12 gap-8">
-                  <div className="lg:col-span-5">
-                    <h3 className="text-4xl leading-tight font-black max-w-md">Prêt à synchroniser et lancer ton SaaS ?</h3>
-                    <div className="mt-5 flex flex-wrap gap-3">
-                      <button
-                        type="button"
-                        onClick={() => navigateTo('/signup')}
-                        className="px-5 py-2.5 rounded-xl bg-white text-slate-900 text-sm font-bold hover:bg-slate-100"
-                      >
-                        Créer mon compte
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => navigateTo('/signin')}
-                        className="px-5 py-2.5 rounded-xl border border-white/30 text-sm font-semibold hover:bg-white/10"
-                      >
-                        Se connecter
-                      </button>
-                    </div>
-                    <div className="mt-10">
-                      <p className="text-xs uppercase tracking-widest text-white/70 font-black">Newsletter</p>
-                      <p className="mt-2 text-sm text-white/75 max-w-sm">
-                        Reçois nos conseils produit, growth et IA appliquée au SaaS chaque mois.
-                      </p>
-                      <div className="mt-4 flex gap-2 max-w-sm">
-                        <input
-                          className="flex-1 h-10 px-3 rounded-lg bg-white/15 border border-white/20 text-sm placeholder:text-white/60 outline-none"
-                          placeholder="Ton email"
-                        />
-                        <button type="button" className="h-10 px-4 rounded-lg bg-white text-slate-900 text-sm font-bold">
-                          S'abonner
-                        </button>
-                      </div>
-                    </div>
-                  </div>
-                  <div className="lg:col-span-7 grid sm:grid-cols-3 gap-6 text-sm">
-                    <div>
-                      <p className="font-black">Produit</p>
-                      <div className="mt-3 space-y-2 text-white/80">
-                        <a className="block hover:text-white" href="#features">Fonctionnalités</a>
-                        <a className="block hover:text-white" href="#how-it-works">Parcours</a>
-                        <a className="block hover:text-white" href="#pricing">Tarifs</a>
-                      </div>
-                    </div>
-                    <div>
-                      <p className="font-black">Plateforme</p>
-                      <div className="mt-3 space-y-2 text-white/80">
-                        <button className="block hover:text-white text-left" type="button" onClick={() => navigateTo('/dashboard')}>Dashboard</button>
-                        <button className="block hover:text-white text-left" type="button" onClick={() => navigateTo('/studio')}>Studio</button>
-                        <a className="block hover:text-white" href="#about">FAQ</a>
-                      </div>
-                    </div>
-                    <div>
-                      <p className="font-black">Contact</p>
-                      <div className="mt-3 space-y-2 text-white/80">
-                        <a className="block hover:text-white" href="https://github.com/Predat1/huggi-v1" target="_blank" rel="noreferrer">GitHub</a>
-                        <button className="block hover:text-white text-left" type="button" onClick={() => navigateTo('/dashboard/support')}>Support</button>
-                        <div className="pt-2 flex items-center gap-2">
-                          <span className="w-8 h-8 rounded-full bg-white/10 border border-white/20 inline-flex items-center justify-center"><Mail size={14} /></span>
-                          <span className="w-8 h-8 rounded-full bg-white/10 border border-white/20 inline-flex items-center justify-center"><Instagram size={14} /></span>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-                <p className="relative mt-8 text-center text-xs text-white/60">
-                  © {new Date().getFullYear()} Huggy. Tous droits réservés.
-                </p>
-              </div>
-            </footer>
-          </div>
-        </div>
-
-        <div className="hidden">
-        <header className="h-16 border-b border-slate-200 bg-white flex items-center justify-between px-6 z-10">
-          <div className="flex items-center gap-3">
-            <div className={`w-9 h-9 ${ACCENT_COLORS[activeAccentColor].bg} rounded-lg flex items-center justify-center text-white shadow-lg`}>
-              <Zap size={20} fill="currentColor" />
-            </div>
-            <div className="flex items-center gap-2">
-              <span className="text-sm font-black tracking-tighter text-slate-900">HUGGY</span>
-              <span className="px-2 py-0.5 bg-slate-100 text-[10px] font-black text-slate-400 rounded-full uppercase tracking-widest">Studio</span>
-            </div>
-          </div>
-          <button
-            type="button"
-            onClick={() => setStudioMode(true)}
-            className={`flex items-center gap-2 px-5 py-2.5 ${ACCENT_COLORS[activeAccentColor].bg} hover:opacity-90 text-white rounded-xl text-sm font-bold transition-all shadow-lg shadow-blue-600/20`}
-          >
-            <Cloud size={16} />
-            Lancer le Studio
-          </button>
-        </header>
-
-        <main className="max-w-6xl mx-auto px-6 py-14">
-          <div className="grid lg:grid-cols-2 gap-10 items-center">
-            <div>
-              <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white border border-slate-200 shadow-sm">
-                <span className="w-2 h-2 rounded-full bg-emerald-500 shadow-[0_0_10px_rgba(16,185,129,0.5)]" />
-                <span className="text-xs font-bold text-slate-700">
-                  {databaseEnabled ? 'PostgreSQL connecté' : 'Mode SaaS (attente DB)'}
-                </span>
-              </div>
-
-              <h1 className="mt-5 text-4xl sm:text-5xl font-black tracking-tight text-slate-900">
-                Générez, éditez et déployez des apps React.
-              </h1>
-              <p className="mt-4 text-slate-600 text-base leading-relaxed max-w-xl">
-                Huggy Studio transforme vos idées en projets multi-fichiers sauvegardés en PostgreSQL, avec prévisualisation live et
-                publication statique par slug.
-              </p>
-
-              <div className="mt-7 flex flex-col sm:flex-row gap-3">
-                <button
-                  type="button"
-                  onClick={() => setStudioMode(true)}
-                  className={`flex items-center justify-center gap-2 px-6 py-3 ${ACCENT_COLORS[activeAccentColor].bg} hover:opacity-90 text-white rounded-xl text-sm font-bold transition-all shadow-lg shadow-blue-600/20`}
-                >
-                  <Sparkles size={18} />
-                  Démarrer maintenant
-                </button>
-                <a
-                  href="https://github.com/Predat1/huggi-v1"
-                  target="_blank"
-                  rel="noreferrer"
-                  className="flex items-center justify-center gap-2 px-6 py-3 border border-slate-200 bg-white hover:bg-slate-50 rounded-xl text-sm font-bold text-slate-700 transition-all"
-                >
-                  <ExternalLink size={18} />
-                  Voir le projet
-                </a>
-              </div>
-
-              <div className="mt-10 grid sm:grid-cols-2 gap-4">
-                <div className="p-5 bg-white border border-slate-200 rounded-2xl shadow-sm">
-                  <Database size={20} className={`${ACCENT_COLORS[activeAccentColor].text}`} />
-                  <p className="mt-2 text-sm font-black text-slate-900">Projets persistés</p>
-                  <p className="mt-1 text-xs text-slate-500 leading-relaxed">PostgreSQL pour sauvegarder fichiers et déploiements.</p>
-                </div>
-                <div className="p-5 bg-white border border-slate-200 rounded-2xl shadow-sm">
-                  <Monitor size={20} className={`${ACCENT_COLORS[activeAccentColor].text}`} />
-                  <p className="mt-2 text-sm font-black text-slate-900">Preview live</p>
-                  <p className="mt-1 text-xs text-slate-500 leading-relaxed">Rendu instantané, mode desktop/tablet/mobile.</p>
-                </div>
-                <div className="p-5 bg-white border border-slate-200 rounded-2xl shadow-sm">
-                  <HardDrive size={20} className={`${ACCENT_COLORS[activeAccentColor].text}`} />
-                  <p className="mt-2 text-sm font-black text-slate-900">Publication par slug</p>
-                  <p className="mt-1 text-xs text-slate-500 leading-relaxed">Déploiement statique dans `SITES_DIR/{`{slug}`}`.</p>
-                </div>
-                <div className="p-5 bg-white border border-slate-200 rounded-2xl shadow-sm">
-                  <Shield size={20} className={`${ACCENT_COLORS[activeAccentColor].text}`} />
-                  <p className="mt-2 text-sm font-black text-slate-900">IA multi-fichiers</p>
-                  <p className="mt-1 text-xs text-slate-500 leading-relaxed">Claude en priorité, Gemini en secours.</p>
-                </div>
-              </div>
-            </div>
-
-            <div className="relative">
-              <div className="absolute -inset-1 bg-gradient-to-r from-blue-500/20 via-violet-500/20 to-emerald-500/20 blur-2xl rounded-[2rem]" />
-              <div className="relative bg-white border border-slate-200 rounded-[2rem] shadow-xl overflow-hidden">
-                <div className={`h-16 flex items-center justify-between px-5 bg-slate-50 border-b border-slate-100`}>
-                  <div className="flex gap-2">
-                    <div className="w-3 h-3 rounded-full bg-red-400/60" />
-                    <div className="w-3 h-3 rounded-full bg-yellow-400/60" />
-                    <div className="w-3 h-3 rounded-full bg-green-400/60" />
-                  </div>
-                  <div className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">
-                    Huggy · Studio
-                  </div>
-                </div>
-                <div className="p-6">
-                  <div className="bg-[#F8F9FB] border border-slate-200 rounded-2xl p-4">
-                    <p className="text-xs font-black text-slate-700">Exemple</p>
-                    <pre className="mt-2 text-xs text-slate-600 font-mono whitespace-pre-wrap">
-{`// Décrivez votre app en français
-// Huggy génère les fichiers puis vous publie par slug
-
-export default function App() {
-  return (
-    <div className="p-6">
-      <h1 className="text-2xl font-bold">Hello Huggy</h1>
-    </div>
-  );
-}`}
-                    </pre>
-                  </div>
-
-                  <div className="mt-4 grid sm:grid-cols-3 gap-3">
-                    <div className="p-3 bg-slate-50 border border-slate-200 rounded-2xl">
-                      <p className="text-[10px] font-bold uppercase tracking-widest text-slate-400">1</p>
-                      <p className="mt-1 text-xs font-black text-slate-700">Générer</p>
-                    </div>
-                    <div className="p-3 bg-slate-50 border border-slate-200 rounded-2xl">
-                      <p className="text-[10px] font-bold uppercase tracking-widest text-slate-400">2</p>
-                      <p className="mt-1 text-xs font-black text-slate-700">Éditer</p>
-                    </div>
-                    <div className="p-3 bg-slate-50 border border-slate-200 rounded-2xl">
-                      <p className="text-[10px] font-bold uppercase tracking-widest text-slate-400">3</p>
-                      <p className="mt-1 text-xs font-black text-slate-700">Publier</p>
-                    </div>
-                  </div>
-                </div>
-              </div>
-              <div className="absolute -bottom-6 -left-6 w-24 h-24 bg-blue-500/10 rounded-full blur-xl" />
-              <div className="absolute -top-8 -right-8 w-28 h-28 bg-emerald-500/10 rounded-full blur-xl" />
-            </div>
-          </div>
-        </main>
-
-      </div>
-      </div>
+      <LandingPage
+        accent={ACCENT_COLORS[activeAccentColor]}
+        onOpenStudio={(initialPrompt) => {
+          if (initialPrompt) setInputValue(initialPrompt);
+          setStudioMode(true);
+          window.history.replaceState({}, '', window.location.pathname);
+        }}
+      />
     );
   }
 
@@ -1285,22 +705,46 @@ export default function App() {
       </AnimatePresence>
 
       {/* Top Navigation Bar */}
-      <header className="h-14 border-b border-slate-200 bg-white flex items-center justify-between px-4 z-10">
-        <div className="flex items-center gap-4">
-          <div className={`w-8 h-8 ${ACCENT_COLORS[activeAccentColor].bg} rounded-lg flex items-center justify-center text-white shadow-lg`}>
+      <header className="h-14 border-b border-slate-200 bg-white/95 backdrop-blur-md supports-[backdrop-filter]:bg-white/80 flex items-center justify-between px-4 z-10 shrink-0 transition-shadow duration-200 shadow-[0_1px_0_rgba(15,23,42,0.04)]">
+        <div className="flex items-center gap-2 sm:gap-4 min-w-0">
+          <button
+            type="button"
+            onClick={() => {
+              setStudioMode(false);
+              window.history.replaceState({}, '', window.location.pathname);
+            }}
+            className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-[11px] font-bold text-slate-600 hover:text-slate-900 hover:bg-slate-100 transition-colors duration-200 shrink-0"
+          >
+            <Home size={14} className="text-slate-400" aria-hidden />
+            <span className="hidden sm:inline">Accueil</span>
+          </button>
+          <div className="h-6 w-[1px] bg-slate-200 hidden sm:block" />
+          <div className={`w-8 h-8 ${ACCENT_COLORS[activeAccentColor].bg} rounded-lg flex items-center justify-center text-white shadow-lg shrink-0`}>
             <Zap size={20} fill="currentColor" />
           </div>
           <div className="h-6 w-[1px] bg-slate-200" />
-          <div className="flex items-center gap-2">
-            <span className="text-sm font-black tracking-tighter text-slate-900">HUGGY</span>
-            <span className="px-2 py-0.5 bg-slate-100 text-[10px] font-black text-slate-400 rounded-full uppercase tracking-widest">Studio</span>
+          <div className="flex items-center gap-2 min-w-0">
+            <span className="text-sm font-black tracking-tighter text-slate-900 truncate">HUGGY</span>
+            <span className="px-2 py-0.5 bg-slate-100 text-[10px] font-black text-slate-400 rounded-full uppercase tracking-widest shrink-0">Studio</span>
           </div>
         </div>
 
-        <div className="flex items-center gap-3">
-          <div className="flex items-center gap-1 bg-slate-100 p-1 rounded-xl border border-slate-200 mr-2">
-            <button className="px-3 py-1.5 text-[11px] font-bold text-slate-500 hover:text-slate-900 transition-colors">Docs</button>
-            <button className="px-3 py-1.5 text-[11px] font-bold text-slate-500 hover:text-slate-900 transition-colors">Feedback</button>
+        <div className="flex items-center gap-2 sm:gap-3">
+          <div className="hidden sm:flex items-center gap-1 bg-slate-100 p-1 rounded-xl border border-slate-200 mr-0 sm:mr-1">
+            <a
+              href="https://github.com/Predat1/huggi-v1/blob/main/README.md"
+              target="_blank"
+              rel="noreferrer"
+              className="px-3 py-1.5 text-[11px] font-bold text-slate-500 hover:text-slate-900 transition-colors duration-200 rounded-lg hover:bg-white/80"
+            >
+              Docs
+            </a>
+            <a
+              href="mailto:contact@huggy.sbs?subject=Feedback%20Huggy%20Studio"
+              className="px-3 py-1.5 text-[11px] font-bold text-slate-500 hover:text-slate-900 transition-colors duration-200 rounded-lg hover:bg-white/80"
+            >
+              Feedback
+            </a>
           </div>
           <button 
             onClick={handlePublish}

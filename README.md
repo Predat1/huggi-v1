@@ -51,6 +51,18 @@ Commandes utiles : `npm run db:down`, `npm run db:logs`.
 
 Crée une base PostgreSQL, copie la variable `DATABASE_URL` (souvent avec `sslmode=require`) dans les variables d’environnement du service Node.
 
+### Option C — Supabase
+
+1. Dans Supabase, ouvre ton projet puis récupère la chaîne de connexion Postgres.
+2. Mets-la dans `.env.local` :
+
+```env
+DATABASE_URL=postgresql://postgres:[VOTRE_MOT_DE_PASSE]@db.<project-ref>.supabase.co:5432/postgres?sslmode=require
+```
+
+3. Lance l’API : `npm run dev`
+4. Vérifie `GET /api/health` puis `"database": "connected"`.
+
 ## Développement local
 
 1. `npm run db:up` **ou** une `DATABASE_URL` pointant vers ta base

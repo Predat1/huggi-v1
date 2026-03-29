@@ -6,6 +6,19 @@ export type GenerateAppResult = {
   code: string;
   files: { path: string; content: string }[];
   reply: string;
+  export?: {
+    stack: 'nextjs-supabase-shadcn' | string;
+    projectName?: string;
+    files: { path: string; content: string }[];
+    database?: {
+      supabaseSchemaSql?: string;
+      rlsPoliciesSql?: string;
+    };
+    auth?: {
+      providers?: string[];
+      notes?: string;
+    };
+  } | null;
   provider?: string;
 };
 
@@ -41,6 +54,7 @@ export const generateAppUpdate = async (
     code: string;
     files?: { path: string; content: string }[];
     reply?: string;
+    export?: GenerateAppResult['export'];
     provider?: string;
   }>('/api/generate-app', {
     prompt,
@@ -52,6 +66,7 @@ export const generateAppUpdate = async (
     code: data.code || '',
     files: data.files || [],
     reply: data.reply || '',
+    export: data.export ?? null,
     provider: data.provider,
   };
 };

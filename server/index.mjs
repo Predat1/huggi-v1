@@ -314,6 +314,7 @@ app.post('/api/generate-app', async (req, res) => {
       code: entry,
       files: result.files,
       reply: result.reply || '',
+      export: result.export || null,
       provider: result.provider,
     });
   } catch (e) {

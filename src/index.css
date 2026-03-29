@@ -1,6 +1,12 @@
 @import "tailwindcss";
 
 @layer base {
+  @media (prefers-reduced-motion: no-preference) {
+    html {
+      scroll-behavior: smooth;
+    }
+  }
+
   :root {
     --bg-primary: #F8F9FB;
     --bg-secondary: #FFFFFF;
@@ -57,33 +63,4 @@
   );
   background-size: 200% 100%;
   animation: huggy-shimmer 1.4s ease-in-out infinite;
-}
-
-@keyframes huggy-fade-up {
-  from {
-    opacity: 0;
-    transform: translateY(10px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
-}
-
-@keyframes huggy-float-soft {
-  0%,
-  100% {
-    transform: translateY(0);
-  }
-  50% {
-    transform: translateY(-4px);
-  }
-}
-
-.huggy-fade-up {
-  animation: huggy-fade-up 420ms ease-out both;
-}
-
-.huggy-float-soft {
-  animation: huggy-float-soft 5.2s ease-in-out infinite;
 }

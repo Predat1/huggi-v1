@@ -1,5 +1,5 @@
 /**
- * Affichage progressif type « chat pro » : débit adapté aux mots / ponctuation.
+ * Affichage progressif type "chat pro" : débit adaptatif aux mots / ponctuation.
  * Retourne une fonction `cancel()` pour nettoyer les timeouts.
  */
 export function streamChatText(
