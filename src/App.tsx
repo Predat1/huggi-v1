@@ -157,7 +157,7 @@ export default function App() {
   const [studioMode, setStudioMode] = useState<boolean>(() => {
     if (typeof window === 'undefined') return false;
     const params = new URLSearchParams(window.location.search);
-    return Boolean(params.get('project'));
+    return Boolean(params.get('project')) || params.get('studio') === '1';
   });
   const [filesMap, setFilesMap] = useState<Record<string, string>>(() => ({
     [PREVIEW_ENTRY]: DEFAULT_PREVIEW_CODE,
@@ -199,6 +199,25 @@ export default function App() {
         if (pid) {
           if (h.database !== 'connected') return;
           const res = await fetch(`/api/projects/${pid}`);
+          if (res.status === 404) {
+            // L'URL pointe vers un projet supprimé/inexistant : recréer un projet pour rendre
+            // le Studio utilisable et éviter que "Publier" ne fasse rien.
+            const created = await fetch('/api/projects', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ name: 'Nouveau projet' }),
+            }).then((r) => r.json());
+            if (cancelled) return;
+            setProjectId(created.project.id);
+            const map: Record<string, string> = {};
+            for (const f of created.files) map[f.path] = f.content;
+            setFilesMap(map);
+            setActiveFilePath(PREVIEW_ENTRY);
+            setDeployments([]);
+            window.history.replaceState({}, '', `?project=${created.project.id}`);
+            showToast('Projet introuvable : nouveau projet créé', 'info');
+            return;
+          }
           if (!res.ok) throw new Error('load');
           const data = await res.json();
           if (cancelled) return;
@@ -674,21 +693,41 @@ export default function App() {
     rose: { bg: 'bg-rose-600', text: 'text-rose-600', border: 'border-rose-600', light: 'bg-rose-50', ring: 'ring-rose-100' },
   };
 
-  if (!studioMode) {
-    return (
-      <LandingPage
-        accent={ACCENT_COLORS[activeAccentColor]}
-        onOpenStudio={(initialPrompt) => {
-          if (initialPrompt) setInputValue(initialPrompt);
-          setStudioMode(true);
-          window.history.replaceState({}, '', window.location.pathname);
-        }}
-      />
-    );
-  }
-
   return (
-    <div className={`flex flex-col h-screen bg-[#F8F9FB] text-slate-900 font-sans overflow-hidden ${activeAccentColor}`}>
+    <AnimatePresence mode="wait" initial={false}>
+      {!studioMode ? (
+        <motion.div
+          key="landing"
+          className="min-h-screen"
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          exit={{ opacity: 0 }}
+          transition={{ duration: 0.22, ease: [0.22, 1, 0.36, 1] }}
+        >
+          <LandingPage
+            accent={ACCENT_COLORS[activeAccentColor]}
+            onOpenStudio={(initialPrompt) => {
+              if (initialPrompt) setInputValue(initialPrompt);
+              setStudioMode(true);
+              if (!new URLSearchParams(window.location.search).get('project')) {
+                window.history.replaceState(
+                  {},
+                  '',
+                  `${window.location.pathname}?studio=1`,
+                );
+              }
+            }}
+          />
+        </motion.div>
+      ) : (
+        <motion.div
+          key="studio"
+          className={`flex flex-col h-screen bg-[#F8F9FB] text-slate-900 font-sans overflow-hidden ${activeAccentColor}`}
+          initial={{ opacity: 0, y: 14 }}
+          animate={{ opacity: 1, y: 0 }}
+          exit={{ opacity: 0, y: -10 }}
+          transition={{ duration: 0.28, ease: [0.22, 1, 0.36, 1] }}
+        >
       {/* Toast Notification */}
       <AnimatePresence>
         {toast && (
@@ -746,6 +785,18 @@ export default function App() {
               Feedback
             </a>
           </div>
+          {deployments.length > 0 && (
+            <button
+              type="button"
+              onClick={() =>
+                window.open(deployments[0].url, '_blank', 'noopener,noreferrer')
+              }
+              className="hidden sm:inline-flex items-center gap-1.5 px-3 py-2 rounded-lg text-[11px] font-bold text-emerald-800 bg-emerald-50 border border-emerald-200/90 hover:bg-emerald-100 transition-colors shrink-0"
+            >
+              <ExternalLink size={14} aria-hidden />
+              SaaS en ligne
+            </button>
+          )}
           <button 
             onClick={handlePublish}
             disabled={isPublishing}
@@ -1922,6 +1973,8 @@ export default function App() {
           </div>
         )}
       </AnimatePresence>
-    </div>
+        </motion.div>
+      )}
+    </AnimatePresence>
   );
 }
