@@ -27,10 +27,10 @@ import { buildUserSiteToDir } from './lib/deploy.mjs';
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const root = path.join(__dirname, '..');
 
-dotenv.config({ path: path.join(root, '.env') });
 // Important for production: never overwrite environment variables injected by the host/platform.
-// Local `.env.local` should still apply when env vars are not already set.
+// Load .env.local first so it takes precedence over empty defaults in .env
 dotenv.config({ path: path.join(root, '.env.local') });
+dotenv.config({ path: path.join(root, '.env') });
 
 const isProd = process.env.NODE_ENV === 'production';
 const PORT = Number(process.env.PORT || (isProd ? 8080 : 3001));
