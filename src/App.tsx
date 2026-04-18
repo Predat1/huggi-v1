@@ -55,6 +55,8 @@ import LandingPage from './components/LandingPage';
 import JSZip from 'jszip';
 import { saveAs } from 'file-saver';
 import { getAuthUser, onAuthStateChange, signIn, signUp } from './lib/supabaseClient';
+import { StreamingChat } from './components/ChatWindow';
+import { StreamController } from './services/streamingService';
 
 type Message = {
   id: string;
@@ -138,6 +140,11 @@ export default function App() {
   const [authEmail, setAuthEmail] = useState('');
   const [authPass, setAuthPass] = useState('');
   const [authMode, setAuthMode] = useState<'login' | 'signup'>('login');
+
+  const streamControllerRef = useRef<StreamController | null>(null);
+  useEffect(() => {
+    streamControllerRef.current = new StreamController();
+  }, []);
 
   useEffect(() => {
     getAuthUser().then(u => {
@@ -980,175 +987,52 @@ export default function App() {
             </div>
           </div>
 
-          <div className="flex-1 overflow-y-auto p-4 space-y-6 scrollbar-hide">
+          <div className="flex-1 overflow-hidden flex flex-col pt-0 pb-0">
             {activeSidebarTab === 'chat' ? (
-              /* Chat History */
-              <div className="space-y-4">
-                <AnimatePresence initial={false}>
-                  {messages.map((msg) => (
-                    <motion.div 
-                      key={msg.id}
-                      initial={{ opacity: 0, y: 10 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      className="flex gap-3"
-                    >
-                      {msg.sender === 'VOUS' ? (
-                        <>
-                          <div className="w-8 h-8 rounded-full bg-slate-100 flex items-center justify-center text-slate-500 shrink-0 border border-slate-200">
-                            <span className="text-[10px] font-bold">VOUS</span>
-                          </div>
-                          <div className="flex-1 overflow-hidden">
-                            <p className="text-sm text-slate-700 mt-1.5 whitespace-pre-wrap break-words">{msg.text}</p>
-                            <div className="mt-2 flex justify-end">
-                              <Download size={14} className="text-slate-300 hover:text-slate-500 cursor-pointer" />
-                            </div>
-                          </div>
-                        </>
-                      ) : (
-                        <>
-                          <div className="w-8 h-8 rounded-lg bg-blue-50 flex items-center justify-center text-blue-600 shrink-0 border border-blue-100">
-                            <Zap size={16} fill="currentColor" />
-                          </div>
-                          <div className="flex-1 overflow-hidden">
-                            <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider flex items-center gap-2">
-                              Huggy
-                              {msg.durationMs && (
-                                <span className="text-[9px] font-medium text-slate-300 lowercase">
-                                  • { (msg.durationMs / 1000).toFixed(1) }s
-                                </span>
-                              )}
-                            </span>
-                            <div className="mt-1.5 p-3 bg-slate-50 rounded-xl border border-slate-100 shadow-sm">
-                              <p className="text-sm text-slate-700 leading-relaxed whitespace-pre-wrap break-words">
-                                {msg.text}
-                              </p>
-                            </div>
-                          </div>
-                        </>
-                      )}
-                    </motion.div>
-                  ))}
-                </AnimatePresence>
-                
-                {agentTasks.length > 0 && (
-                  <div className="space-y-2 ml-11 border-l-2 border-slate-100 pl-4 py-2">
-                    {agentTasks.map(task => (
-                      <motion.div 
-                        key={task.id}
-                        initial={{ opacity: 0, x: -10 }}
-                        animate={{ opacity: 1, x: 0 }}
-                        className="flex items-center gap-3"
-                      >
-                        <div className={`w-5 h-5 rounded-full flex items-center justify-center shrink-0 ${
-                          task.status === 'success' ? 'bg-emerald-50 text-emerald-500' : 
-                          task.status === 'running' ? 'bg-blue-50 text-blue-500' : 'bg-slate-50 text-slate-300'
-                        }`}>
-                          {task.status === 'running' ? (
-                            <Loader2 size={12} className="animate-spin" />
-                          ) : task.status === 'success' ? (
-                            <Check size={12} />
-                          ) : (
-                            <div className="w-1.5 h-1.5 rounded-full bg-current" />
-                          )}
-                        </div>
-                        <span className={`text-[11px] font-medium ${
-                          task.status === 'running' ? 'text-blue-600' : 
-                          task.status === 'success' ? 'text-slate-500' : 'text-slate-400'
-                        }`}>
-                          {task.label}
-                        </span>
-                      </motion.div>
-                    ))}
-                  </div>
-                )}
-
-                {streamingMessage && (
-                  <motion.div
-                    layout
-                    initial={{ opacity: 0, y: 8 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ duration: 0.22, ease: [0.22, 1, 0.36, 1] }}
-                    className="flex gap-3"
-                  >
-                    <div className="relative shrink-0">
-                      <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-blue-600 to-indigo-600 flex items-center justify-center text-white shadow-md shadow-blue-600/20 ring-2 ring-white">
-                        <Zap size={17} fill="currentColor" className="opacity-95" />
-                      </div>
-                      <span className="absolute -bottom-0.5 -right-0.5 flex h-2.5 w-2.5">
-                        <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-emerald-400 opacity-40" />
-                        <span className="relative inline-flex h-2.5 w-2.5 rounded-full bg-emerald-500 ring-2 ring-white" />
-                      </span>
-                    </div>
-                    <div className="flex-1 min-w-0 overflow-hidden">
-                      <div className="flex flex-wrap items-center gap-2 mb-1.5">
-                        <span className="text-[10px] font-bold uppercase tracking-[0.12em] text-slate-500">
-                          Huggy
-                        </span>
-                        <span className="inline-flex items-center gap-1 rounded-md border border-indigo-200/80 bg-indigo-50/90 px-2 py-0.5 text-[10px] font-semibold text-indigo-700 shadow-sm">
-                          <Sparkles size={11} className="text-indigo-500" />
-                          Rédaction
-                        </span>
-                      </div>
-                      <div className="relative overflow-hidden rounded-2xl border border-slate-200/90 bg-white shadow-md shadow-slate-200/40 ring-1 ring-slate-900/[0.04]">
-                        <div className="pointer-events-none absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-indigo-400/50 to-transparent" />
-                        <div className="p-3.5 sm:p-4">
-                          <p className="text-[13px] sm:text-sm text-slate-800 leading-[1.7] whitespace-pre-wrap break-words tracking-[-0.01em]">
-                            {streamingMessage}
-                            <span
-                              className="inline-block w-[2px] h-[1.15em] translate-y-[0.12em] rounded-sm bg-indigo-500 align-text-bottom ml-0.5 huggy-stream-caret"
-                              aria-hidden
-                            />
-                          </p>
-                        </div>
-                      </div>
-                    </div>
-                  </motion.div>
-                )}
-                {isGenerating && !streamingMessage && (
-                  <motion.div
-                    initial={{ opacity: 0, y: 6 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    className="flex gap-3"
-                  >
-                    <div className="w-9 h-9 rounded-xl bg-slate-100 flex items-center justify-center text-slate-500 shrink-0 border border-slate-200/80">
-                      <Loader2 size={17} className="animate-spin text-indigo-500" />
-                    </div>
-                    <div className="flex-1 min-w-0 space-y-2">
-                      <div className="flex flex-wrap items-center gap-2">
-                        <span className="text-[10px] font-bold uppercase tracking-[0.12em] text-slate-500">
-                          Huggy
-                        </span>
-                        <span className="flex items-center gap-1 rounded-md border border-slate-200 bg-white px-2 py-0.5 text-[10px] font-semibold text-slate-600 shadow-sm">
-                          <span className="flex gap-0.5">
-                            {[0, 1, 2].map((i) => (
-                              <span
-                                key={i}
-                                className="h-1 w-1 rounded-full bg-indigo-400 animate-bounce"
-                                style={{ animationDelay: `${i * 120}ms` }}
-                              />
-                            ))}
-                          </span>
-                          Analyse
-                        </span>
-                      </div>
-                      <div className="rounded-2xl border border-slate-200/90 bg-white p-4 shadow-sm ring-1 ring-slate-900/[0.03]">
-                        <div className="space-y-2.5">
-                          <div className="h-2.5 huggy-thinking-shimmer rounded-md w-[88%]" />
-                          <div className="h-2.5 huggy-thinking-shimmer rounded-md w-full" />
-                          <div className="h-2.5 huggy-thinking-shimmer rounded-md w-[72%]" />
-                        </div>
-                        <p className="mt-3 text-[11px] font-medium text-slate-400">
-                          Lecture du projet et préparation de la réponse…
-                        </p>
-                      </div>
-                    </div>
-                  </motion.div>
-                )}
-                <div ref={chatEndRef} />
-              </div>
+              <StreamingChat 
+                streamController={streamControllerRef}
+                onError={(err: Error) => showToast(err.message, 'info')}
+                onMessagesSend={(msg: any) => {
+                  const prompt = msg.content;
+                  setMessages((prev: any[]) => [...prev, {
+                    id: Date.now().toString(),
+                    sender: 'VOUS',
+                    text: prompt,
+                    timestamp: new Date()
+                  }]);
+                  setAgentTasks([{ id: '1', label: 'Compiling updates...', status: 'running', type: 'compile' }]);
+                  generateAppUpdate(prompt, {
+                    currentCode: filesMap[PREVIEW_ENTRY],
+                    projectId,
+                    chatHistory: messages.map((m: any) => ({ role: m.sender === 'VOUS' ? 'user' : 'assistant', content: m.text })),
+                    userId: user?.id,
+                    userEmail: user?.email
+                  }).then(gen => {
+                    setAgentTasks([]);
+                    if (gen.files.length) {
+                      const updatedMap = { ...filesMap };
+                      for (const f of gen.files) updatedMap[f.path] = f.content;
+                      setFilesMap(updatedMap);
+                      showToast('App code mis à jour', 'success');
+                    }
+                    if (gen.export) {
+                      setLastExport(gen.export);
+                    }
+                    setMessages((prev: any[]) => [...prev, {
+                      id: (Date.now() + 1).toString(),
+                      sender: 'HUGGY',
+                      text: gen.reply || `Mise à jour complète pour : ${prompt}`,
+                      timestamp: new Date(),
+                      changedFiles: gen.files.map(f => ({ path: f.path, original: filesMap[f.path] || '', current: f.content }))
+                    }]);
+                  }).catch(e => {
+                    setAgentTasks([]);
+                    console.error('App Update Error:', e);
+                  });
+                }}
+              />
             ) : activeSidebarTab === 'history' ? (
-              /* History / Timeline */
-              <div className="space-y-6">
+              <div className="flex-1 overflow-y-auto p-4 space-y-6 scrollbar-hide">
                 <div className="flex items-center justify-between">
                   <h2 className="text-xs font-bold text-slate-400 uppercase tracking-widest">Timeline</h2>
                   <div className="flex items-center gap-1">
@@ -1159,7 +1043,7 @@ export default function App() {
                 </div>
 
                 <div className="space-y-4 relative before:absolute before:left-[11px] before:top-2 before:bottom-2 before:w-[2px] before:bg-slate-100">
-                  {messages.filter(m => m.sender === 'VOUS' || m.changedFiles).map((m, i) => (
+                  {messages.filter((m: any) => m.sender === 'VOUS' || m.changedFiles).map((m: any, i: number) => (
                     <div key={m.id} className="relative pl-8 group">
                       <div className={`absolute left-0 top-1.5 w-[24px] h-[24px] rounded-full border-4 border-white shadow-sm flex items-center justify-center z-10 ${
                         m.sender === 'VOUS' ? 'bg-slate-200 text-slate-500' : 'bg-blue-500 text-white'
@@ -1204,76 +1088,18 @@ export default function App() {
                 No other tabs available.
               </div>
             )}
-          </div>
-
-          {/* Chat Input Area */}
-          <div className="p-4 border-t border-slate-100 bg-white">
-            <div className="mb-3 flex items-center gap-2">
-              <div className="w-2 h-2 rounded-full bg-blue-500 animate-pulse" />
-              <span className="text-xs text-slate-500 font-medium">619.50 credits</span>
-            </div>
-            <div className="bg-white border border-slate-200 rounded-2xl p-3 shadow-sm focus-within:border-blue-400 focus-within:ring-2 focus-within:ring-blue-100 transition-all">
-              <textarea 
-                value={inputValue}
-                onChange={(e) => {
-                  setInputValue(e.target.value);
-                  e.target.style.height = 'auto';
-                  e.target.style.height = `${Math.min(e.target.scrollHeight, 200)}px`;
-                }}
-                onKeyDown={(e) => {
-                  if (e.key === 'Enter' && !e.shiftKey) {
-                    e.preventDefault();
-                    handleSendMessage();
-                    (e.target as HTMLTextAreaElement).style.height = 'auto';
-                  }
-                }}
-                placeholder="Ask Huggy to build something..."
-                className="w-full text-sm resize-none outline-none text-slate-700 min-h-[60px] max-h-[200px] placeholder:text-slate-400 overflow-y-auto"
-              />
-              <div className="flex items-center justify-between mt-2">
-                <div className="flex items-center gap-1">
-                  <button 
-                    onClick={() => showToast('File upload simulated', 'info')}
-                    className="p-2 hover:bg-slate-100 rounded-lg text-slate-400 transition-colors"
-                  >
-                    <Plus size={18} />
-                  </button>
-                  <button 
-                    onClick={() => {
-                      setIsVisualMode(!isVisualMode);
-                      showToast(`Visual mode ${!isVisualMode ? 'enabled' : 'disabled'}`, 'info');
-                    }}
-                    className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-bold transition-all border ${isVisualMode ? 'bg-indigo-50 border-indigo-200 text-indigo-600' : 'bg-slate-50 border-slate-200 text-slate-600 hover:bg-slate-100'}`}
-                  >
-                    <Zap size={14} className={isVisualMode ? 'text-indigo-600' : 'text-slate-400'} />
-                    Visuel
-                  </button>
-                  <button 
-                    onClick={() => {
-                      setIsRecording(!isRecording);
-                      if (!isRecording) showToast('Recording started...', 'info');
-                      else showToast('Recording finished', 'success');
-                    }}
-                    className={`p-2 rounded-lg transition-all ${isRecording ? 'bg-rose-50 text-rose-600 animate-pulse' : 'hover:bg-slate-100 text-slate-400'}`}
-                  >
-                    <Mic size={18} />
-                  </button>
-                </div>
-                <div className="flex items-center gap-1">
-                  <button className="flex items-center gap-1.5 px-3 py-1.5 hover:bg-slate-100 rounded-full text-xs font-medium text-slate-500 transition-colors">
-                    <MessageSquare size={14} />
-                    Chat
-                  </button>
-                  <button 
-                    onClick={handleSendMessage}
-                    disabled={!inputValue.trim() || isGenerating}
-                    className={`p-2 rounded-lg transition-all ${inputValue.trim() && !isGenerating ? 'bg-blue-600 text-white shadow-md hover:bg-blue-700' : 'bg-slate-100 text-slate-400'}`}
-                  >
-                    <ArrowUp size={18} />
-                  </button>
-                </div>
-              </div>
-            </div>
+            
+            {agentTasks.map(task => (
+                <motion.div 
+                  key={task.id}
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  className="absolute bottom-4 right-4 bg-white px-3 py-2 rounded-xl shadow-lg border border-slate-100 flex items-center gap-2 z-50 text-xs text-slate-600"
+                >
+                  <Loader2 size={14} className="animate-spin text-blue-500" />
+                  Code compilation in progress...
+                </motion.div>
+            ))}
           </div>
         </aside>
 

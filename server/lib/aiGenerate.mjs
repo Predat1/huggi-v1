@@ -243,3 +243,99 @@ export async function runChat(prompt) {
   });
   return response.text || '';
 }
+
+/**
+ * Streaming version of runGenerate
+ */
+export async function runGenerateStream(opts, onChunk, onEnd, onError) {
+  const { prompt, chatHistory = [], currentEntryCode, allFiles = {} } = opts;
+
+  const filesContext = Object.entries(allFiles)
+    .map(([p, c]) => `### FILE: ${p}\n${c}`)
+    .join('\n\n');
+  const historyContext = chatHistory.map(m => `${m.role === 'user' ? 'User' : 'Assistant'}: ${m.content}`).join('\n\n');
+  const userBlock = `Project files:\n${filesContext || `### FILE: ${PREVIEW_ENTRY}\n${currentEntryCode}`}${historyContext ? `\n\n---\nChat History:\n${historyContext}` : ''}\n\n---\nUser request:\n${prompt}`;
+
+  const anthropicKey = process.env.ANTHROPIC_API_KEY;
+  if (anthropicKey) {
+    try {
+      const client = new Anthropic({ apiKey: anthropicKey });
+      const stream = await client.messages.stream({
+        model: process.env.ANTHROPIC_MODEL || 'claude-3-haiku-20240307',
+        max_tokens: 16384,
+        system: SYSTEM_MULTI,
+        messages: [{ role: 'user', content: userBlock }],
+      });
+      stream.on('text', (textDelta) => onChunk(textDelta));
+      stream.on('error', (err) => onError(err));
+      stream.on('end', () => onEnd());
+      return;
+    } catch (e) {
+      return onError(e);
+    }
+  }
+
+  const geminiKey = process.env.GEMINI_API_KEY;
+  if (!geminiKey) {
+    return onError(new Error('Aucune clé IA (ANTHROPIC_API_KEY ou GEMINI_API_KEY).'));
+  }
+  
+  try {
+    const ai = new GoogleGenAI({ apiKey: geminiKey });
+    const responseStream = await ai.models.generateContentStream({
+      model: process.env.GEMINI_MODEL_GENERATE || 'gemini-2.0-flash',
+      contents: [{ parts: [{ text: userBlock }] }],
+      config: { systemInstruction: SYSTEM_MULTI, temperature: 0.7 },
+    });
+    for await (const chunk of responseStream) {
+      if (chunk.text) onChunk(chunk.text);
+    }
+    onEnd();
+  } catch (e) {
+    onError(e);
+  }
+}
+
+/**
+ * Streaming version of runChat
+ */
+export async function runChatStream(prompt, onChunk, onEnd, onError) {
+  const anthropicKey = process.env.ANTHROPIC_API_KEY;
+  if (anthropicKey) {
+    try {
+      const client = new Anthropic({ apiKey: anthropicKey });
+      const stream = await client.messages.stream({
+        model: process.env.ANTHROPIC_MODEL || 'claude-3-5-sonnet-20241022',
+        max_tokens: 4096,
+        system: 'You are Huggy, AI assistant for the Huggy application builder SaaS. Concise, professional, same language as user.',
+        messages: [{ role: 'user', content: prompt }],
+      });
+      stream.on('text', (textDelta) => onChunk(textDelta));
+      stream.on('error', (err) => onError(err));
+      stream.on('end', () => onEnd());
+      return;
+    } catch (e) {
+      return onError(e);
+    }
+  }
+
+  const geminiKey = process.env.GEMINI_API_KEY;
+  if (!geminiKey) {
+    return onError(new Error('Configurez ANTHROPIC_API_KEY ou GEMINI_API_KEY.'));
+  }
+
+  try {
+    const ai = new GoogleGenAI({ apiKey: geminiKey });
+    const responseStream = await ai.models.generateContentStream({
+      model: process.env.GEMINI_MODEL_CHAT || 'gemini-2.0-flash',
+      contents: prompt,
+      config: { systemInstruction: 'You are Huggy, helpful AI for a full-stack builder. Be concise.' },
+    });
+    for await (const chunk of responseStream) {
+      if (chunk.text) onChunk(chunk.text);
+    }
+    onEnd();
+  } catch (e) {
+    onError(e);
+  }
+}

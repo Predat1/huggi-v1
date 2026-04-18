@@ -8,7 +8,7 @@ import { fileURLToPath } from 'url';
 import fs from 'fs';
 import { mkdir } from 'fs/promises';
 import { createPool, initSchema } from './lib/db.mjs';
-import { runChat, runGenerate } from './lib/aiGenerate.mjs';
+import { runChat, runGenerate, runChatStream, runGenerateStream } from './lib/aiGenerate.mjs';
 import {
   PREVIEW_ENTRY,
   createProject,
@@ -350,6 +350,72 @@ app.post('/api/projects/:id/deploy', async (req, res) => {
 
 /* ——— IA ——— */
 
+app.post('/api/generate-app/stream', rateLimiter, async (req, res) => {
+  res.setHeader('Content-Type', 'text/event-stream');
+  res.setHeader('Cache-Control', 'no-cache');
+  res.setHeader('Connection', 'keep-alive');
+
+  try {
+    const { prompt, chatHistory, currentCode, projectId, files: bodyFiles, userId, userEmail } = req.body || {};
+    if (typeof prompt !== 'string') {
+      res.write(`data: ${JSON.stringify({ error: 'prompt requis.', type: 'error' })}\n\n`);
+      return res.end();
+    }
+
+    if (pool && userId) {
+      const profile = await getOrCreateProfile(pool, userId, userEmail);
+      if (profile.credits < 1 && !profile.is_pro) {
+        res.write(`data: ${JSON.stringify({ error: 'Crédits insuffisants. Veuillez recharger votre compte.', type: 'error' })}\n\n`);
+        return res.end();
+      }
+      await deductCredits(pool, userId, 1);
+    }
+
+    let allFiles = {};
+    if (pool && projectId) {
+      if (!isUuid(projectId)) {
+        res.write(`data: ${JSON.stringify({ error: 'projectId invalide.', type: 'error' })}\n\n`);
+        return res.end();
+      }
+      const project = await getProject(pool, projectId);
+      if (!project) {
+        res.write(`data: ${JSON.stringify({ error: 'Projet introuvable.', type: 'error' })}\n\n`);
+        return res.end();
+      }
+      const rows = await listFiles(pool, projectId);
+      for (const r of rows) {
+        allFiles[r.path] = r.content;
+      }
+    }
+    if (bodyFiles && typeof bodyFiles === 'object') {
+      allFiles = { ...allFiles, ...bodyFiles };
+    }
+
+    const currentEntryCode =
+      typeof currentCode === 'string'
+        ? currentCode
+        : allFiles[PREVIEW_ENTRY] || DEFAULT_PREVIEW_CODE;
+
+    await runGenerateStream(
+      { prompt, chatHistory, currentEntryCode, allFiles },
+      (chunk) => res.write(`data: ${JSON.stringify({ chunk, type: 'text' })}\n\n`),
+      () => {
+        res.write(`data: ${JSON.stringify({ type: 'done' })}\n\n`);
+        res.end();
+      },
+      (e) => {
+        console.error('[generate-app/stream error]', e);
+        res.write(`data: ${JSON.stringify({ error: safeError(e), type: 'error' })}\n\n`);
+        res.end();
+      }
+    );
+  } catch (e) {
+    console.error('[generate-app/stream]', e);
+    res.write(`data: ${JSON.stringify({ error: safeError(e), type: 'error' })}\n\n`);
+    res.end();
+  }
+});
+
 app.post('/api/generate-app', rateLimiter, async (req, res) => {
   try {
     const { prompt, chatHistory, currentCode, projectId, files: bodyFiles, userId, userEmail } = req.body || {};
@@ -418,6 +484,38 @@ app.post('/api/generate-app', rateLimiter, async (req, res) => {
     res.status(500).json({
       error: safeError(e),
     });
+  }
+});
+
+app.post('/api/chat/stream', rateLimiter, async (req, res) => {
+  res.setHeader('Content-Type', 'text/event-stream');
+  res.setHeader('Cache-Control', 'no-cache');
+  res.setHeader('Connection', 'keep-alive');
+
+  try {
+    const { prompt } = req.body || {};
+    if (typeof prompt !== 'string') {
+      res.write(`data: ${JSON.stringify({ error: 'prompt requis.', type: 'error' })}\n\n`);
+      return res.end();
+    }
+
+    await runChatStream(
+      prompt,
+      (chunk) => res.write(`data: ${JSON.stringify({ chunk, type: 'text' })}\n\n`),
+      () => {
+        res.write(`data: ${JSON.stringify({ type: 'done' })}\n\n`);
+        res.end();
+      },
+      (e) => {
+        console.error('[chat/stream error]', e);
+        res.write(`data: ${JSON.stringify({ error: safeError(e), type: 'error' })}\n\n`);
+        res.end();
+      }
+    );
+  } catch (e) {
+    console.error('[chat/stream]', e);
+    res.write(`data: ${JSON.stringify({ error: safeError(e), type: 'error' })}\n\n`);
+    res.end();
   }
 });
 
