@@ -1008,79 +1008,136 @@ export default function App() {
 
           <div className="flex-1 overflow-hidden flex flex-col pt-0 pb-0">
             {activeSidebarTab === 'chat' ? (
-              <FullAppStream 
-                onDone={(files) => {
-                  console.log("Stream finished:", files);
-                }}
-                onSend={async (prompt: string): Promise<AsyncIterable<StreamEvent> | undefined> => {
-                  if (!user) {
-                    setShowAuthModal(true);
-                    return undefined;
-                  }
+              <>
+                {/* ── Chat Messages ── */}
+                <div className="flex-1 overflow-y-auto p-4 space-y-4 scrollbar-hide">
+                  {messages.length === 0 && !isGenerating && (
+                    <div className="flex flex-col items-center justify-center h-full gap-4 text-center">
+                      <div className="w-16 h-16 rounded-3xl bg-gradient-to-br from-blue-500 to-violet-600 flex items-center justify-center shadow-xl shadow-blue-500/20">
+                        <Zap size={28} className="text-white" fill="currentColor" />
+                      </div>
+                      <div>
+                        <p className="text-sm font-black text-slate-700">Huggy Studio</p>
+                        <p className="text-xs text-slate-400 mt-1 max-w-[220px]">Décris l'application ou interface que tu veux créer.</p>
+                      </div>
+                    </div>
+                  )}
 
-                  setMessages((prev: any[]) => [...prev, {
-                    id: Date.now().toString(),
-                    sender: 'VOUS',
-                    text: prompt,
-                    timestamp: new Date()
-                  }]);
+                  {messages.map((msg) => (
+                    <div key={msg.id} className={`flex ${msg.sender === 'VOUS' ? 'justify-end' : 'justify-start'}`}>
+                      <div className={`max-w-[85%] ${msg.sender === 'VOUS' ? 'items-end' : 'items-start'} flex flex-col gap-1.5`}>
+                        {msg.sender === 'HUGGY' && (
+                          <div className="flex items-center gap-1.5 px-1">
+                            <div className="w-4 h-4 rounded-md bg-gradient-to-br from-blue-500 to-violet-600 flex items-center justify-center">
+                              <Zap size={9} className="text-white" fill="currentColor" />
+                            </div>
+                            <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Huggy</span>
+                            {msg.durationMs && (
+                              <span className="text-[9px] text-slate-300 font-medium">· {(msg.durationMs / 1000).toFixed(1)}s</span>
+                            )}
+                          </div>
+                        )}
+                        <div className={`rounded-2xl px-4 py-3 text-sm leading-relaxed ${
+                          msg.sender === 'VOUS'
+                            ? 'bg-blue-600 text-white rounded-tr-sm'
+                            : 'bg-slate-50 text-slate-800 border border-slate-100 rounded-tl-sm'
+                        }`}>
+                          {msg.text}
+                        </div>
+                        {msg.changedFiles && msg.changedFiles.length > 0 && (
+                          <div className="flex items-center gap-2 px-1">
+                            <div className="flex items-center gap-1 px-2 py-0.5 bg-emerald-50 text-emerald-600 rounded-full text-[9px] font-bold border border-emerald-100">
+                              <FileCode size={9} />
+                              {msg.changedFiles.length} fichier(s)
+                            </div>
+                            <button
+                              onClick={() => handleRestore(msg)}
+                              disabled={isRestoring}
+                              className="flex items-center gap-1 px-2 py-0.5 bg-blue-50 text-blue-600 rounded-full text-[9px] font-bold border border-blue-100 hover:bg-blue-100 transition-colors disabled:opacity-50"
+                            >
+                              <RotateCcw size={9} className={isRestoring ? 'animate-spin' : ''} />
+                              Restaurer
+                            </button>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  ))}
 
-                  async function* generator(): AsyncIterable<StreamEvent> {
-                    yield { type: "tool_start", tool: "package_install", input: { packages: ["react", "lucide-react"] } } as StreamEvent;
-                    await new Promise(r => setTimeout(r, 600));
-                    yield { type: "tool_result", tool: "package_install", result: { success: true } } as StreamEvent;
+                  {/* ── Streaming / Generating state ── */}
+                  {isGenerating && (
+                    <div className="flex justify-start">
+                      <div className="max-w-[85%] flex flex-col gap-1.5 items-start">
+                        <div className="flex items-center gap-1.5 px-1">
+                          <div className="w-4 h-4 rounded-md bg-gradient-to-br from-blue-500 to-violet-600 flex items-center justify-center">
+                            <Zap size={9} className="text-white" fill="currentColor" />
+                          </div>
+                          <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Huggy</span>
+                        </div>
+                        {/* Tool pills */}
+                        {agentTasks.length > 0 && (
+                          <div className="flex flex-col gap-1 w-full">
+                            {agentTasks.map((task) => (
+                              <div key={task.id} className={`flex items-center gap-2 px-3 py-1.5 rounded-lg text-[11px] font-mono border ${
+                                task.status === 'running'
+                                  ? 'bg-amber-50 border-amber-200 text-amber-800'
+                                  : task.status === 'error'
+                                  ? 'bg-red-50 border-red-200 text-red-700'
+                                  : 'bg-emerald-50 border-emerald-200 text-emerald-700'
+                              }`}>
+                                <span className={`w-1.5 h-1.5 rounded-full flex-shrink-0 ${
+                                  task.status === 'running' ? 'bg-amber-400 animate-pulse' : task.status === 'error' ? 'bg-red-400' : 'bg-emerald-400'
+                                }`} />
+                                {task.type === 'read' ? '◎' : task.type === 'edit' ? '✎' : task.type === 'install' ? '↓' : task.type === 'compile' ? '⚙' : '⚡'} {task.label}
+                              </div>
+                            ))}
+                          </div>
+                        )}
+                        {/* Streaming text or thinking dots */}
+                        {streamingMessage ? (
+                          <div className="bg-slate-50 text-slate-800 border border-slate-100 rounded-2xl rounded-tl-sm px-4 py-3 text-sm leading-relaxed">
+                            {streamingMessage}
+                            <span className="inline-block w-0.5 h-3.5 bg-slate-400 ml-0.5 align-bottom animate-pulse" />
+                          </div>
+                        ) : (
+                          <div className="bg-slate-50 border border-slate-100 rounded-2xl rounded-tl-sm px-4 py-3 flex items-center gap-1.5">
+                            {[0,1,2].map(i => (
+                              <span key={i} className="w-1.5 h-1.5 rounded-full bg-slate-400 animate-bounce" style={{ animationDelay: `${i * 0.12}s` }} />
+                            ))}
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  )}
+                </div>
 
-                    try {
-                      const gen = await generateAppUpdate(prompt, {
-                        currentCode: filesMap[PREVIEW_ENTRY],
-                        projectId,
-                        chatHistory: messages.map((m: any) => ({ role: m.sender === 'VOUS' ? 'user' : 'assistant', content: m.text })),
-                        userId: user.id,
-                        userEmail: user.email
-                      });
-
-                      if (gen.files.length) {
-                        const updatedMap = { ...filesMap };
-                        for (const f of gen.files) {
-                          yield { type: "tool_start", tool: "file_create", input: { path: f.path } } as StreamEvent;
-                          await new Promise(r => setTimeout(r, 200));
-                          updatedMap[f.path] = f.content;
-                          yield { type: "tool_result", tool: "file_create", result: { success: true } } as StreamEvent;
-                        }
-                        setFilesMap(updatedMap);
-                        showToast('App code mis à jour', 'success');
-                      }
-
-                      if (gen.export) {
-                        setLastExport(gen.export);
-                      }
-
-                      const reply = gen.reply || `Mise à jour complète pour : ${prompt}`;
-                      setMessages((prev: any[]) => [...prev, {
-                        id: (Date.now() + 1).toString(),
-                        sender: 'HUGGY',
-                        text: reply,
-                        timestamp: new Date(),
-                        changedFiles: gen.files.map((f: any) => ({ path: f.path, original: filesMap[f.path] || '', current: f.content }))
-                      }]);
-
-                      const words = reply.split(' ');
-                      for (const word of words) {
-                        yield { type: "text", delta: word + ' ' } as StreamEvent;
-                        await new Promise(r => setTimeout(r, 30));
-                      }
-
-                      yield { type: "done" } as StreamEvent;
-                    } catch (e: any) {
-                      console.error('App Update Error:', e);
-                      showToast(e.message ?? 'Erreur', 'info');
-                      yield { type: "error" } as StreamEvent;
-                    }
-                  }
-
-                  return generator();
-                }}
-              />
+                {/* ── Chat Input ── */}
+                <div className="border-t border-slate-100 p-3 shrink-0">
+                  <form
+                    onSubmit={(e) => { e.preventDefault(); handleSendMessage(); }}
+                    className="flex gap-2 items-end"
+                  >
+                    <textarea
+                      value={inputValue}
+                      onChange={e => setInputValue(e.target.value)}
+                      onKeyDown={e => {
+                        if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); handleSendMessage(); }
+                      }}
+                      disabled={isGenerating}
+                      placeholder="Décris ton app ou demande une modification..."
+                      rows={2}
+                      className="flex-1 resize-none rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-sm text-slate-800 placeholder-slate-400 focus:outline-none focus:border-blue-400 focus:ring-1 focus:ring-blue-100 disabled:opacity-50 transition-all"
+                    />
+                    <button
+                      type="submit"
+                      disabled={isGenerating || !inputValue.trim()}
+                      className="p-2.5 rounded-xl bg-blue-600 text-white hover:bg-blue-700 disabled:opacity-40 disabled:cursor-not-allowed transition-all shadow-sm"
+                    >
+                      {isGenerating ? <Loader2 size={18} className="animate-spin" /> : <ArrowUp size={18} />}
+                    </button>
+                  </form>
+                </div>
+              </>
             ) : activeSidebarTab === 'history' ? (
               <div className="flex-1 overflow-y-auto p-4 space-y-6 scrollbar-hide">
                 <div className="flex items-center justify-between">
