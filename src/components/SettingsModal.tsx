@@ -119,7 +119,7 @@ export function SettingsModal({ isOpen, onClose, projectId, userId }: SettingsMo
             </div>
           ) : (
             <div className="space-y-4">
-              <label className="block text-xs font-bold text-slate-700 uppercase tracking-wide flex items-center gap-2"><Lock size={14}/> Secrets (Backend / Build)</label>
+              <label className="block text-xs font-bold text-slate-700 uppercase tracking-wide flex items-center gap-2"><Lock size={14}/> Clés & Configuration de Sécurité</label>
               <div className="bg-white rounded-xl border border-slate-200 divide-y divide-slate-100 p-1">
                 {secrets.map(s => (
                   <div key={s.key} className="flex justify-between items-center p-2 text-sm">

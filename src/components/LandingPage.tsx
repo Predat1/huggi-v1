@@ -84,7 +84,7 @@ const TESTIMONIALS = [
 const FAQ_ITEMS = [
   {
     q: 'What can I build with Huggy?',
-    a: 'SaaS dashboards, landing pages, outils internes, prototypes multi-écrans : tout ce qui peut être exprimé en React. Huggy génère et organise les fichiers pour vous.',
+    a: 'SaaS dashboards, landing pages, outils internes, prototypes multi-écrans : tout ce qui peut être imaginé. Huggy génère et organise tout pour vous.',
   },
   {
     q: 'Do I need to know how to code?',
@@ -92,7 +92,7 @@ const FAQ_ITEMS = [
   },
   {
     q: 'How are projects saved?',
-    a: 'Avec une base PostgreSQL configurée, vos fichiers et déploiements sont persistés par projet. Sans base, vous pouvez quand même explorer le studio en mode local.',
+    a: 'Avec une infrastructure de données configurée, vos éléments et déploiements sont persistés par projet. Le studio reste accessible pour explorer vos idées localement.',
   },
   {
     q: 'Can I publish my app publicly?',
@@ -334,7 +334,7 @@ export default function LandingPage({ accent, onOpenStudio, userId }: LandingPag
                   {[
                     { icon: FileCode, accent: 'blue', t: 'SaaS Platform Builder', d: 'Concevez des dashboards complexes et des interfaces client en un clin d\'œil.' },
                     { icon: BarChart3, accent: 'indigo', t: 'Analytics & Insights', d: 'Générez des graphiques interactifs et des rapports de données en temps réel.' },
-                    { icon: Database, accent: 'emerald', t: 'Backend Integration', d: 'Connectez instantanément vos bases de données Postgres et vos APIs.' },
+                    { icon: Database, accent: 'emerald', t: 'Gestion de Données', d: 'Connectez instantanément votre stockage sécurisé et vos flux d\'information.' },
                     { icon: Shield, accent: 'rose', t: 'Enterprise Security', d: 'Auth sécurisée, gestion des rôles et protection des données par défaut.' },
                   ].map((c) => (
                     <div
@@ -368,7 +368,7 @@ export default function LandingPage({ accent, onOpenStudio, userId }: LandingPag
 
                <div className="grid lg:grid-cols-3 gap-12 relative">
                  {[
-                   { n: '01', t: 'Inspiration AI', d: 'Décrivez votre vision en langage naturel. Huggy analyse et structure vos fichiers React instantanément.' },
+                   { n: '01', t: 'Inspiration AI', d: 'Décrivez votre vision en langage naturel. Huggy analyse et structure votre application instantanément.' },
                    { n: '02', t: 'Édition Immersive', d: 'Ajustez votre interface en temps réel dans notre studio de classe mondiale. Code propre et optimisé.' },
                    { n: '03', t: 'Push & Live', d: 'Déployez vers GitHub ou notre cloud sécurisé. Votre SaaS est prêt à accueillir ses utilisateurs.' },
                  ].map((s) => (
@@ -461,7 +461,7 @@ export default function LandingPage({ accent, onOpenStudio, userId }: LandingPag
                       <div className={`w-5 h-5 rounded-full ${p.hi ? 'bg-blue-500 text-white' : 'bg-emerald-50 text-emerald-600'} flex items-center justify-center shrink-0`}>
                         <Check size={12} strokeWidth={3} />
                       </div>
-                      <span className={`text-[13px] font-bold ${p.hi ? 'text-slate-200' : 'text-slate-700'}`}>Export Code (Vite + React)</span>
+                      <span className={`text-[13px] font-bold ${p.hi ? 'text-slate-200' : 'text-slate-700'}`}>Export du projet (complet)</span>
                     </div>
                   </div>
 

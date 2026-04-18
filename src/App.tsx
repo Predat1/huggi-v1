@@ -659,7 +659,7 @@ export default function App() {
             newUserMsg.text.substring(0, 24),
           );
           updatedMap[PREVIEW_ENTRY] = fallback;
-          fullResponse = `J'ai initialisé le projet pour « ${newUserMsg.text} ». Mes modules de génération avancée sont prêts. Connectez vos clés API ou vérifiez votre base de données pour une personnalisation complète.`;
+          fullResponse = `J'ai initialisé votre espace de création pour : « ${newUserMsg.text} ». Je suis prêt à construire votre interface complète. Connectez vos services externes ou ajustez les paramètres pour une personnalisation sur mesure.`;
         }
       }
 
