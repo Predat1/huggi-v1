@@ -20,6 +20,8 @@ import {
   createDeployment,
   updateDeploymentStatus,
   listDeployments,
+  getOrCreateProfile,
+  deductCredits,
 } from './lib/projectsRepo.mjs';
 import { DEFAULT_PREVIEW_CODE } from './lib/defaultAppCode.mjs';
 import { buildUserSiteToDir } from './lib/deploy.mjs';
@@ -350,9 +352,18 @@ app.post('/api/projects/:id/deploy', async (req, res) => {
 
 app.post('/api/generate-app', rateLimiter, async (req, res) => {
   try {
-    const { prompt, chatHistory, currentCode, projectId, files: bodyFiles } = req.body || {};
+    const { prompt, chatHistory, currentCode, projectId, files: bodyFiles, userId, userEmail } = req.body || {};
     if (typeof prompt !== 'string') {
       return res.status(400).json({ error: 'prompt requis.' });
+    }
+
+    // Credits logic
+    if (pool && userId) {
+      const profile = await getOrCreateProfile(pool, userId, userEmail);
+      if (profile.credits < 1 && !profile.is_pro) {
+        return res.status(402).json({ error: 'Crédits insuffisants. Veuillez recharger votre compte.' });
+      }
+      await deductCredits(pool, userId, 1);
     }
 
     let allFiles = {};
@@ -423,6 +434,17 @@ app.post('/api/chat', rateLimiter, async (req, res) => {
     res.status(500).json({
       error: safeError(e),
     });
+  }
+});
+
+app.get('/api/me', async (req, res) => {
+  const { userId, email } = req.query;
+  if (!pool || !userId) return res.status(400).json({ error: 'Paramètres manquants.' });
+  try {
+    const profile = await getOrCreateProfile(pool, userId, email);
+    res.json(profile);
+  } catch (e) {
+    res.status(500).json({ error: safeError(e) });
   }
 });
 

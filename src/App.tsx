@@ -132,14 +132,28 @@ export default function App() {
   const editorRef = useRef<any>(null);
 
   const [user, setUser] = useState<any>(null);
+  const [credits, setCredits] = useState<number | null>(null);
+  const [lastExport, setLastExport] = useState<any>(null);
   const [showAuthModal, setShowAuthModal] = useState(false);
   const [authEmail, setAuthEmail] = useState('');
   const [authPass, setAuthPass] = useState('');
   const [authMode, setAuthMode] = useState<'login' | 'signup'>('login');
 
   useEffect(() => {
-    getAuthUser().then(setUser);
-    const { data: { subscription } } = onAuthStateChange(setUser);
+    getAuthUser().then(u => {
+      setUser(u);
+      if (u) {
+        getMe({ userId: u.id, email: u.email }).then(data => setCredits(data.credits));
+      }
+    });
+    const { data: { subscription } } = onAuthStateChange((u) => {
+      setUser(u);
+      if (u) {
+        getMe({ userId: u.id, email: u.email }).then(data => setCredits(data.credits));
+      } else {
+        setCredits(null);
+      }
+    });
     return () => subscription?.unsubscribe();
   }, []);
 
@@ -403,9 +417,18 @@ export default function App() {
     try {
       showToast('Préparation du ZIP...', 'info');
       const zip = new JSZip();
-      for (const [path, content] of Object.entries(filesMap)) {
-        zip.file(path, content);
+      
+      if (lastExport?.files?.length) {
+        showToast('Exporting Full Project (Next.js)...', 'info');
+        for (const f of lastExport.files) {
+          zip.file(f.path, f.content);
+        }
+      } else {
+        for (const [path, content] of Object.entries(filesMap)) {
+          zip.file(path, content);
+        }
       }
+      
       const content = await zip.generateAsync({ type: 'blob' });
       saveAs(content, `huggy-project-${projectId || 'local'}.zip`);
       showToast('Export ZIP réussi !', 'success');
@@ -574,8 +597,13 @@ export default function App() {
         const gen = await generateAppUpdate(newUserMsg.text, {
           currentCode: originalCode,
           projectId,
-          chatHistory: historyForAI
+          chatHistory: historyForAI,
+          userId: user.id,
+          userEmail: user.email
         });
+        if (gen.export) {
+          setLastExport(gen.export);
+        }
         if (gen.files.length) {
           for (const f of gen.files) {
             updatedMap[f.path] = f.content;
@@ -632,6 +660,12 @@ export default function App() {
             ],
             durationMs: Date.now() - startTime,
           };
+
+          // Refresh credits after generation
+          if (user) {
+            getMe({ userId: user.id, email: user.email }).then(data => setCredits(data.credits));
+          }
+
           setMessages((prev) => [...prev, huggyMsg]);
           setStreamingMessage('');
           setIsGenerating(false);
@@ -861,6 +895,12 @@ export default function App() {
             </button>
           )}
           <div className="flex items-center gap-2">
+            {credits !== null && (
+              <div className="hidden lg:flex items-center gap-2 px-3 py-1.5 bg-slate-100 rounded-lg border border-slate-200">
+                <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Credits</span>
+                <span className="text-xs font-bold text-slate-700">{credits}</span>
+              </div>
+            )}
             <button 
               onClick={handleExportZip}
               className="flex items-center gap-2 px-3 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-lg text-sm font-bold transition-all active:scale-95 border border-slate-200"

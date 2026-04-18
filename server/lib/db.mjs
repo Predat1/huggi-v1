@@ -57,7 +57,16 @@ export async function initSchema(pool) {
       built_at TIMESTAMPTZ
     );
 
+    CREATE TABLE IF NOT EXISTS profiles (
+      id UUID PRIMARY KEY, -- references auth.users(id)
+      email TEXT,
+      credits NUMERIC NOT NULL DEFAULT 50,
+      is_pro BOOLEAN NOT NULL DEFAULT false,
+      updated_at TIMESTAMPTZ NOT NULL DEFAULT now()
+    );
+
     CREATE INDEX IF NOT EXISTS idx_project_files_project ON project_files(project_id);
     CREATE INDEX IF NOT EXISTS idx_deployments_project ON deployments(project_id);
+    CREATE INDEX IF NOT EXISTS idx_profiles_id ON profiles(id);
   `);
 }

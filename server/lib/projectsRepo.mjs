@@ -95,3 +95,28 @@ export async function listDeployments(pool, projectId, limit = 20) {
   );
   return r.rows;
 }
+
+/** @param {import('pg').Pool} pool */
+export async function getOrCreateProfile(pool, userId, email = null) {
+  const r = await pool.query(
+    `SELECT id, email, credits, is_pro FROM profiles WHERE id = $1`,
+    [userId],
+  );
+  if (r.rows[0]) return r.rows[0];
+
+  const rNew = await pool.query(
+    `INSERT INTO profiles (id, email, credits) VALUES ($1, $2, 50) 
+     RETURNING id, email, credits, is_pro`,
+    [userId, email],
+  );
+  return rNew.rows[0];
+}
+
+/** @param {import('pg').Pool} pool */
+export async function deductCredits(pool, userId, amount = 1) {
+  const r = await pool.query(
+    `UPDATE profiles SET credits = credits - $2 WHERE id = $1 AND credits >= $2 RETURNING credits`,
+    [userId, amount],
+  );
+  return r.rows[0] ? r.rows[0].credits : null;
+}

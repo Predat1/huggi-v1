@@ -48,7 +48,13 @@ async function postJson<T>(url: string, body: unknown): Promise<T> {
 
 export const generateAppUpdate = async (
   prompt: string,
-  params: { currentCode: string; projectId?: string | null, chatHistory?: {role: string, content: string}[] },
+  params: { 
+    currentCode: string; 
+    projectId?: string | null; 
+    chatHistory?: {role: string, content: string}[];
+    userId?: string;
+    userEmail?: string;
+  },
 ): Promise<GenerateAppResult> => {
   const data = await postJson<{
     code: string;
@@ -61,6 +67,8 @@ export const generateAppUpdate = async (
     chatHistory: params.chatHistory,
     currentCode: params.currentCode,
     projectId: params.projectId || undefined,
+    userId: params.userId,
+    userEmail: params.userEmail,
   });
 
   return {
@@ -76,3 +84,8 @@ export const generateChatResponse = async (prompt: string): Promise<string> => {
   const data = await postJson<{ text?: string }>('/api/chat', { prompt });
   return data.text ?? '';
 };
+
+export const getMe = async (params: { userId: string; email?: string }): Promise<{ credits: number, is_pro: boolean }> => {
+  return await postJson<{ credits: number, is_pro: boolean }>(`/api/me?userId=${params.userId}&email=${params.email || ''}`, {});
+};
+
