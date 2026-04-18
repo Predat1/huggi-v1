@@ -91,7 +91,7 @@ export async function runGenerate(opts) {
 
   const anthropicKey = process.env.ANTHROPIC_API_KEY;
   const model =
-    process.env.ANTHROPIC_MODEL || 'claude-3-5-sonnet-20241022';
+    process.env.ANTHROPIC_MODEL || 'claude-3-haiku-20240307';
 
   if (anthropicKey) {
     const client = new Anthropic({ apiKey: anthropicKey });
