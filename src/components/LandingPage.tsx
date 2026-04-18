@@ -304,8 +304,8 @@ export default function LandingPage({ accent, onOpenStudio, userId }: LandingPag
               </p>
 
               <div className="mt-10 max-w-3xl mx-auto">
-                <div className="rounded-3xl overflow-hidden shadow-2xl shadow-slate-900/20" style={{ background: '#111215' }}>
-                  <div className="p-6 pb-4">
+                <div className="rounded-3xl overflow-hidden shadow-2xl shadow-slate-900/10 bg-white border border-slate-100">
+                  <div className="p-4">
                     <HuggyChatInput
                       onSend={(prompt) => {
                         if (prompt.trim()) setBuildInput(prompt);
