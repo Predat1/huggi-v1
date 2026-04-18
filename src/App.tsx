@@ -49,13 +49,13 @@ import { motion, AnimatePresence } from 'motion/react';
 import { LiveProvider, LivePreview, LiveError } from 'react-live';
 import * as LucideIcons from 'lucide-react';
 import { DEFAULT_PREVIEW_CODE } from './defaultPreviewCode';
-import { generateAppUpdate } from './services/geminiService';
+import { generateAppUpdate, getMe } from './services/geminiService';
 import { streamChatText } from './utils/streamChatText';
 import LandingPage from './components/LandingPage';
 import JSZip from 'jszip';
 import { saveAs } from 'file-saver';
 import { getAuthUser, onAuthStateChange, signIn, signUp } from './lib/supabaseClient';
-import { StreamingChat } from './components/ChatWindow';
+import { FullAppStream, StreamEvent } from './components/streaming';
 import { StreamController } from './services/streamingService';
 
 type Message = {
@@ -432,7 +432,7 @@ export default function App() {
         }
       } else {
         for (const [path, content] of Object.entries(filesMap)) {
-          zip.file(path, content);
+          zip.file(path, content as string);
         }
       }
       
@@ -989,46 +989,77 @@ export default function App() {
 
           <div className="flex-1 overflow-hidden flex flex-col pt-0 pb-0">
             {activeSidebarTab === 'chat' ? (
-              <StreamingChat 
-                streamController={streamControllerRef}
-                onError={(err: Error) => showToast(err.message, 'info')}
-                onMessagesSend={(msg: any) => {
-                  const prompt = msg.content;
+              <FullAppStream 
+                onDone={(files) => {
+                  console.log("Stream finished:", files);
+                }}
+                onSend={async (prompt: string): Promise<AsyncIterable<StreamEvent> | undefined> => {
+                  if (!user) {
+                    setShowAuthModal(true);
+                    return undefined;
+                  }
+
                   setMessages((prev: any[]) => [...prev, {
                     id: Date.now().toString(),
                     sender: 'VOUS',
                     text: prompt,
                     timestamp: new Date()
                   }]);
-                  setAgentTasks([{ id: '1', label: 'Compiling updates...', status: 'running', type: 'compile' }]);
-                  generateAppUpdate(prompt, {
-                    currentCode: filesMap[PREVIEW_ENTRY],
-                    projectId,
-                    chatHistory: messages.map((m: any) => ({ role: m.sender === 'VOUS' ? 'user' : 'assistant', content: m.text })),
-                    userId: user?.id,
-                    userEmail: user?.email
-                  }).then(gen => {
-                    setAgentTasks([]);
-                    if (gen.files.length) {
-                      const updatedMap = { ...filesMap };
-                      for (const f of gen.files) updatedMap[f.path] = f.content;
-                      setFilesMap(updatedMap);
-                      showToast('App code mis à jour', 'success');
+
+                  async function* generator(): AsyncIterable<StreamEvent> {
+                    yield { type: "tool_start", tool: "package_install", input: { packages: ["react", "lucide-react"] } } as StreamEvent;
+                    await new Promise(r => setTimeout(r, 600));
+                    yield { type: "tool_result", tool: "package_install", result: { success: true } } as StreamEvent;
+
+                    try {
+                      const gen = await generateAppUpdate(prompt, {
+                        currentCode: filesMap[PREVIEW_ENTRY],
+                        projectId,
+                        chatHistory: messages.map((m: any) => ({ role: m.sender === 'VOUS' ? 'user' : 'assistant', content: m.text })),
+                        userId: user.id,
+                        userEmail: user.email
+                      });
+
+                      if (gen.files.length) {
+                        const updatedMap = { ...filesMap };
+                        for (const f of gen.files) {
+                          yield { type: "tool_start", tool: "file_create", input: { path: f.path } } as StreamEvent;
+                          await new Promise(r => setTimeout(r, 200));
+                          updatedMap[f.path] = f.content;
+                          yield { type: "tool_result", tool: "file_create", result: { success: true } } as StreamEvent;
+                        }
+                        setFilesMap(updatedMap);
+                        showToast('App code mis à jour', 'success');
+                      }
+
+                      if (gen.export) {
+                        setLastExport(gen.export);
+                      }
+
+                      const reply = gen.reply || `Mise à jour complète pour : ${prompt}`;
+                      setMessages((prev: any[]) => [...prev, {
+                        id: (Date.now() + 1).toString(),
+                        sender: 'HUGGY',
+                        text: reply,
+                        timestamp: new Date(),
+                        changedFiles: gen.files.map((f: any) => ({ path: f.path, original: filesMap[f.path] || '', current: f.content }))
+                      }]);
+
+                      const words = reply.split(' ');
+                      for (const word of words) {
+                        yield { type: "text", delta: word + ' ' } as StreamEvent;
+                        await new Promise(r => setTimeout(r, 30));
+                      }
+
+                      yield { type: "done" } as StreamEvent;
+                    } catch (e: any) {
+                      console.error('App Update Error:', e);
+                      showToast(e.message ?? 'Erreur', 'info');
+                      yield { type: "error" } as StreamEvent;
                     }
-                    if (gen.export) {
-                      setLastExport(gen.export);
-                    }
-                    setMessages((prev: any[]) => [...prev, {
-                      id: (Date.now() + 1).toString(),
-                      sender: 'HUGGY',
-                      text: gen.reply || `Mise à jour complète pour : ${prompt}`,
-                      timestamp: new Date(),
-                      changedFiles: gen.files.map(f => ({ path: f.path, original: filesMap[f.path] || '', current: f.content }))
-                    }]);
-                  }).catch(e => {
-                    setAgentTasks([]);
-                    console.error('App Update Error:', e);
-                  });
+                  }
+
+                  return generator();
                 }}
               />
             ) : activeSidebarTab === 'history' ? (
