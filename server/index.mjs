@@ -22,6 +22,7 @@ import {
   listDeployments,
   getOrCreateProfile,
   deductCredits,
+  getUserActiveProjectsCount,
 } from './lib/projectsRepo.mjs';
 import { DEFAULT_PREVIEW_CODE } from './lib/defaultAppCode.mjs';
 import { buildUserSiteToDir } from './lib/deploy.mjs';
@@ -124,8 +125,26 @@ app.post('/api/webhook/stripe', express.raw({ type: 'application/json' }), async
     return res.status(400).send(`Webhook Error: ${err.message}`);
   }
   if (event.type === 'checkout.session.completed') {
-    console.log('[Stripe] Checkout success:', event.data.object.id);
-    // TODO: Update user Pro status in Supabase database here
+    const session = event.data.object;
+    console.log('[Stripe] Checkout success:', session.id);
+    const userId = session.metadata?.userId;
+    const plan = session.metadata?.plan || 'pro';
+    let creditsToAdd = 0;
+    if (plan === 'hobby') creditsToAdd = 1000;
+    else if (plan === 'pro') creditsToAdd = 3000;
+    else if (plan === 'scale') creditsToAdd = 10000;
+
+    if (userId && pool) {
+      try {
+        await pool.query(
+          `UPDATE profiles SET tier = $2, is_pro = true, credits = credits + $3 WHERE id = $1`,
+          [userId, plan, creditsToAdd]
+        );
+        console.log(`[Stripe] Successfully upgraded user ${userId} to ${plan}`);
+      } catch (e) {
+        console.error(`[Stripe] SQL Error updating user ${userId}`, e);
+      }
+    }
   }
   res.send();
 });
@@ -133,15 +152,24 @@ app.post('/api/webhook/stripe', express.raw({ type: 'application/json' }), async
 app.post('/api/checkout', express.json(), async (req, res) => {
   if (!stripe) return res.status(500).json({ error: 'Stripe API non configurée.' });
   try {
+    const plan = req.body?.plan || 'pro';
+    const prices = {
+      hobby: { unit_amount: 1900, name: 'Huggy Hobby' },
+      pro: { unit_amount: 3900, name: 'Huggy Pro' },
+      scale: { unit_amount: 9900, name: 'Huggy Scale' }
+    };
+    const selected = prices[plan] || prices.pro;
+
     const session = await stripe.checkout.sessions.create({
       payment_method_types: ['card'],
       line_items: [{
-        price_data: { currency: 'usd', product_data: { name: 'Huggy Pro (Unlimited)' }, unit_amount: 1500 },
+        price_data: { currency: 'eur', product_data: { name: selected.name }, unit_amount: selected.unit_amount },
         quantity: 1,
       }],
       mode: 'payment',
-      success_url: `${publicBaseUrl(req)}/?pro=success`,
-      cancel_url: `${publicBaseUrl(req)}/?pro=cancel`,
+      metadata: { plan: plan, userId: req.body?.userId },
+      success_url: `${publicBaseUrl(req)}/?plan=${plan}&status=success`,
+      cancel_url: `${publicBaseUrl(req)}/?status=cancel`,
     });
     res.json({ url: session.url });
   } catch (e) {
@@ -171,23 +199,44 @@ app.use((req, res, next) => {
   next();
 });
 
-/** Sous-domaines : {slug}.{PREVIEW_ROOT_DOMAIN} → fichiers statiques */
+/** Sous-domaines : {slug}.{PREVIEW_ROOT_DOMAIN} → fichiers statiques protégés */
 if (previewRootDomain) {
   app.use((req, res, next) => {
     const host = (req.get('host') || '').split(':')[0];
     if (!host.endsWith(previewRootDomain)) return next();
     const slug = host.slice(0, -(previewRootDomain.length + 1));
     if (!slug || slug.includes('.')) return next();
+    
+    // Limits tracking logic
+    // Rate limiter on static proxy is enforced locally here.
+    const ip = req.ip || req.socket?.remoteAddress || 'unknown';
+    let entry = _rlMap.get('live-' + ip);
+    if (!entry || Date.now() - entry.start > 60000) entry = { start: Date.now(), count: 0 };
+    entry.count++;
+    _rlMap.set('live-' + ip, entry);
+    if (entry.count > 300) return res.status(429).send("Trafic trop élevé. Bande passante saturée pour ce projet.");
+
     const dir = path.join(sitesDir, slug);
     if (!fs.existsSync(dir)) return next();
     express.static(dir, { index: 'index.html' })(req, res, next);
   });
 }
 
-/** Chemins /live/:slug/* (MVP Railway sans wildcard DNS) */
+/** Chemins /live/:slug/* (MVP Railway sans wildcard DNS) avec limite de bande passante/requêtes externes */
 app.use('/live/:slug', (req, res, next) => {
   const { slug } = req.params;
   if (!/^[\w-]+$/.test(slug)) return res.status(400).send('Slug invalide.');
+
+  // Rate Limiting auto-hébergement: DDoS & requêtes externes proxy protection
+  const ip = req.ip || req.socket?.remoteAddress || 'unknown';
+  let entry = _rlMap.get(`proxy-${slug}-${ip}`);
+  if (!entry || Date.now() - entry.start > 60000) entry = { start: Date.now(), count: 0 };
+  entry.count++;
+  _rlMap.set(`proxy-${slug}-${ip}`, entry);
+  if (entry.count > 200) {
+    return res.status(429).send("Alerte: Hébergement auto saturé (limite de 200 rps activée sur ce projet Huggy). Veuillez passer au plan Scale.");
+  }
+
   const dir = path.join(sitesDir, slug);
   if (!fs.existsSync(dir)) {
     return res.status(404).send('Preview introuvable ou build en cours.');
@@ -222,8 +271,23 @@ app.post('/api/projects', async (req, res) => {
     return res.status(503).json({ error: 'Service unavailable' });
   }
   try {
-    const name = typeof req.body?.name === 'string' ? req.body.name : 'Sans titre';
-    const project = await createProject(pool, name);
+    const userId = req.body?.userId;
+    let ownerId = null;
+
+    if (userId) {
+      const profile = await getOrCreateProfile(pool, userId, req.body?.userEmail);
+      const activeCount = await getUserActiveProjectsCount(pool, userId);
+      const limits = { free: 1, hobby: 2, pro: 5, scale: 9999 };
+      const tierLimits = limits[profile.tier] ?? 1;
+
+      if (activeCount >= tierLimits) {
+        return res.status(402).json({ error: `Votre plan Saas [${profile.tier.toUpperCase()}] ne permet pas de créer un nouveau projet hébergé (${tierLimits} max). Mettez à niveau votre abonnement pour débloquer de nouveaux serveurs.` });
+      }
+      ownerId = profile.id;
+    }
+
+    const name = typeof req.body?.name === 'string' ? req.body.name : 'Nouveau Projet SaaS';
+    const project = await createProject(pool, name, ownerId);
     await seedDefaultFiles(pool, project.id, DEFAULT_PREVIEW_CODE);
     const files = await listFiles(pool, project.id);
     res.status(201).json({ project, files });

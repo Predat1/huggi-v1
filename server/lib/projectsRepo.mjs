@@ -3,11 +3,11 @@ import { randomSlug } from './slug.mjs';
 export const PREVIEW_ENTRY = 'src/App.tsx';
 
 /** @param {import('pg').Pool} pool */
-export async function createProject(pool, name = 'Sans titre') {
+export async function createProject(pool, name = 'Sans titre', ownerId = null) {
   const slug = randomSlug(12);
   const r = await pool.query(
-    `INSERT INTO projects (name, slug) VALUES ($1, $2) RETURNING id, name, slug, created_at`,
-    [name, slug],
+    `INSERT INTO projects (name, slug, owner_id) VALUES ($1, $2, $3) RETURNING id, name, slug, owner_id, created_at`,
+    [name, slug, ownerId],
   );
   return r.rows[0];
 }
@@ -15,7 +15,7 @@ export async function createProject(pool, name = 'Sans titre') {
 /** @param {import('pg').Pool} pool */
 export async function getProject(pool, id) {
   const r = await pool.query(
-    `SELECT id, name, slug, created_at FROM projects WHERE id = $1`,
+    `SELECT id, name, slug, owner_id, created_at FROM projects WHERE id = $1`,
     [id],
   );
   return r.rows[0] || null;
@@ -24,10 +24,20 @@ export async function getProject(pool, id) {
 /** @param {import('pg').Pool} pool */
 export async function getProjectBySlug(pool, slug) {
   const r = await pool.query(
-    `SELECT id, name, slug, created_at FROM projects WHERE slug = $1`,
+    `SELECT id, name, slug, owner_id, created_at FROM projects WHERE slug = $1`,
     [slug],
   );
   return r.rows[0] || null;
+}
+
+/** @param {import('pg').Pool} pool */
+export async function getUserActiveProjectsCount(pool, ownerId) {
+  if (!ownerId) return 0;
+  const r = await pool.query(
+    `SELECT COUNT(*) as count FROM projects WHERE owner_id = $1`,
+    [ownerId],
+  );
+  return parseInt(r.rows[0].count, 10) || 0;
 }
 
 /** @param {import('pg').Pool} pool */
@@ -99,14 +109,14 @@ export async function listDeployments(pool, projectId, limit = 20) {
 /** @param {import('pg').Pool} pool */
 export async function getOrCreateProfile(pool, userId, email = null) {
   const r = await pool.query(
-    `SELECT id, email, credits, is_pro FROM profiles WHERE id = $1`,
+    `SELECT id, email, credits, tier, is_pro FROM profiles WHERE id = $1`,
     [userId],
   );
   if (r.rows[0]) return r.rows[0];
 
   const rNew = await pool.query(
-    `INSERT INTO profiles (id, email, credits) VALUES ($1, $2, 50) 
-     RETURNING id, email, credits, is_pro`,
+    `INSERT INTO profiles (id, email, credits, tier) VALUES ($1, $2, 50, 'free') 
+     RETURNING id, email, credits, tier, is_pro`,
     [userId, email],
   );
   return rNew.rows[0];

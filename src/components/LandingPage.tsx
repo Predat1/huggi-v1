@@ -18,6 +18,7 @@ import {
   Monitor,
   Database,
   Shield,
+  Check,
 } from 'lucide-react';
 
 export type AccentStyle = {
@@ -31,6 +32,7 @@ export type AccentStyle = {
 type LandingPageProps = {
   accent: AccentStyle;
   onOpenStudio: (initialPrompt?: string) => void;
+  userId?: string;
 };
 
 const TESTIMONIALS = [
@@ -126,10 +128,33 @@ function scrollToId(id: string, onDone?: () => void) {
   onDone?.();
 }
 
-export default function LandingPage({ accent, onOpenStudio }: LandingPageProps) {
+export default function LandingPage({ accent, onOpenStudio, userId }: LandingPageProps) {
   const [buildInput, setBuildInput] = useState('');
   const [openFaq, setOpenFaq] = useState<number | null>(null);
   const [mobileNavOpen, setMobileNavOpen] = useState(false);
+  const [isCheckingOut, setIsCheckingOut] = useState(false);
+
+  const handleCheckout = async (plan: string) => {
+    if (!userId) {
+      alert("Veuillez vous connecter avant de souscrire à un plan.");
+      return;
+    }
+    setIsCheckingOut(true);
+    try {
+      const res = await fetch('/api/checkout', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ plan, userId })
+      });
+      const data = await res.json();
+      if (data.url) window.location.href = data.url;
+      else alert(data.error || "Une erreur est survenue");
+    } catch {
+      alert("Erreur de connexion.");
+    } finally {
+      setIsCheckingOut(false);
+    }
+  };
 
   const go = useCallback(
     (id: string) => (e: React.MouseEvent) => {
@@ -398,32 +423,46 @@ export default function LandingPage({ accent, onOpenStudio }: LandingPageProps) 
 
         <div className="max-w-6xl mx-auto px-6">
           <section id="pricing" className="scroll-mt-28 py-16">
-            <h2 className="text-center text-2xl font-black text-[#0F172A]">Tarifs simples</h2>
-            <p className="mt-2 text-center text-slate-500 text-sm">Choisissez un point d’entrée — montez en charge quand vous êtes prêt.</p>
-            <div className="mt-10 grid md:grid-cols-3 gap-6">
+            <h2 className="text-center text-3xl font-black text-[#0F172A]">Tarifs simples, sans surprise</h2>
+            <p className="mt-4 text-center text-slate-500 text-base max-w-xl mx-auto">Démarrez avec le plan Hobby ou propulsez vos applications avec le plan Pro. Conservez jusqu'à 80% de gains de productivité.</p>
+            <div className="mt-12 grid md:grid-cols-3 gap-8">
               {[
-                { name: 'Starter', price: '0 €', desc: 'Idéal pour prototyper.', feat: 'Studio + prévisualisation' },
-                { name: 'Pro', price: 'Sur mesure', desc: 'Pour les équipes qui publient souvent.', feat: 'Déploiements + base gérée', hi: true },
-                { name: 'Enterprise', price: 'Contact', desc: 'SLA et besoins avancés.', feat: 'Accompagnement dédié' },
+                { id: 'hobby', name: 'Hobby', price: '19 €', desc: 'Idéal pour les MVP et les prototypes simples.', feat: '1 000 Crédits IA / 2 Projets hébergés' },
+                { id: 'pro', name: 'Pro', price: '39 €', desc: 'Pour les développeurs et freelances.', feat: '3 000 Crédits / 5 Projets / Domaines personnalisés', hi: true },
+                { id: 'scale', name: 'Scale', price: '99 €', desc: 'Création sans limite. Haute performance.', feat: '10 000 Crédits / Projets illimités / APIs externes' },
               ].map((p) => (
                 <div
                   key={p.name}
-                  className={`rounded-2xl p-6 border transition-all duration-300 ${
-                    p.hi ? 'border-blue-500 bg-blue-50/50 shadow-lg scale-[1.02]' : 'border-[#E2E8F0] bg-white hover:shadow-md'
+                  className={`rounded-3xl p-8 border transition-all duration-300 relative flex flex-col ${
+                    p.hi ? 'border-blue-500 bg-blue-50/50 shadow-[0_20px_40px_-15px_rgba(37,99,235,0.2)] md:-translate-y-4' : 'border-[#E2E8F0] bg-white hover:shadow-xl hover:-translate-y-1'
                   }`}
                 >
-                  <p className="text-xs font-black uppercase tracking-widest text-slate-400">{p.name}</p>
-                  <p className="mt-3 text-2xl font-black text-[#0F172A]">{p.price}</p>
-                  <p className="mt-2 text-sm text-slate-500">{p.desc}</p>
-                  <p className="mt-4 text-sm font-bold text-slate-800">{p.feat}</p>
+                  {p.hi && <div className="absolute -top-3 left-1/2 -translate-x-1/2 px-4 py-1 bg-blue-600 text-white text-[10px] uppercase tracking-widest font-bold rounded-full shadow-md">Populaire</div>}
+                  <p className="text-sm font-black uppercase tracking-widest text-slate-400">{p.name}</p>
+                  <div className="mt-4 flex items-baseline gap-2">
+                    <p className="text-4xl font-black text-[#0F172A]">{p.price}</p>
+                    <p className="text-sm font-bold text-slate-400 uppercase">/ mois</p>
+                  </div>
+                  <p className="mt-3 text-sm text-slate-500 min-h-[40px]">{p.desc}</p>
+                  <div className="mt-6 pt-6 border-t border-slate-100 flex-1">
+                    <p className="text-sm font-bold text-slate-700 flex items-start gap-2">
+                      <Check size={16} className="text-emerald-500 mt-0.5 shrink-0" />
+                      {p.feat}
+                    </p>
+                    <p className="mt-2 text-sm text-slate-500 flex items-start gap-2">
+                      <Check size={16} className="text-emerald-500 mt-0.5 shrink-0" />
+                      Export du code source ZIP
+                    </p>
+                  </div>
                   <button
                     type="button"
-                    onClick={() => onOpenStudio()}
-                    className={`mt-6 w-full py-3 rounded-xl text-sm font-bold transition-all active:scale-[0.98] ${
-                      p.hi ? `${accent.bg} text-white shadow-lg` : 'border border-[#E2E8F0] bg-white text-slate-800 hover:bg-slate-50'
+                    disabled={isCheckingOut}
+                    onClick={() => handleCheckout(p.id)}
+                    className={`mt-8 w-full py-3.5 rounded-xl text-sm font-bold transition-all active:scale-[0.98] ${
+                      p.hi ? `${accent.bg} text-white shadow-lg shadow-blue-600/30 hover:shadow-xl` : 'border-2 border-slate-200 bg-white text-slate-800 hover:border-slate-300'
                     }`}
                   >
-                    Commencer
+                    Sélectionner le plan {p.name}
                   </button>
                 </div>
               ))}

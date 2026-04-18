@@ -36,6 +36,7 @@ export async function initSchema(pool) {
       id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
       name TEXT NOT NULL DEFAULT 'Sans titre',
       slug TEXT NOT NULL UNIQUE,
+      owner_id UUID REFERENCES profiles(id) ON DELETE SET NULL,
       created_at TIMESTAMPTZ NOT NULL DEFAULT now()
     );
 
@@ -53,6 +54,7 @@ export async function initSchema(pool) {
       slug TEXT NOT NULL UNIQUE,
       status TEXT NOT NULL DEFAULT 'pending',
       error TEXT,
+      active BOOLEAN NOT NULL DEFAULT true,
       created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
       built_at TIMESTAMPTZ
     );
@@ -61,11 +63,13 @@ export async function initSchema(pool) {
       id UUID PRIMARY KEY, -- references auth.users(id)
       email TEXT,
       credits NUMERIC NOT NULL DEFAULT 50,
+      tier TEXT NOT NULL DEFAULT 'free',
       is_pro BOOLEAN NOT NULL DEFAULT false,
       updated_at TIMESTAMPTZ NOT NULL DEFAULT now()
     );
 
     CREATE INDEX IF NOT EXISTS idx_project_files_project ON project_files(project_id);
+    CREATE INDEX IF NOT EXISTS idx_projects_owner ON projects(owner_id);
     CREATE INDEX IF NOT EXISTS idx_deployments_project ON deployments(project_id);
     CREATE INDEX IF NOT EXISTS idx_profiles_id ON profiles(id);
   `);
