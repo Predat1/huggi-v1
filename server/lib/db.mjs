@@ -36,8 +36,16 @@ export async function initSchema(pool) {
       id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
       name TEXT NOT NULL DEFAULT 'Sans titre',
       slug TEXT NOT NULL UNIQUE,
+      custom_domain TEXT UNIQUE NULL,
       owner_id UUID REFERENCES profiles(id) ON DELETE SET NULL,
       created_at TIMESTAMPTZ NOT NULL DEFAULT now()
+    );
+
+    CREATE TABLE IF NOT EXISTS project_secrets (
+      project_id UUID NOT NULL REFERENCES projects(id) ON DELETE CASCADE,
+      key TEXT NOT NULL,
+      value TEXT NOT NULL,
+      PRIMARY KEY (project_id, key)
     );
 
     CREATE TABLE IF NOT EXISTS project_files (
@@ -62,6 +70,7 @@ export async function initSchema(pool) {
     CREATE TABLE IF NOT EXISTS profiles (
       id UUID PRIMARY KEY, -- references auth.users(id)
       email TEXT,
+      stripe_customer_id TEXT UNIQUE NULL,
       credits NUMERIC NOT NULL DEFAULT 50,
       tier TEXT NOT NULL DEFAULT 'free',
       is_pro BOOLEAN NOT NULL DEFAULT false,

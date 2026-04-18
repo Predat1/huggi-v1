@@ -23,6 +23,11 @@ import {
   getOrCreateProfile,
   deductCredits,
   getUserActiveProjectsCount,
+  getProjectByDomain,
+  getProjectSecrets,
+  upsertProjectSecret,
+  deleteProjectSecret,
+  updateProjectDomain,
 } from './lib/projectsRepo.mjs';
 import { DEFAULT_PREVIEW_CODE } from './lib/defaultAppCode.mjs';
 import { buildUserSiteToDir } from './lib/deploy.mjs';
@@ -135,10 +140,11 @@ app.post('/api/webhook/stripe', express.raw({ type: 'application/json' }), async
     else if (plan === 'scale') creditsToAdd = 10000;
 
     if (userId && pool) {
+      let customerId = session.customer;
       try {
         await pool.query(
-          `UPDATE profiles SET tier = $2, is_pro = true, credits = credits + $3 WHERE id = $1`,
-          [userId, plan, creditsToAdd]
+          `UPDATE profiles SET tier = $2, is_pro = true, credits = credits + $3, stripe_customer_id = COALESCE(stripe_customer_id, $4) WHERE id = $1`,
+          [userId, plan, creditsToAdd, customerId]
         );
         console.log(`[Stripe] Successfully upgraded user ${userId} to ${plan}`);
       } catch (e) {
@@ -177,6 +183,24 @@ app.post('/api/checkout', express.json(), async (req, res) => {
   }
 });
 
+app.post('/api/billing/portal', express.json(), async (req, res) => {
+  if (!stripe) return res.status(500).json({ error: 'Stripe API non configurée.' });
+  try {
+    const userId = req.body?.userId;
+    if (!userId) return res.status(401).json({ error: 'Non authentifié' });
+    const profile = await getOrCreateProfile(pool, userId);
+    if (!profile.stripe_customer_id) return res.status(400).json({ error: "Aucun abonnement existant." });
+    
+    const session = await stripe.billingPortal.sessions.create({
+      customer: profile.stripe_customer_id,
+      return_url: `${publicBaseUrl(req)}/`,
+    });
+    res.json({ url: session.url });
+  } catch (e) {
+    res.status(500).json({ error: safeError(e) });
+  }
+});
+
 app.use(express.json({ limit: '5mb' }));
 
 // Security headers + CORS
@@ -196,6 +220,38 @@ app.use((req, res, next) => {
     res.setHeader('Access-Control-Allow-Headers', 'Content-Type,Authorization');
   }
   if (req.method === 'OPTIONS') return res.sendStatus(204);
+  next();
+});
+
+/** Middleware: Custom Domains Router */
+app.use(async (req, res, next) => {
+  const host = (req.get('host') || '').split(':')[0];
+  if (!pool || host === 'localhost' || host === '127.0.0.1' || host.endsWith('.railway.app') || host.endsWith('huggy.sbs') || (previewRootDomain && host.endsWith(previewRootDomain))) {
+    return next();
+  }
+  
+  try {
+    const project = await getProjectByDomain(pool, host);
+    if (project) {
+      const slug = project.slug;
+      
+      // Enforce rate limiter on this custom domain explicitly to prevent DDoS leakage
+      const ip = req.ip || req.socket?.remoteAddress || 'unknown';
+      let entry = _rlMap.get(`proxy-${slug}-${ip}`);
+      if (!entry || Date.now() - entry.start > 60000) entry = { start: Date.now(), count: 0 };
+      entry.count++;
+      _rlMap.set(`proxy-${slug}-${ip}`, entry);
+      
+      if (entry.count > 300) return res.status(429).send("Alerte: Trafic trop élevé sur le domaine.");
+
+      const dir = path.join(sitesDir, slug);
+      if (fs.existsSync(dir)) {
+        return express.static(dir, { index: 'index.html' })(req, res, next);
+      }
+    }
+  } catch(e) {
+    console.error("Custom domain error:", e);
+  }
   next();
 });
 
@@ -300,13 +356,64 @@ app.post('/api/projects', async (req, res) => {
 app.get('/api/projects/:id', async (req, res) => {
   if (!pool) return res.status(503).json({ error: 'Service unavailable' });
   try {
+    const userId = req.query.userId;
     if (!isUuid(req.params.id)) return res.status(400).json({ error: 'ID projet invalide.' });
     const project = await getProject(pool, req.params.id);
     if (!project) return res.status(404).json({ error: 'Projet introuvable.' });
+    
+    // Security check: If it has an owner, user must match
+    if (project.owner_id && project.owner_id !== userId) {
+      return res.status(403).json({ error: 'Accès non autorisé au projet.' });
+    }
+
     const files = await listFiles(pool, project.id);
     const deployments = await listDeployments(pool, project.id);
-    res.json({ project, files, deployments });
+    const secrets = userId ? await getProjectSecrets(pool, project.id) : [];
+    
+    res.json({ project, files, deployments, secrets });
   } catch (e) {
+    res.status(500).json({ error: safeError(e) });
+  }
+});
+
+app.post('/api/projects/:id/secrets', async (req, res) => {
+  if (!pool) return res.status(503).json({ error: 'Service unavailable' });
+  try {
+    const { userId, key, value } = req.body || {};
+    if (!isUuid(req.params.id)) return res.status(400).json({ error: 'ID projet invalide.' });
+    const project = await getProject(pool, req.params.id);
+    if (!project || (project.owner_id && project.owner_id !== userId)) {
+      return res.status(403).json({ error: 'Action non autorisée.' });
+    }
+    
+    if (value === null) {
+      await deleteProjectSecret(pool, project.id, key);
+    } else {
+      await upsertProjectSecret(pool, project.id, key, value);
+    }
+    res.json({ ok: true });
+  } catch (e) {
+    res.status(500).json({ error: safeError(e) });
+  }
+});
+
+app.post('/api/projects/:id/domain', async (req, res) => {
+  if (!pool) return res.status(503).json({ error: 'Service unavailable' });
+  try {
+    const { userId, domain } = req.body || {};
+    if (!isUuid(req.params.id)) return res.status(400).json({ error: 'ID projet invalide.' });
+    const project = await getProject(pool, req.params.id);
+    if (!project || (project.owner_id && project.owner_id !== userId)) {
+      return res.status(403).json({ error: 'Action non autorisée.' });
+    }
+    
+    await updateProjectDomain(pool, project.id, domain);
+    res.json({ ok: true });
+  } catch (e) {
+    // Unique violation constraint
+    if (e.code === '23505') {
+      return res.status(400).json({ error: 'Ce domaine est déjà utilisé par un autre projet.' });
+    }
     res.status(500).json({ error: safeError(e) });
   }
 });
@@ -380,9 +487,11 @@ app.post('/api/projects/:id/deploy', async (req, res) => {
     await mkdir(sitesDir, { recursive: true });
 
     try {
+      const secrets = project.owner_id ? await getProjectSecrets(pool, project.id) : [];
       await buildUserSiteToDir(
         rows.map((r) => ({ path: r.path, content: r.content })),
         outDir,
+        secrets
       );
       await updateDeploymentStatus(pool, dep.id, 'live', null);
     } catch (err) {

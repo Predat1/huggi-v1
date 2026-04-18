@@ -15,10 +15,25 @@ export async function createProject(pool, name = 'Sans titre', ownerId = null) {
 /** @param {import('pg').Pool} pool */
 export async function getProject(pool, id) {
   const r = await pool.query(
-    `SELECT id, name, slug, owner_id, created_at FROM projects WHERE id = $1`,
+    `SELECT id, name, slug, owner_id, custom_domain, created_at FROM projects WHERE id = $1`,
     [id],
   );
   return r.rows[0] || null;
+}
+
+export async function getProjectByDomain(pool, domain) {
+  const r = await pool.query(
+    `SELECT id, name, slug, owner_id, custom_domain, created_at FROM projects WHERE custom_domain = $1`,
+    [domain],
+  );
+  return r.rows[0] || null;
+}
+
+export async function updateProjectDomain(pool, id, customDomain) {
+  await pool.query(
+    `UPDATE projects SET custom_domain = $2 WHERE id = $1`,
+    [id, customDomain],
+  );
 }
 
 /** @param {import('pg').Pool} pool */
@@ -47,6 +62,29 @@ export async function listFiles(pool, projectId) {
     [projectId],
   );
   return r.rows;
+}
+
+export async function getProjectSecrets(pool, projectId) {
+  const r = await pool.query(
+    `SELECT key, value FROM project_secrets WHERE project_id = $1`,
+    [projectId],
+  );
+  return r.rows;
+}
+
+export async function upsertProjectSecret(pool, projectId, key, value) {
+  await pool.query(
+    `INSERT INTO project_secrets (project_id, key, value) VALUES ($1, $2, $3)
+     ON CONFLICT (project_id, key) DO UPDATE SET value = $3`,
+    [projectId, key, value],
+  );
+}
+
+export async function deleteProjectSecret(pool, projectId, key) {
+  await pool.query(
+    `DELETE FROM project_secrets WHERE project_id = $1 AND key = $2`,
+    [projectId, key],
+  );
 }
 
 /** @param {import('pg').Pool} pool */
@@ -109,14 +147,14 @@ export async function listDeployments(pool, projectId, limit = 20) {
 /** @param {import('pg').Pool} pool */
 export async function getOrCreateProfile(pool, userId, email = null) {
   const r = await pool.query(
-    `SELECT id, email, credits, tier, is_pro FROM profiles WHERE id = $1`,
+    `SELECT id, email, stripe_customer_id, credits, tier, is_pro FROM profiles WHERE id = $1`,
     [userId],
   );
   if (r.rows[0]) return r.rows[0];
 
   const rNew = await pool.query(
     `INSERT INTO profiles (id, email, credits, tier) VALUES ($1, $2, 50, 'free') 
-     RETURNING id, email, credits, tier, is_pro`,
+     RETURNING id, email, stripe_customer_id, credits, tier, is_pro`,
     [userId, email],
   );
   return rNew.rows[0];

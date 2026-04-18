@@ -57,6 +57,8 @@ import { saveAs } from 'file-saver';
 import { getAuthUser, onAuthStateChange, signIn, signUp } from './lib/supabaseClient';
 import { FullAppStream, StreamEvent } from './components/streaming';
 import { StreamController } from './services/streamingService';
+import { SettingsModal } from './components/SettingsModal';
+import { GithubExportModal } from './components/GithubExportModal';
 
 type Message = {
   id: string;
@@ -137,6 +139,9 @@ export default function App() {
   const [credits, setCredits] = useState<number | null>(null);
   const [lastExport, setLastExport] = useState<any>(null);
   const [showAuthModal, setShowAuthModal] = useState(false);
+  const [showBillingModal, setShowBillingModal] = useState(false);
+  const [showSettingsModal, setShowSettingsModal] = useState(false);
+  const [showExportModal, setShowExportModal] = useState(false);
   const [authEmail, setAuthEmail] = useState('');
   const [authPass, setAuthPass] = useState('');
   const [authMode, setAuthMode] = useState<'login' | 'signup'>('login');
@@ -770,6 +775,20 @@ export default function App() {
     rose: { bg: 'bg-rose-600', text: 'text-rose-600', border: 'border-rose-600', light: 'bg-rose-50', ring: 'ring-rose-100' },
   };
 
+  const handleBillingPortal = async () => {
+    try {
+      showToast('Ouverture du portail Stripe...', 'info');
+      const res = await fetch('/api/billing/portal', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ userId: user?.id })
+      });
+      const data = await res.json();
+      if (data.url) window.location.href = data.url;
+      else showToast(data.error || 'Erreur Stripe', 'info');
+    } catch(e) { showToast('Erreur serveur', 'info'); }
+  };
+
   return (
     <AnimatePresence mode="wait" initial={false}>
       {!studioMode ? (
@@ -1397,19 +1416,19 @@ export default function App() {
                         className="absolute top-full right-0 mt-2 w-56 bg-white rounded-2xl border border-slate-200 shadow-2xl p-2 z-50"
                       >
                         <p className="px-3 pt-1 pb-2 text-[10px] font-bold text-slate-400 uppercase tracking-wider">Projet Huggy</p>
-                        <button type="button" className="w-full flex flex-col items-start gap-0.5 px-3 py-2 hover:bg-slate-50 rounded-lg text-left transition-colors">
+                        <button type="button" onClick={() => { setShowMoreMenu(false); setShowExportModal(true); }} className="w-full flex flex-col items-start gap-0.5 px-3 py-2 hover:bg-slate-50 rounded-lg text-left transition-colors">
                           <span className="flex items-center gap-2 text-xs font-bold text-slate-700">
                             <Download size={14} className="shrink-0" aria-hidden />
                             Exporter le code
                           </span>
-                          <span className="text-[10px] text-slate-400 pl-[22px]">Archive ou copie des fichiers du projet</span>
+                          <span className="text-[10px] text-slate-400 pl-[22px]">GitHub ou Archive ZIP</span>
                         </button>
-                        <button type="button" className="w-full flex flex-col items-start gap-0.5 px-3 py-2 hover:bg-slate-50 rounded-lg text-left transition-colors">
+                        <button type="button" onClick={() => { setShowMoreMenu(false); setShowSettingsModal(true); }} className="w-full flex flex-col items-start gap-0.5 px-3 py-2 hover:bg-slate-50 rounded-lg text-left transition-colors">
                           <span className="flex items-center gap-2 text-xs font-bold text-slate-700">
                             <Settings size={14} className="shrink-0" aria-hidden />
                             Paramètres du projet
                           </span>
-                          <span className="text-[10px] text-slate-400 pl-[22px]">Réglages avancés et préférences Studio</span>
+                          <span className="text-[10px] text-slate-400 pl-[22px]">Domaine, secrets et variables</span>
                         </button>
                         <div className="h-[1px] bg-slate-100 my-1" />
                         <button type="button" className="w-full flex flex-col items-start gap-0.5 px-3 py-2 hover:bg-slate-50 rounded-lg text-left transition-colors">
@@ -1942,6 +1961,9 @@ export default function App() {
           </div>
         )}
       </AnimatePresence>
+
+      <SettingsModal isOpen={showSettingsModal} onClose={() => setShowSettingsModal(false)} projectId={projectId || ''} userId={user?.id} />
+      <GithubExportModal isOpen={showExportModal} onClose={() => setShowExportModal(false)} projectId={projectId || ''} userId={user?.id} onStandardZipExport={handleExportZip} />
         </motion.div>
       )}
     </AnimatePresence>

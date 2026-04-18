@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { signIn, signUp, signOut } from '@/lib/supabaseClient';
+import { signIn, signUp, signOut } from '../lib/supabaseClient';
 import { LogOut, LogIn } from 'lucide-react';
 
 interface AuthFormProps {

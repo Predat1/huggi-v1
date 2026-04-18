@@ -24,6 +24,7 @@ type UserDashboardProps = {
   onNavigate: (path: string) => void;
   onOpenStudio: () => void;
   onSignOut: () => void;
+  onOpenBillingPortal?: () => void;
 };
 
 const navItems = [
@@ -112,8 +113,17 @@ export default function UserDashboard({
   onNavigate,
   onOpenStudio,
   onSignOut,
+  onOpenBillingPortal,
 }: UserDashboardProps) {
   const current = pageCopy[route] || pageCopy['/dashboard'];
+
+  const handleAction = () => {
+    if (route === '/dashboard/billing' && onOpenBillingPortal) {
+      onOpenBillingPortal();
+    } else {
+      // default action
+    }
+  };
 
   return (
     <div className="min-h-screen bg-[#060913] text-white">
@@ -236,9 +246,10 @@ export default function UserDashboard({
                 <p className="mt-2 font-black text-lg">{current.action}</p>
                 <button
                   type="button"
+                  onClick={handleAction}
                   className="mt-6 w-full h-10 rounded-xl bg-blue-600 hover:bg-blue-500 text-sm font-bold inline-flex items-center justify-center gap-2 transition-all"
                 >
-                  Exécuter
+                  {route === '/dashboard/billing' ? 'Gérer mon abonnement' : 'Exécuter'}
                   <ArrowUpRight size={14} />
                 </button>
                 <div className="mt-6 pt-4 border-t border-white/10 space-y-2 text-sm text-white/75">

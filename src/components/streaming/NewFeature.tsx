@@ -273,12 +273,12 @@ export function NewFeatureStream({ onDone, initialPrompt, streamEvents }: NewFea
           {/* Phase summary */}
           {phases.length > 0 && (
             <div style={{ padding:"8px 12px", borderBottom:"0.5px solid var(--color-border-tertiary,#e5e5e5)", display:"flex", flexDirection:"column", gap:4 }}>
-              {phases.map((ph, i) => <PhaseHeader key={i} label={ph.label} done={ph.done} />)}
+              {phases.map((ph, i) => <PhaseHeader key={i} {...ph} />)}
             </div>
           )}
 
           <div style={{ flex:1, overflowY:"auto", padding:"6px 0" }}>
-            {files.map((f) => <FileTreeItem key={f.path} file={f} />)}
+            {files.map((f) => <FileTreeItem key={f.path} file={f as FileNode} />)}
           </div>
         </div>
 
@@ -289,7 +289,7 @@ export function NewFeatureStream({ onDone, initialPrompt, streamEvents }: NewFea
               <div key={i} style={{ alignSelf:"flex-end", maxWidth:"72%", background:"#E6F1FB", border:"0.5px solid #B5D4F4", borderRadius:"12px 12px 3px 12px", padding:"9px 13px", fontSize:13, color:"#0C447C", lineHeight:1.5, animation:"pillFadeIn .2s ease" }}>{msg.text}</div>
             ) : (
               <div key={i} style={{ alignSelf:"flex-start", maxWidth:"90%", display:"flex", flexDirection:"column", gap:5 }}>
-                {msg.tools?.map((pill) => <ToolPillView key={pill.id} pill={pill} />)}
+                {msg.tools?.map((pill) => { const pProps: { pill: ToolPill } = { pill }; return <ToolPillView key={pill.id} {...pProps} />; })}
                 {msg.text !== undefined && (
                   <div style={{ background:"var(--color-background-primary,#fff)", border:"0.5px solid var(--color-border-tertiary,#e5e5e5)", borderRadius:"3px 12px 12px 12px", padding:"9px 13px", fontSize:13, color:"var(--color-text-primary,#111)", lineHeight:1.6, whiteSpace:"pre-wrap" }}>
                     {msg.text}

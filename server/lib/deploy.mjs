@@ -10,8 +10,9 @@ const repoRoot = path.join(__dirname, '..', '..');
 /**
  * @param {Array<{ path: string, content: string }>} files
  * @param {string} outDir absolute path to publish (e.g. sites/abc123)
+ * @param {Array<{key: string, value: string}>} secrets environment variables map
  */
-export async function buildUserSiteToDir(files, outDir) {
+export async function buildUserSiteToDir(files, outDir, secrets = []) {
   const map = Object.fromEntries(files.map((f) => [f.path.replace(/\\/g, '/'), f.content]));
   let entry = map[PREVIEW_ENTRY];
   if (!entry) {
@@ -42,7 +43,10 @@ export async function buildUserSiteToDir(files, outDir) {
       jsx: 'automatic',
       minify: true,
       legalComments: 'none',
-      define: { 'process.env.NODE_ENV': '"production"' },
+      define: { 
+        'process.env.NODE_ENV': '"production"',
+        ...secrets.reduce((acc, s) => { acc[`import.meta.env.${s.key}`] = JSON.stringify(s.value); return acc; }, {})
+      },
       nodePaths: [path.join(repoRoot, 'node_modules')],
     });
 
