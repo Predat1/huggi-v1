@@ -20,6 +20,7 @@ import {
   Shield,
   Check,
 } from 'lucide-react';
+import HuggyChatInput from './HuggyChatInput';
 
 export type AccentStyle = {
   bg: string;
@@ -303,35 +304,18 @@ export default function LandingPage({ accent, onOpenStudio, userId }: LandingPag
               </p>
 
               <div className="mt-10 max-w-3xl mx-auto">
-                <div className="relative rounded-3xl border border-[#E2E8F0] bg-white shadow-sm overflow-hidden">
-                  <div className="p-8 sm:p-10">
-                    <label htmlFor="landing-build" className="sr-only">
-                      Décrivez votre projet
-                    </label>
-                    <textarea
-                      id="landing-build"
-                      rows={3}
-                      value={buildInput}
-                      onChange={(e) => setBuildInput(e.target.value)}
+                <div className="rounded-3xl overflow-hidden shadow-2xl shadow-slate-900/20" style={{ background: '#111215' }}>
+                  <div className="p-6 pb-4">
+                    <HuggyChatInput
+                      onSend={(prompt) => {
+                        if (prompt.trim()) setBuildInput(prompt);
+                        openStudio();
+                      }}
                       placeholder="Build a CRM for real estate with client tracking..."
-                      className="w-full text-left text-xl sm:text-2xl font-bold text-[#0F172A] placeholder:text-slate-300 bg-transparent resize-none focus:outline-none focus:ring-0 border-0"
+                      modelLabel="Huggy AI"
+                      disclaimer="Huggy may make mistakes. Please use with discretion."
                     />
-                    <div className="mt-10 flex items-center justify-between">
-                      <div className="flex items-center gap-3 text-xs text-slate-400">
-                        <div className="w-10 h-10 rounded-2xl bg-blue-50 flex items-center justify-center text-blue-600 font-black">+</div>
-                        <div className="font-black uppercase tracking-widest text-slate-400">Advanced model active</div>
-                      </div>
-                    </div>
                   </div>
-
-                  <button
-                    type="button"
-                    onClick={openStudio}
-                    className="absolute right-6 bottom-6 w-12 h-12 rounded-2xl bg-[#2563EB] text-white flex items-center justify-center shadow-lg shadow-blue-600/25 hover:opacity-90 transition-all duration-200 active:scale-95"
-                    aria-label="Démarrer dans le studio"
-                  >
-                    <ArrowUp size={18} />
-                  </button>
                 </div>
               </div>
 

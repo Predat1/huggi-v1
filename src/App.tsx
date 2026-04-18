@@ -59,6 +59,7 @@ import { FullAppStream, StreamEvent } from './components/streaming';
 import { StreamController } from './services/streamingService';
 import { SettingsModal } from './components/SettingsModal';
 import { GithubExportModal } from './components/GithubExportModal';
+import HuggyChatInput from './components/HuggyChatInput';
 
 type Message = {
   id: string;
@@ -1112,30 +1113,19 @@ export default function App() {
                 </div>
 
                 {/* ── Chat Input ── */}
-                <div className="border-t border-slate-100 p-3 shrink-0">
-                  <form
-                    onSubmit={(e) => { e.preventDefault(); handleSendMessage(); }}
-                    className="flex gap-2 items-end"
-                  >
-                    <textarea
-                      value={inputValue}
-                      onChange={e => setInputValue(e.target.value)}
-                      onKeyDown={e => {
-                        if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); handleSendMessage(); }
-                      }}
-                      disabled={isGenerating}
-                      placeholder="Décris ton app ou demande une modification..."
-                      rows={2}
-                      className="flex-1 resize-none rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-sm text-slate-800 placeholder-slate-400 focus:outline-none focus:border-blue-400 focus:ring-1 focus:ring-blue-100 disabled:opacity-50 transition-all"
-                    />
-                    <button
-                      type="submit"
-                      disabled={isGenerating || !inputValue.trim()}
-                      className="p-2.5 rounded-xl bg-blue-600 text-white hover:bg-blue-700 disabled:opacity-40 disabled:cursor-not-allowed transition-all shadow-sm"
-                    >
-                      {isGenerating ? <Loader2 size={18} className="animate-spin" /> : <ArrowUp size={18} />}
-                    </button>
-                  </form>
+                <div className="shrink-0 p-3 bg-[#111215]">
+                  <HuggyChatInput
+                    onSend={(prompt) => {
+                      if (prompt) {
+                        setInputValue(prompt);
+                        setTimeout(() => handleSendMessage(), 0);
+                      }
+                    }}
+                    isLoading={isGenerating}
+                    placeholder="Ask AI anything"
+                    modelLabel="Huggy AI"
+                    disclaimer="Huggy may make mistakes. Please use with discretion."
+                  />
                 </div>
               </>
             ) : activeSidebarTab === 'history' ? (
