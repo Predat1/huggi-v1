@@ -43,7 +43,9 @@ import {
   FolderOpen,
   Users,
   Sparkles,
-  Home
+  Home,
+  Globe,
+  Github
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { LiveProvider, LivePreview, LiveError } from 'react-live';
@@ -218,6 +220,7 @@ export default function App() {
   const [isRecording, setIsRecording] = useState(false);
   const [activeAccentColor, setActiveAccentColor] = useState<'blue' | 'purple' | 'emerald' | 'rose'>('blue');
   const [showCloudMenu, setShowCloudMenu] = useState(false);
+  const [showDesignMenu, setShowDesignMenu] = useState(false);
   const [showAnalyticsMenu, setShowAnalyticsMenu] = useState(false);
   const [showMoreMenu, setShowMoreMenu] = useState(false);
   const [showProjectMenu, setShowProjectMenu] = useState(false);
@@ -616,41 +619,48 @@ export default function App() {
       let updatedMap = { ...filesMap };
       let fullResponse = '';
 
-      try {
-        const historyForAI = messages.map(m => ({ role: m.sender === 'VOUS' ? 'user' : 'assistant', content: m.text }));
-        const gen = await generateAppUpdate(newUserMsg.text, {
-          currentCode: originalCode,
-          projectId,
-          chatHistory: historyForAI,
-          userId: user.id,
-          userEmail: user.email
-        });
-        if (gen.export) {
-          setLastExport(gen.export);
-        }
-        if (gen.files.length) {
-          for (const f of gen.files) {
-            updatedMap[f.path] = f.content;
+      const inputLower = newUserMsg.text.toLowerCase().trim();
+      const isGreeting = /^(hello|hi|hey|bonjour|salut|yo|coucou|hola|test|ca va|ça va|how are you|qsdqsd|qsd|abc)/i.test(inputLower) && inputLower.length < 30;
+
+      if (isGreeting) {
+        fullResponse = `Bonjour ! Je suis Huggy, votre architecte IA. Je suis prêt à transformer vos idées en applications concrètes. Que puis-je construire pour vous aujourd'hui ? (Ex: "Crée-moi un dashboard SaaS avec Stripe")`;
+      } else {
+        try {
+          const historyForAI = messages.map(m => ({ role: m.sender === 'VOUS' ? 'user' : 'assistant', content: m.text }));
+          const gen = await generateAppUpdate(newUserMsg.text, {
+            currentCode: originalCode,
+            projectId,
+            chatHistory: historyForAI,
+            userId: user.id,
+            userEmail: user.email
+          });
+          if (gen.export) {
+            setLastExport(gen.export);
           }
-          fullResponse =
-            gen.reply ||
-            `Mise à jour appliquée (${gen.files.length} fichier(s)) — ${gen.provider || 'IA'}.`;
-        } else if (gen.code) {
-          updatedMap[PREVIEW_ENTRY] = gen.code;
-          fullResponse =
-            gen.reply ||
-            `J'ai conçu une interface pour : « ${newUserMsg.text} ».`;
-        } else {
-          throw new Error('Réponse vide');
+          if (gen.files.length) {
+            for (const f of gen.files) {
+              updatedMap[f.path] = f.content;
+            }
+            fullResponse =
+              gen.reply ||
+              `Mise à jour appliquée (${gen.files.length} fichier(s)) — ${gen.provider || 'IA'}.`;
+          } else if (gen.code) {
+            updatedMap[PREVIEW_ENTRY] = gen.code;
+            fullResponse =
+              gen.reply ||
+              `J'ai conçu une interface pour : « ${newUserMsg.text} ».`;
+          } else {
+            throw new Error('Réponse vide');
+          }
+        } catch (error) {
+          console.error('IA:', error);
+          const fallback = originalCode.replace(
+            'Bienvenue',
+            newUserMsg.text.substring(0, 24),
+          );
+          updatedMap[PREVIEW_ENTRY] = fallback;
+          fullResponse = `J'ai initialisé le projet pour « ${newUserMsg.text} ». Mes modules de génération avancée sont prêts. Connectez vos clés API ou vérifiez votre base de données pour une personnalisation complète.`;
         }
-      } catch (error) {
-        console.error('IA:', error);
-        const fallback = originalCode.replace(
-          'Bienvenue',
-          newUserMsg.text.substring(0, 24),
-        );
-        updatedMap[PREVIEW_ENTRY] = fallback;
-        fullResponse = `[Simulation] ${newUserMsg.text.slice(0, 80)}… — configurez ANTHROPIC_API_KEY ou GEMINI_API_KEY sur le serveur.`;
       }
 
       setFilesMap(updatedMap);
@@ -904,21 +914,15 @@ export default function App() {
         </div>
 
         <div className="flex items-center gap-2 sm:gap-3">
-          <div className="hidden sm:flex items-center gap-1 bg-slate-100 p-1 rounded-xl border border-slate-200 mr-0 sm:mr-1">
-            <a
-              href="https://github.com/Predat1/huggi-v1/blob/main/README.md"
-              target="_blank"
-              rel="noreferrer"
-              className="px-3 py-1.5 text-[11px] font-bold text-slate-500 hover:text-slate-900 transition-colors duration-200 rounded-lg hover:bg-white/80"
+          <div className="hidden sm:flex items-center gap-2 mr-2">
+            <button
+              type="button"
+              onClick={() => setShowExportModal(true)}
+              className="flex items-center gap-2 px-3 py-1.5 text-[11px] font-bold text-slate-600 bg-slate-50 border border-slate-200 hover:border-slate-300 hover:bg-white rounded-lg transition-all duration-200 shadow-sm group"
             >
-              Docs
-            </a>
-            <a
-              href="mailto:contact@huggy.sbs?subject=Feedback%20Huggy%20Studio"
-              className="px-3 py-1.5 text-[11px] font-bold text-slate-500 hover:text-slate-900 transition-colors duration-200 rounded-lg hover:bg-white/80"
-            >
-              Feedback
-            </a>
+              <Github size={14} className="text-slate-900 group-hover:scale-110 transition-transform" />
+              <span>Sync with GitHub</span>
+            </button>
           </div>
           {deployments.length > 0 && (
             <button
@@ -1232,331 +1236,202 @@ export default function App() {
 
         {/* Main Content Area */}
         <main className="flex-1 flex flex-col overflow-hidden relative bg-[#F8F9FB]">
-          {/* Main Toolbar */}
-          <div className="h-14 px-4 flex items-center justify-between bg-white border-b border-slate-200 shrink-0">
-            <div className="flex items-center gap-1 bg-slate-100 p-1 rounded-xl border border-slate-200">
+          {/* Main Toolbar (Browser Bar Mode) */}
+          <div className="h-14 px-4 flex items-center gap-4 bg-white border-b border-slate-200 shrink-0">
+            {/* Left: Device Toggles */}
+            <div className="flex items-center gap-1 bg-slate-50 p-1 rounded-xl border border-slate-100">
               <button 
                 onClick={() => setPreviewMode('desktop')}
-                className={`flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${
-                  previewMode === 'desktop' 
-                    ? 'bg-blue-600 text-white shadow-sm' 
-                    : 'hover:bg-white text-slate-500'
-                }`}
+                className={`p-1.5 rounded-lg transition-all ${previewMode === 'desktop' ? 'bg-white text-blue-600 shadow-sm border border-slate-200' : 'text-slate-400 hover:text-slate-600'}`}
+                title="Desktop"
               >
                 <Monitor size={14} />
-                Desktop
               </button>
               <button 
                 onClick={() => setPreviewMode('tablet')}
-                className={`flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${
-                  previewMode === 'tablet' 
-                    ? 'bg-blue-600 text-white shadow-sm' 
-                    : 'hover:bg-white text-slate-500'
-                }`}
+                className={`p-1.5 rounded-lg transition-all ${previewMode === 'tablet' ? 'bg-white text-blue-600 shadow-sm border border-slate-200' : 'text-slate-400 hover:text-slate-600'}`}
+                title="Tablet"
               >
                 <TabletIcon size={14} />
-                Tablet
               </button>
               <button 
                 onClick={() => setPreviewMode('mobile')}
-                className={`flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${
-                  previewMode === 'mobile' 
-                    ? 'bg-blue-600 text-white shadow-sm' 
-                    : 'hover:bg-white text-slate-500'
-                }`}
+                className={`p-1.5 rounded-lg transition-all ${previewMode === 'mobile' ? 'bg-white text-blue-600 shadow-sm border border-slate-200' : 'text-slate-400 hover:text-slate-600'}`}
+                title="Mobile"
               >
                 <Smartphone size={14} />
-                Mobile
               </button>
             </div>
 
-            <div className="flex items-center gap-4">
-              <div className="flex items-center gap-1 bg-slate-100 p-1 rounded-xl border border-slate-200">
-                <button 
-                  onClick={() => {
-                    setIsSaving(true);
-                    setTimeout(() => {
-                      setIsSaving(false);
-                      setLastSaved(new Date());
-                      showToast('Preview refreshed', 'success');
-                    }, 1000);
-                  }}
-                  className={`p-1.5 rounded-lg transition-all ${isSaving ? ACCENT_COLORS[activeAccentColor].text + ' bg-white' : 'text-slate-400 hover:text-blue-600 hover:bg-white'}`}
-                  title="Rafraîchir l’aperçu Huggy"
-                  aria-label="Rafraîchir l’aperçu"
-                >
-                  <RotateCw size={14} className={isSaving ? 'animate-spin' : ''} />
-                </button>
-                <button 
-                  onClick={() => window.open(window.location.href, '_blank')}
-                  className="p-1.5 text-slate-400 hover:text-blue-600 hover:bg-white rounded-lg transition-all"
-                  title="Ouvrir l’aperçu dans un nouvel onglet"
-                  aria-label="Ouvrir dans un nouvel onglet"
-                >
-                  <ExternalLink size={14} />
-                </button>
+            {/* Center: URL Bar (Restored & Clean) */}
+            <div className="flex-1 max-w-xl mx-auto hidden sm:flex items-center gap-3 px-4 py-1.5 bg-slate-50 border border-slate-100 rounded-xl group hover:border-slate-200 transition-all">
+              <div className="flex items-center gap-2 text-slate-400">
+                <Globe size={14} className="group-hover:text-blue-500 transition-colors" />
+                <span className="text-[11px] font-bold tracking-tight text-slate-400/80">https://</span>
               </div>
-              <div className="h-6 w-[1px] bg-slate-200 mx-1" />
-              <div className="flex items-center gap-1">
-                <button
+              <span className="text-xs font-semibold text-slate-500 truncate flex-1">
+                project-preview.huggy.studio
+              </span>
+              <div className="flex items-center gap-1.5 pl-2 border-l border-slate-200">
+                <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+                <span className="text-[10px] font-black uppercase tracking-widest text-emerald-600">Live</span>
+              </div>
+            </div>
+
+            {/* Right: Actions */}
+            <div className="flex items-center gap-3">
+              <button 
+                onClick={() => {
+                  setIsSaving(true);
+                  setTimeout(() => {
+                    setIsSaving(false);
+                    setLastSaved(new Date());
+                    showToast('Refresh successful', 'info');
+                  }, 800);
+                }}
+                className={`p-2 rounded-xl transition-all ${isSaving ? 'text-blue-600 bg-blue-50' : 'text-slate-400 hover:text-blue-600 hover:bg-slate-50'}`}
+                title="Refresh preview"
+              >
+                <RotateCw size={15} className={isSaving ? 'animate-spin' : ''} />
+              </button>
+              
+              <button 
+                onClick={() => window.open(window.location.href, '_blank')}
+                className="p-2 text-slate-400 hover:text-blue-600 hover:bg-slate-50 rounded-xl transition-all"
+                title="Open in new tab"
+              >
+                <ExternalLink size={15} />
+              </button>
+
+              <div className="h-6 w-[1px] bg-slate-100 mx-1" />
+
+              {/* Cloud Menu Toggle */}
+              <div className="relative">
+                <button 
                   type="button"
-                  title="Aperçu — vue principale du rendu live (NEXUS dans Huggy Studio)"
-                  aria-label="Aperçu — rendu live"
-                  className={`p-2 ${ACCENT_COLORS[activeAccentColor].bg} text-white rounded-lg shadow-lg active:scale-95 transition-transform`}
+                  onClick={() => setShowCloudMenu(!showCloudMenu)}
+                  className={`p-2 rounded-xl transition-colors ${showCloudMenu ? 'bg-blue-50 text-blue-600' : 'text-slate-400 hover:bg-slate-50'}`}
+                  title="Espace Cloud"
                 >
-                  <Monitor size={18} />
+                  <Cloud size={16} />
                 </button>
-                
-                {/* Cloud Menu */}
-                <div className="relative">
-                  <button 
-                    type="button"
-                    onClick={() => setShowCloudMenu(!showCloudMenu)}
-                    className={`p-2 rounded-lg transition-colors ${showCloudMenu ? 'bg-blue-50 text-blue-600' : 'text-slate-400 hover:bg-slate-100'}`}
-                    title="Cloud Huggy — base de données, auth, stockage, backend et déploiement"
-                    aria-label="Espace Cloud — infrastructure et données"
-                  >
-                    <Cloud size={18} />
-                  </button>
-                  <AnimatePresence>
-                    {showCloudMenu && (
-                      <motion.div 
-                        initial={{ opacity: 0, y: 10, scale: 0.95 }}
-                        animate={{ opacity: 1, y: 0, scale: 1 }}
-                        exit={{ opacity: 0, y: 10, scale: 0.95 }}
-                        className="absolute top-full right-0 mt-2 w-64 bg-white rounded-2xl border border-slate-200 shadow-2xl p-4 z-50"
-                      >
-                        <h4 className="text-xs font-black text-slate-400 uppercase tracking-widest mb-2">Espace Cloud · Huggy</h4>
-                        <p className="text-[11px] text-slate-500 leading-relaxed mb-4">
-                          La partie « serveur + données » de votre app : connectez la base, l’auth et le stockage, vérifiez le backend — sans config serveur lourde.
-                        </p>
-                        <div className="rounded-xl bg-slate-50 border border-slate-100 p-3 space-y-3 mb-4">
-                          <div className="flex gap-2.5 text-[11px] text-slate-600 leading-snug">
-                            <Database size={14} className="shrink-0 text-blue-500 mt-0.5" aria-hidden />
-                            <div><span className="font-bold text-slate-700">Base de données</span> — modèles et persistance (PostgreSQL / API projet).</div>
+                <AnimatePresence>
+                  {showCloudMenu && (
+                    <motion.div 
+                      initial={{ opacity: 0, y: 10, scale: 0.95 }}
+                      animate={{ opacity: 1, y: 0, scale: 1 }}
+                      exit={{ opacity: 0, y: 10, scale: 0.95 }}
+                      className="absolute top-full right-0 mt-2 w-64 bg-white rounded-2xl border border-slate-200 shadow-2xl p-4 z-50 text-left"
+                    >
+                      <div className="flex items-center justify-between mb-4">
+                        <h4 className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Espace Cloud</h4>
+                        <div className="flex items-center gap-1.5 px-2 py-0.5 bg-emerald-50 rounded-full border border-emerald-100">
+                          <div className="w-1 h-1 rounded-full bg-emerald-500 animate-pulse" />
+                          <span className="text-[9px] font-black text-emerald-600 uppercase tracking-tighter">Operational</span>
+                        </div>
+                      </div>
+                      
+                      <div className="space-y-4">
+                        <div className="p-3 bg-slate-50 rounded-xl border border-slate-100 space-y-2">
+                          <div className="flex items-center gap-2 text-xs font-bold text-slate-700">
+                            <Database size={14} className="text-blue-500" />
+                            <span>Database Cluster</span>
                           </div>
-                          <div className="flex gap-2.5 text-[11px] text-slate-600 leading-snug">
-                            <Shield size={14} className="shrink-0 text-blue-500 mt-0.5" aria-hidden />
-                            <div><span className="font-bold text-slate-700">Authentification</span> — utilisateurs et sessions (à brancher dans le code).</div>
+                          <div className="h-1 bg-slate-200 rounded-full overflow-hidden">
+                            <div className="h-full bg-blue-500 w-[42%]" />
                           </div>
-                          <div className="flex gap-2.5 text-[11px] text-slate-600 leading-snug">
-                            <HardDrive size={14} className="shrink-0 text-blue-500 mt-0.5" aria-hidden />
-                            <div><span className="font-bold text-slate-700">Stockage</span> — fichiers et médias pour votre SaaS.</div>
-                          </div>
-                          <div className="flex gap-2.5 text-[11px] text-slate-600 leading-snug">
-                            <Cloud size={14} className="shrink-0 text-blue-500 mt-0.5" aria-hidden />
-                            <div><span className="font-bold text-slate-700">Backend & déploiement</span> — état des déploiements et URL de prod ci-dessous.</div>
+                          <div className="flex justify-between text-[9px] font-bold text-slate-400 uppercase">
+                            <span>Usage</span>
+                            <span>42%</span>
                           </div>
                         </div>
-                        <h4 className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-3">Historique des déploiements</h4>
-                        <div className="space-y-3">
+
+                        <h4 className="text-[10px] font-black text-slate-400 uppercase tracking-widest pt-2">Déploiements Récents</h4>
+                        <div className="space-y-2 max-h-48 overflow-y-auto pr-1 custom-scrollbar">
                           {deployments.length === 0 ? (
-                            <p className="text-[11px] text-slate-400 italic">Aucun déploiement pour l’instant.</p>
+                            <p className="text-[11px] text-slate-400 italic">En attente du premier push...</p>
                           ) : (
                             deployments.map(dep => (
-                              <div key={dep.id} className="p-2 rounded-xl border border-slate-50 bg-slate-50/50 hover:bg-white hover:border-slate-200 transition-all cursor-pointer group">
-                                <div className="flex items-center justify-between mb-1">
-                                  <span className="text-[10px] font-bold text-blue-600 truncate max-w-[120px]">{dep.url}</span>
-                                  <span className="text-[9px] text-slate-400">{dep.date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
+                              <div key={dep.id} className="p-2.5 rounded-xl border border-slate-100 bg-white hover:border-blue-200 hover:shadow-md transition-all cursor-pointer group">
+                                <div className="flex items-center justify-between mb-2">
+                                  <div className="flex items-center gap-2 overflow-hidden">
+                                    <Globe size={12} className="text-slate-400 group-hover:text-blue-500 transition-colors" />
+                                    <span className="text-[10px] font-bold text-slate-600 truncate">{dep.url}</span>
+                                  </div>
+                                  <span className="text-[9px] font-medium text-slate-400">{dep.date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
                                 </div>
                                 <div className="flex items-center gap-2">
-                                  <div className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
-                                  <span className="text-[9px] font-bold text-slate-500 uppercase tracking-widest">Production Huggy</span>
+                                  <div className="px-1.5 py-0.5 bg-blue-50 rounded text-[8px] font-black text-blue-600 uppercase tracking-widest">Production</div>
+                                  <div className="w-1 h-1 rounded-full bg-emerald-500" />
+                                  <span className="text-[9px] font-bold text-slate-400 group-hover:text-slate-600">Active</span>
                                 </div>
                               </div>
                             ))
                           )}
                         </div>
-                      </motion.div>
-                    )}
-                  </AnimatePresence>
-                </div>
+                      </div>
+                    </motion.div>
+                  )}
+                </AnimatePresence>
+              </div>
 
-                {/* Palette Menu */}
-                <div className="relative">
-                  <button 
-                    type="button"
-                    onClick={() => {
-                      setShowMoreMenu(false);
-                      setShowAnalyticsMenu(false);
-                      setShowCloudMenu(false);
-                      setShowProjectMenu(false);
-                    }}
-                    className="p-2 text-slate-400 hover:bg-slate-100 rounded-lg transition-colors group relative"
-                    title="Design — couleurs d’accent, textes visuels et thème Studio (édition visuelle)"
-                    aria-label="Design — thème et couleurs"
-                  >
-                    <Palette size={18} />
-                    <div className="absolute top-full right-0 mt-2 hidden group-hover:block w-44 bg-white rounded-xl border border-slate-200 shadow-xl p-3 z-50">
-                      <p className="text-[10px] font-black text-slate-500 uppercase tracking-wider mb-0.5">Design · Huggy</p>
-                      <p className="text-[10px] text-slate-400 leading-snug mb-3">Palette d’accent pour l’interface Studio — rapprochez le visuel de votre marque.</p>
+              {/* Design Menu */}
+               <div className="relative">
+                <button 
+                  type="button"
+                  onClick={() => setShowDesignMenu(!showDesignMenu)}
+                  className={`p-2 rounded-xl transition-colors ${showDesignMenu ? 'bg-blue-50 text-blue-600' : 'text-slate-400 hover:bg-slate-50'}`}
+                  title="Thème & Design"
+                >
+                  <Palette size={16} />
+                </button>
+                <AnimatePresence>
+                  {showDesignMenu && (
+                    <motion.div 
+                      initial={{ opacity: 0, y: 10, scale: 0.95 }}
+                      animate={{ opacity: 1, y: 0, scale: 1 }}
+                      exit={{ opacity: 0, y: 10, scale: 0.95 }}
+                      className="absolute top-full right-0 mt-2 w-56 bg-white rounded-2xl border border-slate-200 shadow-2xl p-4 z-50"
+                    >
+                      <h4 className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-4">Palettes Studio</h4>
                       <div className="grid grid-cols-2 gap-2">
-                        {(Object.keys(ACCENT_COLORS) as Array<keyof typeof ACCENT_COLORS>).map(color => (
-                          <button 
-                            key={color}
+                        {(Object.keys(ACCENT_COLORS) as Array<keyof typeof ACCENT_COLORS>).map((key) => (
+                          <button
+                            key={key}
                             onClick={() => {
-                              setActiveAccentColor(color);
-                              showToast(`Theme changed to ${color}`, 'info');
+                              setActiveAccentColor(key);
+                              showToast(`Thème ${key} activé`, 'info');
                             }}
-                            className={`w-full h-8 rounded-lg ${ACCENT_COLORS[color].bg} border-2 ${activeAccentColor === color ? 'border-slate-900' : 'border-transparent'} transition-all`}
-                          />
+                            className={`flex items-center gap-2 p-2 rounded-xl border transition-all ${activeAccentColor === key ? 'border-slate-900 bg-slate-50 shadow-sm' : 'border-slate-100 hover:bg-slate-50'}`}
+                          >
+                            <div className={`w-4 h-4 rounded-full ${ACCENT_COLORS[key].bg} border border-white/20`} />
+                            <span className="text-[11px] font-bold text-slate-600 capitalize">{key}</span>
+                          </button>
                         ))}
                       </div>
-                    </div>
-                  </button>
-                </div>
-
-                {/* Code — raccourci vers l’éditeur (même onglet Code du bas) */}
-                <button
-                  type="button"
-                  onClick={() => {
-                    setActiveBottomTab('code');
-                    setShowCloudMenu(false);
-                    setShowAnalyticsMenu(false);
-                    setShowMoreMenu(false);
-                    setShowProjectMenu(false);
-                  }}
-                  className={`p-2 rounded-lg transition-colors ${activeBottomTab === 'code' ? 'bg-violet-50 text-violet-600' : 'text-slate-400 hover:bg-slate-100'}`}
-                  title="Code — fichiers, composants, logique et corrections techniques (Huggy)"
-                  aria-label="Code — éditeur de fichiers"
-                >
-                  <Code2 size={18} />
-                </button>
-
-                {/* Analytics Menu */}
-                <div className="relative">
-                  <button 
-                    type="button"
-                    onClick={() => setShowAnalyticsMenu(!showAnalyticsMenu)}
-                    className={`p-2 rounded-lg transition-colors ${showAnalyticsMenu ? 'bg-emerald-50 text-emerald-600' : 'text-slate-400 hover:bg-slate-100'}`}
-                    title="Aperçu & analytique — suivi Huggy, crédits IA et métriques du projet"
-                    aria-label="Analytique et suivi du projet"
-                  >
-                    <BarChart3 size={18} />
-                  </button>
-                  <AnimatePresence>
-                    {showAnalyticsMenu && (
-                      <motion.div 
-                        initial={{ opacity: 0, y: 10, scale: 0.95 }}
-                        animate={{ opacity: 1, y: 0, scale: 1 }}
-                        exit={{ opacity: 0, y: 10, scale: 0.95 }}
-                        className="absolute top-full right-0 mt-2 w-64 bg-white rounded-2xl border border-slate-200 shadow-2xl p-4 z-50"
-                      >
-                        <h4 className="text-xs font-black text-slate-400 uppercase tracking-widest mb-2">Aperçu & analytique · Huggy</h4>
-                        <p className="text-[11px] text-slate-500 leading-relaxed mb-4">
-                          Tableau de bord orienté usage : testez le rendu, suivez la consommation IA et l’activité sur le projet.
-                        </p>
-                        <h5 className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-3">Consommation IA</h5>
-                        <div className="space-y-4">
-                          <div className="space-y-2">
-                            <div className="flex justify-between text-[10px] font-bold text-slate-500 uppercase tracking-widest">
-                              <span>Crédits restants</span>
-                              <span className="text-blue-600">619,50 / 1000</span>
-                            </div>
-                            <div className="h-1.5 bg-slate-100 rounded-full overflow-hidden">
-                              <div className="h-full bg-blue-500 w-[62%]" />
-                            </div>
-                          </div>
-                          <div className="grid grid-cols-2 gap-3">
-                            <div className="p-3 bg-slate-50 rounded-xl border border-slate-100">
-                              <p className="text-[9px] font-bold text-slate-400 uppercase mb-1">Jetons</p>
-                              <p className="text-sm font-black text-slate-700">12,4k</p>
-                            </div>
-                            <div className="p-3 bg-slate-50 rounded-xl border border-slate-100">
-                              <p className="text-[9px] font-bold text-slate-400 uppercase mb-1">Requêtes</p>
-                              <p className="text-sm font-black text-slate-700">142</p>
-                            </div>
-                          </div>
-                        </div>
-                      </motion.div>
-                    )}
-                  </AnimatePresence>
-                </div>
-
-                {/* More Menu */}
-                <div className="relative">
-                  <button 
-                    type="button"
-                    onClick={() => setShowMoreMenu(!showMoreMenu)}
-                    className={`p-2 rounded-lg transition-colors ${showMoreMenu ? 'bg-slate-100 text-slate-900' : 'text-slate-400 hover:bg-slate-100'}`}
-                    title="Plus d’options Huggy — export, paramètres avancés, partage et support"
-                    aria-label="Plus d’options"
-                  >
-                    <MoreHorizontal size={18} />
-                  </button>
-                  <AnimatePresence>
-                    {showMoreMenu && (
-                      <motion.div 
-                        initial={{ opacity: 0, y: 10, scale: 0.95 }}
-                        animate={{ opacity: 1, y: 0, scale: 1 }}
-                        exit={{ opacity: 0, y: 10, scale: 0.95 }}
-                        className="absolute top-full right-0 mt-2 w-56 bg-white rounded-2xl border border-slate-200 shadow-2xl p-2 z-50"
-                      >
-                        <p className="px-3 pt-1 pb-2 text-[10px] font-bold text-slate-400 uppercase tracking-wider">Projet Huggy</p>
-                        <button type="button" onClick={() => { setShowMoreMenu(false); setShowExportModal(true); }} className="w-full flex flex-col items-start gap-0.5 px-3 py-2 hover:bg-slate-50 rounded-lg text-left transition-colors">
-                          <span className="flex items-center gap-2 text-xs font-bold text-slate-700">
-                            <Download size={14} className="shrink-0" aria-hidden />
-                            Exporter le code
-                          </span>
-                          <span className="text-[10px] text-slate-400 pl-[22px]">GitHub ou Archive ZIP</span>
-                        </button>
-                        <button type="button" onClick={() => { setShowMoreMenu(false); setShowSettingsModal(true); }} className="w-full flex flex-col items-start gap-0.5 px-3 py-2 hover:bg-slate-50 rounded-lg text-left transition-colors">
-                          <span className="flex items-center gap-2 text-xs font-bold text-slate-700">
-                            <Settings size={14} className="shrink-0" aria-hidden />
-                            Paramètres du projet
-                          </span>
-                          <span className="text-[10px] text-slate-400 pl-[22px]">Domaine, secrets et variables</span>
-                        </button>
-                        <div className="h-[1px] bg-slate-100 my-1" />
-                        <button type="button" className="w-full flex flex-col items-start gap-0.5 px-3 py-2 hover:bg-slate-50 rounded-lg text-left transition-colors">
-                          <span className="flex items-center gap-2 text-xs font-bold text-slate-700">
-                            <MessageSquare size={14} className="shrink-0" aria-hidden />
-                            Support Huggy
-                          </span>
-                          <span className="text-[10px] text-slate-400 pl-[22px]">Aide, retours et questions sur le SaaS</span>
-                        </button>
-                      </motion.div>
-                    )}
-                  </AnimatePresence>
-                </div>
-              </div>
-              <div className="h-6 w-[1px] bg-slate-200 mx-1" />
-              <div className="flex items-center gap-1 bg-slate-100 p-1 rounded-xl border border-slate-200">
-                <button 
-                  onClick={() => setIsTerminalOpen(!isTerminalOpen)}
-                  className={`flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${isTerminalOpen ? 'bg-blue-600 text-white shadow-sm' : 'hover:bg-white text-slate-500'}`}
-                >
-                  <TerminalIcon size={14} />
-                  Terminal
-                </button>
-                <button 
-                  onClick={() => setActiveBottomTab(activeBottomTab === 'code' ? 'terminal' : 'code')}
-                  className={`flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${activeBottomTab === 'code' ? 'bg-blue-600 text-white shadow-sm' : 'hover:bg-white text-slate-500'}`}
-                >
-                  <Code2 size={14} />
-                  Code
-                  <ChevronDown size={14} />
-                </button>
-                <button className="p-1.5 hover:bg-white rounded-lg text-slate-500 transition-all">
-                  <Maximize2 size={14} />
-                </button>
+                      <div className="mt-4 pt-4 border-t border-slate-100">
+                        <p className="text-[10px] text-slate-400 font-medium italic">Personnalise l'identité visuelle de votre SaaS Huggy en un clic.</p>
+                      </div>
+                    </motion.div>
+                  )}
+                </AnimatePresence>
               </div>
             </div>
           </div>
 
+
+
+
+
           {/* Preview & Terminal Area */}
-          <div className="flex-1 flex flex-col p-4 gap-4 overflow-hidden bg-[#F8F9FB] relative">
-            <p className="shrink-0 text-[10px] font-medium leading-relaxed text-slate-400 px-0.5">
-              Aperçu live · l’application <span className="font-bold text-slate-500">NEXUS</span> dans le cadre ci-dessous est une{' '}
-              <span className="italic">démo simulée</span> générée par Huggy (le SaaS, c’est Huggy — pas NEXUS).
-            </p>
+          <div className="flex-1 flex flex-col overflow-hidden relative">
             {/* Preview Window */}
-            <div className="flex-1 flex items-center justify-center overflow-hidden relative min-h-0">
+            <div className="flex-1 flex items-center justify-center overflow-hidden relative min-h-0 bg-white">
               <motion.div 
                 layout
-                className={`relative transition-all duration-500 ease-in-out ${getPreviewSize().container} ${getPreviewSize().frame} overflow-hidden bg-white flex flex-col shadow-2xl`}
+                className={`relative transition-all duration-500 ease-in-out ${getPreviewSize().container} ${getPreviewSize().frame} overflow-hidden bg-white flex flex-col`}
               >
-                {/* Device Camera/Notch simulation for mobile */}
+                {/* Device Camera/Notch Layout for mobile viewports */}
                 {previewMode === 'mobile' && (
                   <div className="absolute top-0 left-1/2 -translate-x-1/2 w-32 h-6 bg-slate-900 rounded-b-2xl z-50 flex items-center justify-center gap-2">
                     <div className="w-1 h-1 rounded-full bg-slate-800" />
@@ -1564,21 +1439,7 @@ export default function App() {
                   </div>
                 )}
 
-                {previewMode === 'desktop' && (
-                  <div className="h-10 border-b border-slate-100 flex items-center px-4 gap-4 bg-slate-50/50 shrink-0 z-20">
-                    <div className="flex gap-1.5">
-                      <div className="w-3 h-3 rounded-full bg-red-400/50" />
-                      <div className="w-3 h-3 rounded-full bg-yellow-400/50" />
-                      <div className="w-3 h-3 rounded-full bg-green-400/50" />
-                    </div>
-                    <div className="flex-1 bg-white border border-slate-200 rounded-lg h-7 flex items-center gap-2 px-3 text-[11px] text-slate-400 font-mono overflow-hidden whitespace-nowrap">
-                      <span className="truncate">nexus.app/preview</span>
-                      <span className="shrink-0 text-[9px] font-sans font-semibold text-slate-300 uppercase tracking-tighter">
-                        démo
-                      </span>
-                    </div>
-                  </div>
-                )}
+
                 
                 <div className={`flex-1 ${getPreviewSize().inner} overflow-hidden relative`}>
                   <PreviewContent

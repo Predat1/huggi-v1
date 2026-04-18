@@ -190,8 +190,9 @@ export default function LandingPage({ accent, onOpenStudio, userId }: LandingPag
   return (
     <div className="min-h-screen bg-white text-slate-900 font-sans antialiased">
       <div className="sticky top-0 z-[110] border-b border-slate-100/80 bg-white/85 backdrop-blur-md supports-[backdrop-filter]:bg-white/70 transition-[background,box-shadow] duration-300 shadow-[0_1px_0_rgba(15,23,42,0.04)]">
-        <div className="max-w-6xl mx-auto px-6 h-16 flex items-center justify-between">
-          <div className="flex items-center gap-4">
+        <div className="max-w-6xl mx-auto px-6 h-16 grid grid-cols-2 md:grid-cols-[1fr_auto_1fr] items-center">
+          {/* Left Side: Logo */}
+          <div className="flex items-center justify-start">
             <button
               type="button"
               onClick={() => scrollToId('top')}
@@ -204,30 +205,33 @@ export default function LandingPage({ accent, onOpenStudio, userId }: LandingPag
               </div>
               <span className="text-sm font-black tracking-tight text-slate-900">Huggy</span>
             </button>
-            <nav className="hidden md:flex items-center gap-6 text-sm font-bold text-slate-600">
-              <a href="#features" onClick={go('features')} className="hover:text-slate-900 transition-colors duration-200">
-                Features
-              </a>
-              <a href="#how-it-works" onClick={go('how-it-works')} className="hover:text-slate-900 transition-colors duration-200">
-                How it works
-              </a>
-              <a href="#testimonials" onClick={go('testimonials')} className="hover:text-slate-900 transition-colors duration-200">
-                Community
-              </a>
-              <a href="#pricing" onClick={go('pricing')} className="hover:text-slate-900 transition-colors duration-200">
-                Pricing
-              </a>
-              <a href="#about" onClick={go('about')} className="hover:text-slate-900 transition-colors duration-200">
-                About
-              </a>
-            </nav>
           </div>
 
-          <div className="flex items-center gap-3">
+          {/* Center Side: Navigation */}
+          <nav className="hidden md:flex items-center justify-center gap-7 text-sm font-bold text-slate-500">
+            <a href="#features" onClick={go('features')} className="hover:text-slate-900 transition-colors duration-200">
+              Features
+            </a>
+            <a href="#how-it-works" onClick={go('how-it-works')} className="hover:text-slate-900 transition-colors duration-200">
+              How it works
+            </a>
+            <a href="#testimonials" onClick={go('testimonials')} className="hover:text-slate-900 transition-colors duration-200">
+              Community
+            </a>
+            <a href="#pricing" onClick={go('pricing')} className="hover:text-slate-900 transition-colors duration-200">
+              Pricing
+            </a>
+            <a href="#about" onClick={go('about')} className="hover:text-slate-900 transition-colors duration-200">
+              About
+            </a>
+          </nav>
+
+          {/* Right Side: Actions */}
+          <div className="flex items-center justify-end gap-3">
             <a
               href="#contact"
               onClick={go('contact')}
-              className="hidden sm:inline-block text-sm font-bold text-slate-600 hover:text-slate-900 transition-colors duration-200"
+              className="hidden sm:inline-block text-xs font-black uppercase tracking-wider text-slate-400 hover:text-slate-900 transition-colors duration-200"
             >
               Sign in
             </a>
@@ -318,84 +322,96 @@ export default function LandingPage({ accent, onOpenStudio, userId }: LandingPag
                 </div>
               </div>
 
-              <div id="features" className="mt-12 scroll-mt-28 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 text-left">
-                {[
-                  { icon: FileCode, color: 'text-blue-600', bg: 'bg-blue-50', t: 'AI Landing Page Builder', d: 'Turn ideas into shippable UIs.' },
-                  { icon: BarChart3, color: 'text-indigo-600', bg: 'bg-indigo-50', t: 'SaaS Dashboard for Analytics', d: 'Charts, tables, and insights.' },
-                  { icon: ClipboardList, color: 'text-emerald-600', bg: 'bg-emerald-50', t: 'Booking System for Doctors', d: 'Scheduling and appointments.' },
-                  { icon: HardDrive, color: 'text-slate-700', bg: 'bg-slate-50', t: 'Project Management Tool', d: 'Tasks, files, and workflows.' },
-                ].map((c) => (
-                  <div
-                    key={c.t}
-                    className="p-6 bg-white border border-[#E2E8F0] rounded-2xl shadow-sm hover:shadow-md hover:border-slate-200 transition-all duration-300"
-                  >
-                    <div className={`w-10 h-10 rounded-xl ${c.bg} ${c.color} flex items-center justify-center`}>
-                      <c.icon size={18} />
+              {/* --- FEATURES SECTION (Redesigned: Glassmorphism) --- */}
+              <div id="features" className="mt-20 scroll-mt-28">
+                <div className="flex items-center gap-3 mb-10 overflow-hidden">
+                  <div className="h-px bg-slate-200 flex-1" />
+                  <span className="text-[10px] font-black text-slate-400 uppercase tracking-[0.3em] whitespace-nowrap">Capabilities</span>
+                  <div className="h-px bg-slate-200 flex-1" />
+                </div>
+                
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 text-left">
+                  {[
+                    { icon: FileCode, accent: 'blue', t: 'SaaS Platform Builder', d: 'Concevez des dashboards complexes et des interfaces client en un clin d\'œil.' },
+                    { icon: BarChart3, accent: 'indigo', t: 'Analytics & Insights', d: 'Générez des graphiques interactifs et des rapports de données en temps réel.' },
+                    { icon: Database, accent: 'emerald', t: 'Backend Integration', d: 'Connectez instantanément vos bases de données Postgres et vos APIs.' },
+                    { icon: Shield, accent: 'rose', t: 'Enterprise Security', d: 'Auth sécurisée, gestion des rôles et protection des données par défaut.' },
+                  ].map((c) => (
+                    <div
+                      key={c.t}
+                      className="group relative p-8 bg-white border border-slate-100 rounded-[32px] overflow-hidden transition-all duration-500 hover:shadow-2xl hover:shadow-blue-500/10 hover:-translate-y-2"
+                    >
+                      <div className={`absolute top-0 right-0 w-32 h-32 bg-${c.accent}-500/5 blur-3xl rounded-full -mr-16 -mt-16 group-hover:bg-${c.accent}-500/10 transition-colors`} />
+                      <div className={`w-14 h-14 rounded-2xl bg-${c.accent}-50 flex items-center justify-center text-${c.accent}-600 mb-6 group-hover:scale-110 transition-transform duration-500 border border-${c.accent}-100/50`}>
+                        <c.icon size={24} />
+                      </div>
+                      <h3 className="text-lg font-black text-slate-900 leading-tight mb-3 italic">{c.t}</h3>
+                      <p className="text-sm font-medium text-slate-500 leading-relaxed">{c.d}</p>
                     </div>
-                    <p className="mt-4 text-sm font-black text-slate-800">{c.t}</p>
-                    <p className="mt-1 text-xs text-slate-500">{c.d}</p>
-                  </div>
-                ))}
+                  ))}
+                </div>
               </div>
 
-              <p className="mt-8 text-center text-xs text-slate-400">More ideas</p>
+              <p className="mt-12 text-center text-[10px] font-bold text-slate-400 uppercase tracking-widest animate-bounce">Scroll for more</p>
             </div>
           </main>
 
+          {/* --- HOW IT WORKS (Redesigned: Visual Timeline) --- */}
+          <section id="how-it-works" className="scroll-mt-28 py-24">
+            <div className="relative rounded-[48px] bg-slate-100/50 border border-slate-200/60 p-12 overflow-hidden">
+               <div className="absolute top-0 left-1/2 -translate-x-1/2 w-px h-full bg-gradient-to-b from-blue-500/20 via-blue-200/10 to-transparent hidden lg:block" />
+               
+               <div className="relative text-center mb-16">
+                 <h2 className="text-xs font-black uppercase tracking-[0.4em] text-blue-600 mb-4 px-4">Le Processus Huggy</h2>
+                 <p className="text-3xl sm:text-4xl font-black text-[#0F172A] tracking-tight">De l'idée au déploiement en 60s.</p>
+               </div>
 
-
-          <section id="how-it-works" className="scroll-mt-28 py-12 bg-[#F9FAFB] -mx-6 px-6 rounded-3xl">
-            <h2 className="text-center text-sm font-black uppercase tracking-widest text-blue-600">Comment ça marche</h2>
-            <p className="mt-2 text-center text-2xl font-black text-[#0F172A]">Trois étapes pour shipped</p>
-            <div className="mt-10 grid md:grid-cols-3 gap-6">
-              {[
-                { n: '1', t: 'Générer', d: 'Décrivez votre produit ; Huggy propose une base de fichiers React.' },
-                { n: '2', t: 'Éditer', d: 'Affinez dans l’éditeur, prévisualisez en live sur tous les formats.' },
-                { n: '3', t: 'Publier', d: 'Déployez une build statique et partagez votre URL /live/{slug}/.' },
-              ].map((s) => (
-                <div key={s.n} className="bg-white p-6 rounded-2xl border border-[#E2E8F0] shadow-sm text-left transition-transform duration-300 hover:-translate-y-0.5">
-                  <p className="text-xs font-bold text-slate-400 uppercase tracking-widest">{s.n}</p>
-                  <p className="mt-2 text-lg font-black text-slate-900">{s.t}</p>
-                  <p className="mt-2 text-sm text-slate-500 leading-relaxed">{s.d}</p>
-                </div>
-              ))}
+               <div className="grid lg:grid-cols-3 gap-12 relative">
+                 {[
+                   { n: '01', t: 'Inspiration AI', d: 'Décrivez votre vision en langage naturel. Huggy analyse et structure vos fichiers React instantanément.' },
+                   { n: '02', t: 'Édition Immersive', d: 'Ajustez votre interface en temps réel dans notre studio de classe mondiale. Code propre et optimisé.' },
+                   { n: '03', t: 'Push & Live', d: 'Déployez vers GitHub ou notre cloud sécurisé. Votre SaaS est prêt à accueillir ses utilisateurs.' },
+                 ].map((s) => (
+                   <div key={s.n} className="relative group p-8 rounded-3xl bg-white border border-slate-100 shadow-sm hover:shadow-xl transition-all duration-500">
+                     <span className="text-6xl font-black text-slate-100 group-hover:text-blue-50/50 transition-colors absolute -top-4 -left-4 pointer-events-none select-none">{s.n}</span>
+                     <div className="relative">
+                       <h3 className="text-xl font-bold text-slate-900 mb-3">{s.t}</h3>
+                       <p className="text-sm text-slate-500 leading-relaxed font-medium">{s.d}</p>
+                     </div>
+                   </div>
+                 ))}
+               </div>
             </div>
           </section>
         </div>
 
-        <section id="testimonials" className="scroll-mt-28 py-20 px-6 bg-[#F9FAFB]">
-          <div className="max-w-6xl mx-auto">
-            <div className="text-center">
-              <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-blue-50 border border-blue-100 text-blue-600 text-xs font-black tracking-wide">
-                <Star size={14} className="fill-blue-600 text-blue-600" />
-                TESTIMONIALS
+        {/* --- TESTIMONIALS (Redesigned: Premium Grid) --- */}
+        <section id="testimonials" className="scroll-mt-28 py-32 px-6 relative overflow-hidden bg-white">
+          <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_right,rgba(37,99,235,0.03),transparent)]" />
+          <div className="max-w-6xl mx-auto relative">
+            <div className="text-center mb-20">
+              <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-blue-50 text-blue-600 text-[10px] font-black tracking-widest border border-blue-100 shadow-sm mb-6">
+                <Star size={14} className="fill-blue-600" />
+                COMMUNITY VOICE
               </div>
-              <h2 className="mt-6 text-3xl sm:text-4xl font-black text-[#0F172A]">Loved by builders worldwide</h2>
-              <p className="mt-3 text-slate-500 max-w-lg mx-auto">See what makers and teams say about Huggy</p>
+              <h2 className="text-4xl md:text-5xl font-black text-slate-900 tracking-tight leading-tight">Plébiscité par les bâtisseurs.</h2>
+              <p className="mt-6 text-lg text-slate-500 max-w-2xl mx-auto font-medium">Rejoignez des milliers de créateurs qui repoussent les limites du possible.</p>
             </div>
 
-            <div className="mt-12 grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
-              {TESTIMONIALS.map((t) => (
+            <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-8">
+              {TESTIMONIALS.map((t, idx) => (
                 <article
                   key={t.name}
-                  className="bg-white p-8 rounded-2xl border border-[#E2E8F0] shadow-sm flex flex-col transition-shadow duration-300 hover:shadow-md"
+                  className={`bg-white p-10 rounded-[40px] border border-slate-100 shadow-sm flex flex-col transition-all duration-500 hover:shadow-2xl hover:-translate-y-2 group ${idx === 1 ? 'md:scale-105 z-10 border-blue-100' : ''}`}
                 >
-                  <div className="flex gap-0.5 text-[#2563EB]">
-                    {Array.from({ length: 5 }).map((_, i) => (
-                      <Star key={i} size={16} className="fill-[#2563EB] text-[#2563EB]" />
-                    ))}
-                  </div>
-                  <p className="mt-4 text-[#0F172A] font-medium leading-relaxed">&ldquo;{t.quote}&rdquo;</p>
-                  <div className="mt-6 pt-6 border-t border-slate-100 flex items-center gap-3">
-                    <div
-                      className="w-11 h-11 rounded-full bg-gradient-to-br from-blue-100 to-indigo-100 text-blue-700 flex items-center justify-center text-xs font-black shrink-0"
-                      aria-hidden
-                    >
+                  <p className="text-slate-700 font-bold text-lg leading-relaxed mb-8">&ldquo;{t.quote}&rdquo;</p>
+                  <div className="mt-auto pt-8 border-t border-slate-50 flex items-center gap-4">
+                    <div className="w-12 h-12 rounded-2xl bg-slate-900 text-white flex items-center justify-center text-xs font-black shadow-lg group-hover:rotate-6 transition-transform">
                       {t.initials}
                     </div>
                     <div>
-                      <p className="font-bold text-[#0F172A]">{t.name}</p>
-                      <p className="text-sm text-slate-500">{t.role}</p>
+                      <p className="font-black text-slate-900 tracking-tight">{t.name}</p>
+                      <p className="text-xs font-bold text-blue-600 uppercase tracking-widest mt-0.5">{t.role}</p>
                     </div>
                   </div>
                 </article>
@@ -405,47 +421,61 @@ export default function LandingPage({ accent, onOpenStudio, userId }: LandingPag
         </section>
 
         <div className="max-w-6xl mx-auto px-6">
-          <section id="pricing" className="scroll-mt-28 py-16">
-            <h2 className="text-center text-3xl font-black text-[#0F172A]">Tarifs simples, sans surprise</h2>
-            <p className="mt-4 text-center text-slate-500 text-base max-w-xl mx-auto">Démarrez avec le plan Hobby ou propulsez vos applications avec le plan Pro. Conservez jusqu'à 80% de gains de productivité.</p>
-            <div className="mt-12 grid md:grid-cols-3 gap-8">
+          {/* --- PRICING (Redesigned: High-End Cards) --- */}
+          <section id="pricing" className="scroll-mt-28 py-24 border-t border-slate-100">
+            <div className="text-center mb-16">
+              <h2 className="text-4xl font-black text-slate-900 mb-4 italic">Tarification Scalable</h2>
+              <p className="text-slate-500 font-medium text-lg">Investissez dans votre vitesse de livraison.</p>
+            </div>
+            
+            <div className="grid md:grid-cols-3 gap-10">
               {[
-                { id: 'hobby', name: 'Hobby', price: '19 €', desc: 'Idéal pour les MVP et les prototypes simples.', feat: '1 000 Crédits IA / 2 Projets hébergés' },
-                { id: 'pro', name: 'Pro', price: '39 €', desc: 'Pour les développeurs et freelances.', feat: '3 000 Crédits / 5 Projets / Domaines personnalisés', hi: true },
-                { id: 'scale', name: 'Scale', price: '99 €', desc: 'Création sans limite. Haute performance.', feat: '10 000 Crédits / Projets illimités / APIs externes' },
+                { id: 'hobby', name: 'Starter', price: '0 €', desc: 'Idéal pour explorer et tester vos premières idées.', feat: '500 Crédits IA / 1 Projet' },
+                { id: 'pro', name: 'Premium', price: '29 €', desc: 'Pour les créateurs sérieux et les startups.', feat: '5 000 Crédits / 10 Projets / Export Source', hi: true },
+                { id: 'scale', name: 'Agency', price: '89 €', desc: 'Pour les équipes produisant à grande échelle.', feat: '20 000 Crédits / Illimité / Support VIP' },
               ].map((p) => (
                 <div
                   key={p.name}
-                  className={`rounded-3xl p-8 border transition-all duration-300 relative flex flex-col ${
-                    p.hi ? 'border-blue-500 bg-blue-50/50 shadow-[0_20px_40px_-15px_rgba(37,99,235,0.2)] md:-translate-y-4' : 'border-[#E2E8F0] bg-white hover:shadow-xl hover:-translate-y-1'
+                  className={`rounded-[44px] p-10 border transition-all duration-700 relative flex flex-col ${
+                    p.hi 
+                    ? 'border-blue-500 bg-slate-900 text-white shadow-2xl scale-105' 
+                    : 'border-slate-100 bg-white hover:border-blue-200 shadow-sm hover:shadow-2xl'
                   }`}
                 >
-                  {p.hi && <div className="absolute -top-3 left-1/2 -translate-x-1/2 px-4 py-1 bg-blue-600 text-white text-[10px] uppercase tracking-widest font-bold rounded-full shadow-md">Populaire</div>}
-                  <p className="text-sm font-black uppercase tracking-widest text-slate-400">{p.name}</p>
-                  <div className="mt-4 flex items-baseline gap-2">
-                    <p className="text-4xl font-black text-[#0F172A]">{p.price}</p>
-                    <p className="text-sm font-bold text-slate-400 uppercase">/ mois</p>
+                  {p.hi && <div className="absolute -top-4 left-1/2 -translate-x-1/2 px-6 py-2 bg-blue-600 text-white text-[10px] uppercase tracking-[0.2em] font-black rounded-full shadow-lg">Meilleur Rapport</div>}
+                  <p className={`text-xs font-black uppercase tracking-widest ${p.hi ? 'text-blue-400' : 'text-slate-400'}`}>{p.name}</p>
+                  <div className="mt-6 flex items-baseline gap-2">
+                    <p className="text-5xl font-black tracking-tighter">{p.price}</p>
+                    <p className={`text-sm font-bold uppercase ${p.hi ? 'text-slate-400' : 'text-slate-400'}`}>/ mois</p>
                   </div>
-                  <p className="mt-3 text-sm text-slate-500 min-h-[40px]">{p.desc}</p>
-                  <div className="mt-6 pt-6 border-t border-slate-100 flex-1">
-                    <p className="text-sm font-bold text-slate-700 flex items-start gap-2">
-                      <Check size={16} className="text-emerald-500 mt-0.5 shrink-0" />
-                      {p.feat}
-                    </p>
-                    <p className="mt-2 text-sm text-slate-500 flex items-start gap-2">
-                      <Check size={16} className="text-emerald-500 mt-0.5 shrink-0" />
-                      Export du code source ZIP
-                    </p>
+                  <p className={`mt-4 text-sm font-medium leading-relaxed ${p.hi ? 'text-slate-400' : 'text-slate-500'}`}>{p.desc}</p>
+                  
+                  <div className={`mt-10 pt-10 border-t ${p.hi ? 'border-white/10' : 'border-slate-100'} space-y-4 flex-1`}>
+                    <div className="flex items-center gap-3">
+                      <div className={`w-5 h-5 rounded-full ${p.hi ? 'bg-blue-500 text-white' : 'bg-emerald-50 text-emerald-600'} flex items-center justify-center shrink-0`}>
+                        <Check size={12} strokeWidth={3} />
+                      </div>
+                      <span className={`text-[13px] font-bold ${p.hi ? 'text-slate-200' : 'text-slate-700'}`}>{p.feat}</span>
+                    </div>
+                    <div className="flex items-center gap-3">
+                      <div className={`w-5 h-5 rounded-full ${p.hi ? 'bg-blue-500 text-white' : 'bg-emerald-50 text-emerald-600'} flex items-center justify-center shrink-0`}>
+                        <Check size={12} strokeWidth={3} />
+                      </div>
+                      <span className={`text-[13px] font-bold ${p.hi ? 'text-slate-200' : 'text-slate-700'}`}>Export Code (Vite + React)</span>
+                    </div>
                   </div>
+
                   <button
                     type="button"
                     disabled={isCheckingOut}
                     onClick={() => handleCheckout(p.id)}
-                    className={`mt-8 w-full py-3.5 rounded-xl text-sm font-bold transition-all active:scale-[0.98] ${
-                      p.hi ? `${accent.bg} text-white shadow-lg shadow-blue-600/30 hover:shadow-xl` : 'border-2 border-slate-200 bg-white text-slate-800 hover:border-slate-300'
+                    className={`mt-12 w-full py-5 rounded-[24px] text-sm font-black transition-all active:scale-[0.98] ${
+                      p.hi 
+                      ? 'bg-blue-600 text-white shadow-xl shadow-blue-900/50 hover:bg-blue-500' 
+                      : 'bg-slate-50 text-slate-900 hover:bg-slate-100'
                     }`}
                   >
-                    Sélectionner le plan {p.name}
+                    Lancer l'aventure {p.name}
                   </button>
                 </div>
               ))}

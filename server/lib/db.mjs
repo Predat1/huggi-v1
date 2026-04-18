@@ -29,8 +29,17 @@ export function createPool() {
 
 /** @param {import('pg').Pool} pool */
 export async function initSchema(pool) {
-  await pool.query(`
     CREATE EXTENSION IF NOT EXISTS "pgcrypto";
+
+    CREATE TABLE IF NOT EXISTS profiles (
+      id UUID PRIMARY KEY, -- references auth.users(id)
+      email TEXT,
+      stripe_customer_id TEXT UNIQUE NULL,
+      credits NUMERIC NOT NULL DEFAULT 50,
+      tier TEXT NOT NULL DEFAULT 'free',
+      is_pro BOOLEAN NOT NULL DEFAULT false,
+      updated_at TIMESTAMPTZ NOT NULL DEFAULT now()
+    );
 
     CREATE TABLE IF NOT EXISTS projects (
       id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -65,16 +74,6 @@ export async function initSchema(pool) {
       active BOOLEAN NOT NULL DEFAULT true,
       created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
       built_at TIMESTAMPTZ
-    );
-
-    CREATE TABLE IF NOT EXISTS profiles (
-      id UUID PRIMARY KEY, -- references auth.users(id)
-      email TEXT,
-      stripe_customer_id TEXT UNIQUE NULL,
-      credits NUMERIC NOT NULL DEFAULT 50,
-      tier TEXT NOT NULL DEFAULT 'free',
-      is_pro BOOLEAN NOT NULL DEFAULT false,
-      updated_at TIMESTAMPTZ NOT NULL DEFAULT now()
     );
 
     CREATE INDEX IF NOT EXISTS idx_project_files_project ON project_files(project_id);
