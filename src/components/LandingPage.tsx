@@ -313,7 +313,6 @@ export default function LandingPage({ accent, onOpenStudio, userId }: LandingPag
                       }}
                       placeholder="Build a CRM for real estate with client tracking..."
                       modelLabel="Huggy AI"
-                      disclaimer="Huggy may make mistakes. Please use with discretion."
                     />
                   </div>
                 </div>

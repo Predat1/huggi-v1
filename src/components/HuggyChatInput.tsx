@@ -80,7 +80,7 @@ export default function HuggyChatInput({
   defaultTags = [],
   placeholder = 'Ask AI anything',
   className = '',
-  disclaimer = 'Huggy may make mistakes. Please use with discretion.',
+  disclaimer = '',
   modelLabel = 'Huggy AI',
 }: HuggyChatInputProps) {
   const [value, setValue] = useState('');
@@ -118,9 +118,14 @@ export default function HuggyChatInput({
     <div className={`flex flex-col items-center gap-2 w-full ${className}`}>
       {/* ── Main input card ── */}
       <div
-        className="w-full rounded-2xl border border-white/10 overflow-hidden"
+        className="w-full rounded-2xl border border-white/10 overflow-hidden relative"
         style={{ background: '#1C1C1E' }}
       >
+        {/* Branding */}
+        <div className="absolute top-3 right-4 select-none pointer-events-none opacity-20 group-hover:opacity-40 transition-opacity">
+          <span className="text-[10px] font-black tracking-[0.2em] text-white">HUGGY</span>
+        </div>
+
         {/* Tag row */}
         {tags.length > 0 && (
           <div className="flex flex-wrap gap-1.5 px-4 pt-3">
@@ -259,10 +264,7 @@ export default function HuggyChatInput({
         </div>
       </div>
 
-      {/* Disclaimer */}
-      {disclaimer && (
-        <p className="text-[12px] text-white/25 text-center leading-relaxed mt-1">{disclaimer}</p>
-      )}
+
     </div>
   );
 }

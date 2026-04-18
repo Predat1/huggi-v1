@@ -221,6 +221,7 @@ export default function App() {
   const [showAnalyticsMenu, setShowAnalyticsMenu] = useState(false);
   const [showMoreMenu, setShowMoreMenu] = useState(false);
   const [showProjectMenu, setShowProjectMenu] = useState(false);
+  const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
   const [toast, setToast] = useState<{message: string, type: 'success' | 'info'} | null>(null);
 
   const showToast = (message: string, type: 'success' | 'info' = 'success') => {
@@ -960,16 +961,26 @@ export default function App() {
 
       <div className="flex flex-1 overflow-hidden">
         {/* Left Sidebar */}
-        <aside className="w-[440px] border-r border-slate-200 bg-white flex flex-col shrink-0">
-          <div className="p-4 border-b border-slate-100 flex items-center justify-between relative">
-            <div 
-              onClick={() => setShowProjectMenu(!showProjectMenu)}
-              className="flex items-center gap-2 cursor-pointer hover:bg-slate-50 p-1 rounded transition-colors group"
+        <aside className={`${isSidebarCollapsed ? 'w-16' : 'w-[440px]'} border-r border-slate-200 bg-white flex flex-col shrink-0 transition-all duration-300 ease-in-out`}>
+          <div className="p-4 border-b border-slate-100 flex items-center justify-between relative min-h-[57px]">
+            {!isSidebarCollapsed && (
+              <div 
+                onClick={() => setShowProjectMenu(!showProjectMenu)}
+                className="flex items-center gap-2 cursor-pointer hover:bg-slate-50 p-1 rounded transition-colors group"
+              >
+                <div className={`w-4 h-4 ${ACCENT_COLORS[activeAccentColor].bg} rounded-sm`} />
+                <span className="font-bold text-sm text-slate-700">New Project</span>
+                <ChevronDown size={14} className={`text-slate-400 transition-transform ${showProjectMenu ? 'rotate-180' : ''}`} />
+              </div>
+            )}
+            
+            <button
+              onClick={() => setIsSidebarCollapsed(!isSidebarCollapsed)}
+              className={`p-1.5 rounded-lg hover:bg-slate-100 text-slate-400 hover:text-slate-900 transition-all ${isSidebarCollapsed ? 'mx-auto' : ''}`}
+              title={isSidebarCollapsed ? 'Expand sidebar' : 'Collapse sidebar'}
             >
-              <div className={`w-4 h-4 ${ACCENT_COLORS[activeAccentColor].bg} rounded-sm`} />
-              <span className="font-bold text-sm text-slate-700">New Project</span>
-              <ChevronDown size={14} className={`text-slate-400 transition-transform ${showProjectMenu ? 'rotate-180' : ''}`} />
-            </div>
+              {isSidebarCollapsed ? <Plus size={18} /> : <Maximize2 size={16} className="rotate-45" />}
+            </button>
 
             <AnimatePresence>
               {showProjectMenu && (
@@ -999,7 +1010,8 @@ export default function App() {
               )}
             </AnimatePresence>
 
-            <div className="flex items-center gap-3 text-slate-400">
+            {!isSidebarCollapsed && (
+              <div className="flex items-center gap-3 text-slate-400">
               <button 
                 onClick={() => setActiveSidebarTab('chat')}
                 className={`p-1.5 rounded transition-colors ${activeSidebarTab === 'chat' ? 'text-blue-600 bg-blue-50' : 'hover:text-slate-600'}`}
@@ -1014,10 +1026,11 @@ export default function App() {
               >
                 <History size={18} />
               </button>
-            </div>
+              </div>
+            )}
           </div>
 
-          <div className="flex-1 overflow-hidden flex flex-col pt-0 pb-0">
+          <div className={`flex-1 flex flex-col min-h-0 ${isSidebarCollapsed ? 'hidden' : 'flex'}`}>
             {activeSidebarTab === 'chat' ? (
               <>
                 {/* ── Chat Messages ── */}
@@ -1085,24 +1098,32 @@ export default function App() {
                           </div>
                           <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Huggy</span>
                         </div>
-                        {/* Tool pills */}
+                        {/* Tool pills (Collapsible) */}
                         {agentTasks.length > 0 && (
-                          <div className="flex flex-col gap-1 w-full">
-                            {agentTasks.map((task) => (
-                              <div key={task.id} className={`flex items-center gap-2 px-3 py-1.5 rounded-lg text-[11px] font-mono border ${
-                                task.status === 'running'
-                                  ? 'bg-amber-50 border-amber-200 text-amber-800'
-                                  : task.status === 'error'
-                                  ? 'bg-red-50 border-red-200 text-red-700'
-                                  : 'bg-emerald-50 border-emerald-200 text-emerald-700'
-                              }`}>
-                                <span className={`w-1.5 h-1.5 rounded-full flex-shrink-0 ${
-                                  task.status === 'running' ? 'bg-amber-400 animate-pulse' : task.status === 'error' ? 'bg-red-400' : 'bg-emerald-400'
-                                }`} />
-                                {task.type === 'read' ? '◎' : task.type === 'edit' ? '✎' : task.type === 'install' ? '↓' : task.type === 'compile' ? '⚙' : '⚡'} {task.label}
-                              </div>
-                            ))}
-                          </div>
+                          <details className="w-full group/details" open={agentTasks.some(t => t.status === 'running')}>
+                            <summary className="flex items-center gap-1.5 px-1 py-1 cursor-pointer select-none">
+                              <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest group-hover/details:text-slate-600 transition-colors">
+                                {agentTasks.filter(t => t.status === 'success').length}/{agentTasks.length} Tâches terminées
+                              </span>
+                              <ChevronDown size={10} className="text-slate-300 group-open/details:rotate-180 transition-transform" />
+                            </summary>
+                            <div className="flex flex-col gap-1 w-full mt-1">
+                              {agentTasks.map((task) => (
+                                <div key={task.id} className={`flex items-center gap-2 px-3 py-1.5 rounded-lg text-[11px] font-mono border ${
+                                  task.status === 'running'
+                                    ? 'bg-amber-50 border-amber-200 text-amber-800 shadow-sm'
+                                    : task.status === 'error'
+                                    ? 'bg-red-50 border-red-200 text-red-700'
+                                    : 'bg-emerald-50/50 border-emerald-100 text-emerald-600'
+                                }`}>
+                                  <span className={`w-1.5 h-1.5 rounded-full flex-shrink-0 ${
+                                    task.status === 'running' ? 'bg-amber-400 animate-pulse' : task.status === 'error' ? 'bg-red-400' : 'bg-emerald-400'
+                                  }`} />
+                                  {task.type === 'read' ? '◎' : task.type === 'edit' ? '✎' : task.type === 'install' ? '↓' : task.type === 'compile' ? '⚙' : '⚡'} {task.label}
+                                </div>
+                              ))}
+                            </div>
+                          </details>
                         )}
                         {/* Streaming text or thinking dots */}
                         {streamingMessage ? (
@@ -1123,7 +1144,7 @@ export default function App() {
                 </div>
 
                 {/* ── Chat Input ── */}
-                <div className="shrink-0 p-3 bg-[#111215]">
+                <div className="shrink-0 p-4 pb-10 bg-[#111215]">
                   <HuggyChatInput
                     onSend={(prompt) => {
                       if (prompt) {
@@ -1134,7 +1155,6 @@ export default function App() {
                     isLoading={isGenerating}
                     placeholder="Ask AI anything"
                     modelLabel="Huggy AI"
-                    disclaimer="Huggy may make mistakes. Please use with discretion."
                   />
                 </div>
               </>
