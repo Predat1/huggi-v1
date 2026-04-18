@@ -37,6 +37,39 @@ const PORT = Number(process.env.PORT || (isProd ? 8080 : 3001));
 const sitesDir = process.env.SITES_DIR || path.join(root, 'data', 'sites');
 const previewRootDomain = process.env.PREVIEW_ROOT_DOMAIN || '';
 
+/* ——— Rate Limiter (in-memory, per IP) ——— */
+const _rlMap = new Map();
+const RL_WINDOW_MS = 60_000; // 1 minute
+const RL_MAX_HITS  = 30;     // 30 requests per window
+
+function rateLimiter(req, res, next) {
+  const ip = req.ip || req.socket?.remoteAddress || 'unknown';
+  const now = Date.now();
+  let entry = _rlMap.get(ip);
+  if (!entry || now - entry.start > RL_WINDOW_MS) {
+    entry = { start: now, count: 0 };
+    _rlMap.set(ip, entry);
+  }
+  entry.count++;
+  if (entry.count > RL_MAX_HITS) {
+    return res.status(429).json({ error: 'Too many requests. Please wait.' });
+  }
+  next();
+}
+// Periodic cleanup to avoid memory leaks
+setInterval(() => {
+  const cutoff = Date.now() - RL_WINDOW_MS * 2;
+  for (const [ip, entry] of _rlMap) {
+    if (entry.start < cutoff) _rlMap.delete(ip);
+  }
+}, RL_WINDOW_MS * 2);
+
+/** Mask error details in production */
+function safeError(e) {
+  if (isProd) return 'Internal server error';
+  return e instanceof Error ? e.message : String(e);
+}
+
 const pool = createPool();
 
 function isUuid(v) {
@@ -74,13 +107,26 @@ function liveUrl(req, slug) {
 
 const app = express();
 app.disable('x-powered-by');
+app.set('trust proxy', 1); // Railway / reverse proxy
 app.use(express.json({ limit: '5mb' }));
 
-// Basic hardening without extra deps.
+// Security headers + CORS
 app.use((req, res, next) => {
   res.setHeader('X-Content-Type-Options', 'nosniff');
   res.setHeader('Referrer-Policy', 'no-referrer');
   res.setHeader('Permissions-Policy', 'geolocation=(), microphone=(), camera=()');
+  res.setHeader('X-Frame-Options', 'DENY');
+  res.setHeader('Strict-Transport-Security', 'max-age=31536000; includeSubDomains');
+
+  // CORS — restrict to the configured app URL
+  const origin = req.get('origin');
+  const allowed = process.env.PUBLIC_APP_URL || 'http://localhost:3000';
+  if (origin && (origin === allowed || !isProd)) {
+    res.setHeader('Access-Control-Allow-Origin', origin);
+    res.setHeader('Access-Control-Allow-Methods', 'GET,POST,PUT,DELETE,OPTIONS');
+    res.setHeader('Access-Control-Allow-Headers', 'Content-Type,Authorization');
+  }
+  if (req.method === 'OPTIONS') return res.sendStatus(204);
   next();
 });
 
@@ -120,12 +166,11 @@ app.get('/api/health', async (_req, res) => {
       dbOk = false;
     }
   }
+  // Do NOT expose which API keys are configured — information leak
   res.json({
     ok: true,
     env: isProd ? 'production' : 'development',
     database: pool ? (dbOk ? 'connected' : 'error') : 'disabled',
-    anthropic: Boolean(process.env.ANTHROPIC_API_KEY),
-    gemini: Boolean(process.env.GEMINI_API_KEY),
   });
 });
 
@@ -133,7 +178,7 @@ app.get('/api/health', async (_req, res) => {
 
 app.post('/api/projects', async (req, res) => {
   if (!pool) {
-    return res.status(503).json({ error: 'DATABASE_URL non configuré.' });
+    return res.status(503).json({ error: 'Service unavailable' });
   }
   try {
     const name = typeof req.body?.name === 'string' ? req.body.name : 'Sans titre';
@@ -143,12 +188,12 @@ app.post('/api/projects', async (req, res) => {
     res.status(201).json({ project, files });
   } catch (e) {
     console.error(e);
-    res.status(500).json({ error: e instanceof Error ? e.message : 'Erreur' });
+    res.status(500).json({ error: safeError(e) });
   }
 });
 
 app.get('/api/projects/:id', async (req, res) => {
-  if (!pool) return res.status(503).json({ error: 'Pas de base.' });
+  if (!pool) return res.status(503).json({ error: 'Service unavailable' });
   try {
     if (!isUuid(req.params.id)) return res.status(400).json({ error: 'ID projet invalide.' });
     const project = await getProject(pool, req.params.id);
@@ -157,12 +202,12 @@ app.get('/api/projects/:id', async (req, res) => {
     const deployments = await listDeployments(pool, project.id);
     res.json({ project, files, deployments });
   } catch (e) {
-    res.status(500).json({ error: e instanceof Error ? e.message : 'Erreur' });
+    res.status(500).json({ error: safeError(e) });
   }
 });
 
 app.get('/api/projects/:id/files', async (req, res) => {
-  if (!pool) return res.status(503).json({ error: 'Pas de base.' });
+  if (!pool) return res.status(503).json({ error: 'Service unavailable' });
   try {
     if (!isUuid(req.params.id)) return res.status(400).json({ error: 'ID projet invalide.' });
     const project = await getProject(pool, req.params.id);
@@ -170,12 +215,12 @@ app.get('/api/projects/:id/files', async (req, res) => {
     const files = await listFiles(pool, project.id);
     res.json({ files });
   } catch (e) {
-    res.status(500).json({ error: e instanceof Error ? e.message : 'Erreur' });
+    res.status(500).json({ error: safeError(e) });
   }
 });
 
 app.put('/api/projects/:id/files', async (req, res) => {
-  if (!pool) return res.status(503).json({ error: 'Pas de base.' });
+  if (!pool) return res.status(503).json({ error: 'Service unavailable' });
   try {
     if (!isUuid(req.params.id)) return res.status(400).json({ error: 'ID projet invalide.' });
     const project = await getProject(pool, req.params.id);
@@ -190,12 +235,12 @@ app.put('/api/projects/:id/files', async (req, res) => {
     await upsertFile(pool, project.id, normalized, content);
     res.json({ ok: true });
   } catch (e) {
-    res.status(500).json({ error: e instanceof Error ? e.message : 'Erreur' });
+    res.status(500).json({ error: safeError(e) });
   }
 });
 
 app.delete('/api/projects/:id/files', async (req, res) => {
-  if (!pool) return res.status(503).json({ error: 'Pas de base.' });
+  if (!pool) return res.status(503).json({ error: 'Service unavailable' });
   try {
     if (!isUuid(req.params.id)) return res.status(400).json({ error: 'ID projet invalide.' });
     const project = await getProject(pool, req.params.id);
@@ -212,12 +257,12 @@ app.delete('/api/projects/:id/files', async (req, res) => {
     await deleteFile(pool, project.id, normalized);
     res.json({ ok: true });
   } catch (e) {
-    res.status(500).json({ error: e instanceof Error ? e.message : 'Erreur' });
+    res.status(500).json({ error: safeError(e) });
   }
 });
 
 app.post('/api/projects/:id/deploy', async (req, res) => {
-  if (!pool) return res.status(503).json({ error: 'Pas de base.' });
+  if (!pool) return res.status(503).json({ error: 'Service unavailable' });
   try {
     if (!isUuid(req.params.id)) return res.status(400).json({ error: 'ID projet invalide.' });
     const project = await getProject(pool, req.params.id);
@@ -244,7 +289,7 @@ app.post('/api/projects/:id/deploy', async (req, res) => {
         err instanceof Error ? err.message : String(err),
       );
       return res.status(500).json({
-        error: err instanceof Error ? err.message : 'Build échoué',
+        error: safeError(err),
         deploymentId: dep.id,
         slug: dep.slug,
       });
@@ -258,13 +303,13 @@ app.post('/api/projects/:id/deploy', async (req, res) => {
       url,
     });
   } catch (e) {
-    res.status(500).json({ error: e instanceof Error ? e.message : 'Erreur' });
+    res.status(500).json({ error: safeError(e) });
   }
 });
 
 /* ——— IA ——— */
 
-app.post('/api/generate-app', async (req, res) => {
+app.post('/api/generate-app', rateLimiter, async (req, res) => {
   try {
     const { prompt, currentCode, projectId, files: bodyFiles } = req.body || {};
     if (typeof prompt !== 'string') {
@@ -320,12 +365,12 @@ app.post('/api/generate-app', async (req, res) => {
   } catch (e) {
     console.error('[generate-app]', e);
     res.status(500).json({
-      error: e instanceof Error ? e.message : 'Erreur génération',
+      error: safeError(e),
     });
   }
 });
 
-app.post('/api/chat', async (req, res) => {
+app.post('/api/chat', rateLimiter, async (req, res) => {
   try {
     const { prompt } = req.body || {};
     if (typeof prompt !== 'string') {
@@ -336,7 +381,7 @@ app.post('/api/chat', async (req, res) => {
   } catch (e) {
     console.error('[chat]', e);
     res.status(500).json({
-      error: e instanceof Error ? e.message : 'Erreur chat',
+      error: safeError(e),
     });
   }
 });

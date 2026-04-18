@@ -4,7 +4,16 @@ dist/
 coverage/
 .DS_Store
 *.log
+
+# Secrets — NEVER commit these
 .env*
 !.env.example
+.env.production
+*.pem
+*.key
+*.p12
+*.pfx
+
+# Data
 data/
 .tmp-deploy/
