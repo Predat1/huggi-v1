@@ -1,14 +1,8 @@
 import React, { useState, useRef, useEffect } from 'react';
 import {
   Plus,
-  Search,
-  Sparkles,
-  MoreHorizontal,
   ArrowUp,
-  Mic,
   X,
-  ChevronDown,
-  Zap,
 } from 'lucide-react';
 
 export interface ChatTag {
@@ -172,52 +166,13 @@ export default function HuggyChatInput({
           />
         </div>
 
-        {/* ── Toolbar ── */}
-        <div className="flex flex-wrap items-center justify-between gap-y-2 px-4 pb-4 pt-1">
+        {/* ── Toolbar (Minimal) ── */}
+        <div className="flex items-center justify-between px-4 pb-4 pt-1">
           {/* Left Toolbar */}
-          <div className="flex flex-wrap items-center gap-1">
+          <div className="flex items-center">
             {/* Plus */}
-            <button className="w-9 h-9 rounded-full flex items-center justify-center text-slate-400 hover:text-slate-900 hover:bg-slate-50 transition-all">
-              <Plus size={18} strokeWidth={2} />
-            </button>
-
-            {/* Model Badge (Compact) */}
-            <div className="flex items-center gap-1 px-2.5 h-8 rounded-full bg-slate-50 border border-slate-200 hover:bg-white transition-all cursor-pointer group">
-              <div className="w-3.5 h-3.5 flex items-center justify-center shrink-0">
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none">
-                  <path d="M12 2L14.5 9.5L22 12L14.5 14.5L12 22L9.5 14.5L2 12L9.5 9.5L12 2Z" fill="url(#sparkle-grad-compact-v2)" />
-                  <defs>
-                    <linearGradient id="sparkle-grad-compact-v2" x1="2" y1="2" x2="22" y2="22" gradientUnits="userSpaceOnUse">
-                      <stop offset="0%" stopColor="#FB923C" />
-                      <stop offset="50%" stopColor="#818CF8" />
-                      <stop offset="100%" stopColor="#2DD4BF" />
-                    </linearGradient>
-                  </defs>
-                </svg>
-              </div>
-              <span className="text-slate-800 text-[12px] font-bold truncate max-w-[80px]">{modelLabel === 'Huggy AI' ? 'Gemini 3 Pro' : modelLabel}</span>
-              <span className="text-slate-400 text-[8px] font-black uppercase tracking-tight ml-0.5 shrink-0">Beta</span>
-            </div>
-
-            {/* Lens/Search */}
-            <button className="w-9 h-9 rounded-full flex items-center justify-center text-slate-400 hover:text-slate-900 hover:bg-slate-50 transition-all">
-              <Search size={17} strokeWidth={2.5} />
-            </button>
-
-            {/* Magic */}
-            <button className="w-9 h-9 rounded-xl bg-[#4F46E5] flex items-center justify-center text-white shadow-lg shadow-indigo-600/20 hover:bg-[#4338CA] transition-all">
-              <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                <path d="m11 11 5 5" />
-                <path d="m14 11 3 3" />
-                <path d="m11 14 3 3" />
-                <path d="M11 11 9 9l-2 1 1 2 2-1Z" fill="currentColor" />
-                <path d="M11 11v8l3-3 4 1-7-6Z" />
-              </svg>
-            </button>
-
-            {/* More */}
-            <button className="w-9 h-9 rounded-full flex items-center justify-center text-slate-400 hover:text-slate-900 hover:bg-slate-50 transition-all">
-              <MoreHorizontal size={18} strokeWidth={2.5} />
+            <button className="w-10 h-10 rounded-full flex items-center justify-center text-slate-400 hover:text-slate-900 hover:bg-slate-50 transition-all">
+              <Plus size={20} strokeWidth={2} />
             </button>
           </div>
 
@@ -226,7 +181,7 @@ export default function HuggyChatInput({
             {/* Mic */}
             <button
               onClick={() => setIsListening(!isListening)}
-              className={`w-9 h-9 rounded-xl flex items-center justify-center border transition-all ${
+              className={`w-10 h-10 rounded-xl flex items-center justify-center border transition-all ${
                 isListening 
                 ? 'bg-rose-50 border-rose-200 text-rose-500 shadow-inner' 
                 : 'bg-slate-50 border-slate-200 text-slate-400 hover:text-slate-900 hover:border-slate-300'
@@ -247,16 +202,16 @@ export default function HuggyChatInput({
             <button
               onClick={handleSend}
               disabled={!canSend}
-              className={`w-10 h-10 min-w-[40px] min-h-[40px] rounded-full flex items-center justify-center transition-all ${
+              className={`w-11 h-11 min-w-[44px] min-h-[44px] rounded-full flex items-center justify-center transition-all ${
                 canSend 
                 ? 'bg-[#4F46E5] hover:bg-[#3730A3] text-white shadow-lg shadow-indigo-500/20 active:scale-95' 
                 : 'bg-slate-100 text-slate-300 cursor-not-allowed'
               }`}
             >
               {isLoading ? (
-                <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
               ) : (
-                <ArrowUp size={20} strokeWidth={3} />
+                <ArrowUp size={22} strokeWidth={3} />
               )}
             </button>
           </div>
