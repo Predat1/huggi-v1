@@ -118,25 +118,48 @@ export default function HuggyChatInput({
     <div className={`flex flex-col items-center gap-2 w-full ${className}`}>
       {/* ── Main input card ── */}
       <div
-        className="w-full rounded-2xl border border-white/10 overflow-hidden relative"
+        className="w-full rounded-[32px] border border-white/10 overflow-hidden relative shadow-2xl"
         style={{ background: '#1C1C1E' }}
       >
-        {/* Branding */}
-        <div className="absolute top-3 right-4 select-none pointer-events-none opacity-20 group-hover:opacity-40 transition-opacity">
-          <span className="text-[10px] font-black tracking-[0.2em] text-white">HUGGY</span>
-        </div>
+        {/* Branding (Subtle) */}
+        {!disclaimer && (
+          <div className="absolute top-4 right-6 select-none pointer-events-none opacity-10">
+            <span className="text-[10px] font-black tracking-[0.2em] text-white uppercase italic">HUGGY</span>
+          </div>
+        )}
 
         {/* Tag row */}
         {tags.length > 0 && (
-          <div className="flex flex-wrap gap-1.5 px-4 pt-3">
+          <div className="flex flex-wrap gap-1.5 px-6 pt-5">
             {tags.map((tag) => (
-              <TagPill key={tag.id} tag={tag} onRemove={() => removeTag(tag.id)} />
+              <div
+                key={tag.id}
+                className="flex items-center gap-2 py-1.5 pl-1.5 pr-2.5 rounded-full border border-white/20 border-dashed bg-white/5 text-[14px] font-medium text-white/90 group/tag transition-all hover:bg-white/10"
+              >
+                <div 
+                  className="w-6 h-6 rounded-full flex items-center justify-center overflow-hidden shrink-0 border border-white/10"
+                  style={{ background: tag.color ?? '#378ADD' }}
+                >
+                  {tag.avatar ? (
+                    <img src={tag.avatar} alt="" className="w-full h-full object-cover" />
+                  ) : (
+                    <span className="text-[10px] font-bold text-white uppercase">{tag.label.slice(0, 1)}</span>
+                  )}
+                </div>
+                <span>{tag.label}</span>
+                <button 
+                  onClick={() => removeTag(tag.id)}
+                  className="text-white/40 hover:text-white transition-colors"
+                >
+                  <X size={14} />
+                </button>
+              </div>
             ))}
           </div>
         )}
 
-        {/* Textarea */}
-        <div className="px-5 pt-4 pb-2">
+        {/* Textarea Area */}
+        <div className="px-7 pt-5 pb-3">
           <textarea
             ref={textareaRef}
             value={value}
@@ -145,126 +168,108 @@ export default function HuggyChatInput({
             disabled={isLoading}
             placeholder={placeholder}
             rows={1}
-            className="w-full bg-transparent text-white text-[18px] font-medium placeholder-white/25 resize-none focus:outline-none leading-relaxed disabled:opacity-50"
-            style={{ caretColor: '#7F77DD', minHeight: '32px' }}
+            className="w-full bg-transparent text-white text-[20px] font-medium placeholder-white/20 resize-none focus:outline-none leading-relaxed disabled:opacity-50"
+            style={{ caretColor: '#6366F1', minHeight: '38px' }}
           />
         </div>
 
         {/* ── Toolbar ── */}
-        <div className="flex items-center justify-between px-4 pb-4 pt-1">
-          {/* Left side */}
-          <div className="flex items-center gap-1">
+        <div className="flex items-center justify-between px-6 pb-6 pt-1">
+          {/* Left Toolbar */}
+          <div className="flex items-center gap-1.5">
             {/* Plus */}
-            <button
-              type="button"
-              className="w-9 h-9 rounded-xl flex items-center justify-center text-white/40 hover:text-white/70 hover:bg-white/8 transition-all"
-              aria-label="Attach"
-            >
-              <Plus size={20} />
+            <button className="w-10 h-10 rounded-full flex items-center justify-center text-white/40 hover:text-white hover:bg-white/5 transition-all">
+              <Plus size={24} strokeWidth={1.5} />
             </button>
 
-            {/* Model badge */}
-            <button
-              type="button"
-              className="flex items-center gap-2 px-3.5 h-9 rounded-xl hover:bg-white/8 transition-all group"
-              aria-label="Select model"
-            >
-              {/* Gemini-style colorful icon */}
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                <defs>
-                  <linearGradient id="gem-grad" x1="0" y1="0" x2="24" y2="24" gradientUnits="userSpaceOnUse">
-                    <stop offset="0%" stopColor="#7F77DD" />
-                    <stop offset="50%" stopColor="#378ADD" />
-                    <stop offset="100%" stopColor="#1D9E75" />
-                  </linearGradient>
-                </defs>
-                <path d="M12 2C6.48 2 2 6.48 2 12C2 17.52 6.48 22 12 22C17.52 22 22 17.52 22 12C22 6.48 17.52 2 12 2ZM12 20C7.59 20 4 16.41 4 12C4 7.59 7.59 4 12 4C16.41 4 20 7.59 20 12C20 16.41 16.41 20 12 20Z" fill="url(#gem-grad)" />
-                <path d="M12 6L9 12L12 18L15 12L12 6Z" fill="url(#gem-grad)" />
+            {/* Model Badge */}
+            <div className="flex items-center gap-2 px-4 h-11 rounded-[22px] bg-white/5 border border-white/5 hover:bg-white/10 transition-all cursor-pointer group">
+              <div className="w-5 h-5 flex items-center justify-center">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
+                  <path d="M12 2L14.5 9.5L22 12L14.5 14.5L12 22L9.5 14.5L2 12L9.5 9.5L12 2Z" fill="url(#sparkle-grad)" />
+                  <defs>
+                    <linearGradient id="sparkle-grad" x1="2" y1="2" x2="22" y2="22" gradientUnits="userSpaceOnUse">
+                      <stop offset="0%" stopColor="#FB923C" />
+                      <stop offset="50%" stopColor="#818CF8" />
+                      <stop offset="100%" stopColor="#2DD4BF" />
+                    </linearGradient>
+                  </defs>
+                </svg>
+              </div>
+              <span className="text-white/95 text-[15px] font-bold">{modelLabel === 'Huggy AI' ? 'Gemini 3 Pro' : modelLabel}</span>
+              <span className="text-white/30 text-[12px] font-bold uppercase tracking-tight ml-0.5">Beta</span>
+            </div>
+
+            {/* Lens/Search */}
+            <button className="w-10 h-10 rounded-full flex items-center justify-center text-white/40 hover:text-white hover:bg-white/5 transition-all">
+              <Search size={20} strokeWidth={2} />
+            </button>
+
+            {/* Magic/Magic Button (Exact Blue Icon) */}
+            <button className="w-10 h-10 rounded-[12px] bg-[#3B389B] flex items-center justify-center text-white shadow-lg shadow-indigo-500/10 hover:bg-[#4E4AC4] transition-all">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                <path d="m11 11 5 5" />
+                <path d="m14 11 3 3" />
+                <path d="m11 14 3 3" />
+                <path d="M11 11 9 9l-2 1 1 2 2-1Z" fill="currentColor" />
+                <path d="M11 11v8l3-3 4 1-7-6Z" />
               </svg>
-              <span className="text-white/80 text-[13px] font-semibold group-hover:text-white transition-colors">{modelLabel}</span>
-              <span className="px-1.5 py-0.5 rounded-md bg-white/10 text-white/50 text-[10px] font-bold">Beta</span>
-            </button>
-
-            {/* Search */}
-            <button
-              type="button"
-              className="w-9 h-9 rounded-xl flex items-center justify-center text-white/40 hover:text-white/70 hover:bg-white/8 transition-all"
-              aria-label="Search"
-            >
-              <Search size={17} />
-            </button>
-
-            {/* Sparkles/Magic */}
-            <button
-              type="button"
-              className="w-9 h-9 rounded-xl flex items-center justify-center text-white/40 hover:text-violet-400 hover:bg-violet-500/10 transition-all"
-              aria-label="Magic"
-            >
-              <Sparkles size={17} />
             </button>
 
             {/* More */}
-            <button
-              type="button"
-              className="w-9 h-9 rounded-xl flex items-center justify-center text-white/40 hover:text-white/70 hover:bg-white/8 transition-all"
-              aria-label="More options"
-            >
-              <MoreHorizontal size={17} />
+            <button className="w-10 h-10 rounded-full flex items-center justify-center text-white/40 hover:text-white hover:bg-white/5 transition-all">
+              <MoreHorizontal size={22} strokeWidth={2} />
             </button>
           </div>
 
-          {/* Right side — mic + send */}
-          <div className="flex items-center gap-2.5">
-            {/* Mic / audio */}
+          {/* Right Controls */}
+          <div className="flex items-center gap-3">
+            {/* Mic Waveform Icon */}
             <button
-              type="button"
-              onClick={() => setIsListening((v) => !v)}
-              className={`w-11 h-11 rounded-xl flex items-center justify-center border transition-all ${
-                isListening
-                  ? 'border-violet-400/60 bg-violet-500/20 text-violet-300'
-                  : 'border-white/15 text-white/40 hover:text-white/70 hover:border-white/25'
+              onClick={() => setIsListening(!isListening)}
+              className={`w-11 h-11 rounded-[16px] flex items-center justify-center border transition-all ${
+                isListening 
+                ? 'bg-red-500/10 border-red-500/30 text-red-400' 
+                : 'bg-white/5 border-white/10 text-white/60 hover:text-white hover:border-white/20'
               }`}
-              aria-label="Voice input"
             >
-              {isListening ? (
-                /* Waveform bars */
-                <span className="flex items-end gap-[2px] h-5">
-                  {[3, 5, 7, 5, 3].map((h, i) => (
-                    <span
-                      key={i}
-                      className="w-[2.5px] rounded-full bg-violet-400 animate-bounce"
-                      style={{ height: `${h * 2.5}px`, animationDelay: `${i * 0.08}s` }}
-                    />
-                  ))}
-                </span>
-              ) : (
-                <Mic size={18} />
-              )}
+              <div className="flex items-center gap-[2.5px]">
+                {[2, 4, 2].map((h, i) => (
+                  <div 
+                    key={i} 
+                    className={`w-[2.5px] rounded-full transition-all duration-300 ${isListening ? 'bg-red-400 animate-pulse' : 'bg-current'}`} 
+                    style={{ height: isListening ? `${Math.random() * 12 + 6}px` : `${h * 3.5}px` }} 
+                  />
+                ))}
+              </div>
             </button>
 
-            {/* Send button */}
+            {/* Send Circle */}
             <button
-              type="button"
               onClick={handleSend}
               disabled={!canSend}
-              className={`w-11 h-11 rounded-xl flex items-center justify-center transition-all font-bold shadow-lg ${
-                canSend
-                  ? 'bg-[#6366F1] hover:bg-[#4F46E5] text-white shadow-indigo-600/30 active:scale-95'
-                  : 'bg-white/8 text-white/20 cursor-not-allowed'
+              className={`w-12 h-12 rounded-full flex items-center justify-center transition-all ${
+                canSend 
+                ? 'bg-[#4338CA] hover:bg-[#3730A3] text-white shadow-xl shadow-indigo-600/30' 
+                : 'bg-white/10 text-white/20 cursor-not-allowed'
               }`}
-              aria-label="Send"
             >
               {isLoading ? (
                 <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
               ) : (
-                <ArrowUp size={20} strokeWidth={3} />
+                <ArrowUp size={24} strokeWidth={3} />
               )}
             </button>
           </div>
         </div>
       </div>
 
-
+      {/* Persistent Disclaimer (per Turn Request) */}
+      {disclaimer && (
+        <p className="text-[13px] text-white/25 text-center leading-relaxed mt-2 font-medium tracking-tight">
+          {disclaimer.replace('Acme', 'Huggy')}
+        </p>
+      )}
     </div>
   );
 }
