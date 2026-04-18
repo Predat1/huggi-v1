@@ -334,50 +334,7 @@ export default function LandingPage({ accent, onOpenStudio }: LandingPageProps) 
             </div>
           </main>
 
-          <section id="about" className="scroll-mt-28 py-16 border-t border-slate-100">
-            <div className="grid lg:grid-cols-2 gap-12 items-center">
-              <div>
-                <h2 className="text-3xl sm:text-4xl font-black tracking-tight text-[#0F172A]">
-                  Générez, éditez et déployez des apps React.
-                </h2>
-                <p className="mt-4 text-slate-600 leading-relaxed">
-                  Huggy Studio transforme vos idées en projets multi-fichiers sauvegardés en PostgreSQL, avec prévisualisation live et publication statique par slug.
-                </p>
-                <div className="mt-8 flex flex-wrap gap-3">
-                  <button
-                    type="button"
-                    onClick={() => onOpenStudio()}
-                    className={`px-6 py-3 rounded-xl text-sm font-bold text-white ${accent.bg} shadow-lg shadow-blue-600/20 hover:opacity-90 transition-all active:scale-[0.98]`}
-                  >
-                    Démarrer maintenant
-                  </button>
-                  <a
-                    href="https://github.com/Predat1/huggi-v1"
-                    target="_blank"
-                    rel="noreferrer"
-                    className="px-6 py-3 rounded-xl text-sm font-bold border border-[#E2E8F0] bg-white text-slate-700 hover:bg-slate-50 transition-colors inline-flex items-center gap-2"
-                  >
-                    Voir le projet
-                    <ExternalLink size={16} />
-                  </a>
-                </div>
-              </div>
-              <div className="grid sm:grid-cols-2 gap-4">
-                {[
-                  { icon: Database, t: 'Projets persistés', d: 'PostgreSQL pour sauvegarder fichiers et déploiements.' },
-                  { icon: Monitor, t: 'Preview live', d: 'Rendu instantané, mode desktop/tablet/mobile.' },
-                  { icon: HardDrive, t: 'Publication par slug', d: 'Déploiement statique dans SITES_DIR/{slug}.' },
-                  { icon: Shield, t: 'IA multi-fichiers', d: 'Claude en priorité, Gemini en secours.' },
-                ].map((x) => (
-                  <div key={x.t} className="p-5 rounded-2xl border border-[#E2E8F0] bg-[#F9FAFB]">
-                    <x.icon size={20} className="text-blue-600" />
-                    <p className="mt-2 text-sm font-black text-slate-900">{x.t}</p>
-                    <p className="mt-1 text-xs text-slate-500 leading-relaxed">{x.d}</p>
-                  </div>
-                ))}
-              </div>
-            </div>
-          </section>
+
 
           <section id="how-it-works" className="scroll-mt-28 py-12 bg-[#F9FAFB] -mx-6 px-6 rounded-3xl">
             <h2 className="text-center text-sm font-black uppercase tracking-widest text-blue-600">Comment ça marche</h2>
