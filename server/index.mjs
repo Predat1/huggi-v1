@@ -105,9 +105,48 @@ function liveUrl(req, slug) {
   return `${publicBaseUrl(req)}/live/${slug}/`;
 }
 
+import Stripe from 'stripe';
+const stripe = process.env.STRIPE_SECRET_KEY ? new Stripe(process.env.STRIPE_SECRET_KEY) : null;
+
 const app = express();
 app.disable('x-powered-by');
 app.set('trust proxy', 1); // Railway / reverse proxy
+
+app.post('/api/webhook/stripe', express.raw({ type: 'application/json' }), async (req, res) => {
+  const sig = req.headers['stripe-signature'];
+  let event;
+  try {
+    if (!stripe) throw new Error('No Stripe Key Configured');
+    event = stripe.webhooks.constructEvent(req.body, sig, process.env.STRIPE_WEBHOOK_SECRET);
+  } catch (err) {
+    return res.status(400).send(`Webhook Error: ${err.message}`);
+  }
+  if (event.type === 'checkout.session.completed') {
+    console.log('[Stripe] Checkout success:', event.data.object.id);
+    // TODO: Update user Pro status in Supabase database here
+  }
+  res.send();
+});
+
+app.post('/api/checkout', express.json(), async (req, res) => {
+  if (!stripe) return res.status(500).json({ error: 'Stripe API non configurée.' });
+  try {
+    const session = await stripe.checkout.sessions.create({
+      payment_method_types: ['card'],
+      line_items: [{
+        price_data: { currency: 'usd', product_data: { name: 'Huggy Pro (Unlimited)' }, unit_amount: 1500 },
+        quantity: 1,
+      }],
+      mode: 'payment',
+      success_url: `${publicBaseUrl(req)}/?pro=success`,
+      cancel_url: `${publicBaseUrl(req)}/?pro=cancel`,
+    });
+    res.json({ url: session.url });
+  } catch (e) {
+    res.status(500).json({ error: safeError(e) });
+  }
+});
+
 app.use(express.json({ limit: '5mb' }));
 
 // Security headers + CORS
@@ -311,7 +350,7 @@ app.post('/api/projects/:id/deploy', async (req, res) => {
 
 app.post('/api/generate-app', rateLimiter, async (req, res) => {
   try {
-    const { prompt, currentCode, projectId, files: bodyFiles } = req.body || {};
+    const { prompt, chatHistory, currentCode, projectId, files: bodyFiles } = req.body || {};
     if (typeof prompt !== 'string') {
       return res.status(400).json({ error: 'prompt requis.' });
     }
@@ -337,6 +376,7 @@ app.post('/api/generate-app', rateLimiter, async (req, res) => {
 
     const result = await runGenerate({
       prompt,
+      chatHistory,
       currentEntryCode,
       allFiles,
     });

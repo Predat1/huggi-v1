@@ -48,7 +48,7 @@ async function postJson<T>(url: string, body: unknown): Promise<T> {
 
 export const generateAppUpdate = async (
   prompt: string,
-  params: { currentCode: string; projectId?: string | null },
+  params: { currentCode: string; projectId?: string | null, chatHistory?: {role: string, content: string}[] },
 ): Promise<GenerateAppResult> => {
   const data = await postJson<{
     code: string;
@@ -58,6 +58,7 @@ export const generateAppUpdate = async (
     provider?: string;
   }>('/api/generate-app', {
     prompt,
+    chatHistory: params.chatHistory,
     currentCode: params.currentCode,
     projectId: params.projectId || undefined,
   });

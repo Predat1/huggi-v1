@@ -33,7 +33,7 @@ Rules for Studio preview (required):
 - Always include "${PREVIEW_ENTRY}" as the main preview component (self-contained React arrow function or function component body).
 - You may add more studio files (e.g. src/components/Foo.tsx) with valid imports between project files.
 - For ONLY ${PREVIEW_ENTRY} you may use the legacy pattern: no imports; React, motion/AnimatePresence, and lucide-react icons are assumed in scope (Huggy live preview).
-- Use Tailwind CSS class names. Prefer premium layouts.
+- Use Tailwind CSS class names. STRICT RULE: Always aim for a visually stunning, premium SaaS layout! Use Framer Motion for micro-interactions and Lucide React extensively for icons. Make it look like a million-dollar startup.
 
 Rules for Export (when present):
 - Must be a Next.js App Router project using TypeScript + Tailwind + shadcn/ui + lucide-react.
@@ -81,13 +81,15 @@ function extractCodeBlock(text) {
  * @param {Record<string, string>} [opts.allFiles]
  */
 export async function runGenerate(opts) {
-  const { prompt, currentEntryCode, allFiles = {} } = opts;
+  const { prompt, chatHistory = [], currentEntryCode, allFiles = {} } = opts;
 
   const filesContext = Object.entries(allFiles)
     .map(([p, c]) => `### FILE: ${p}\n${c}`)
     .join('\n\n');
 
-  const userBlock = `Project files:\n${filesContext || `### FILE: ${PREVIEW_ENTRY}\n${currentEntryCode}`}\n\n---\nUser request:\n${prompt}`;
+  const historyContext = chatHistory.map(m => `${m.role === 'user' ? 'User' : 'Assistant'}: ${m.content}`).join('\n\n');
+
+  const userBlock = `Project files:\n${filesContext || `### FILE: ${PREVIEW_ENTRY}\n${currentEntryCode}`}${historyContext ? `\n\n---\nChat History:\n${historyContext}` : ''}\n\n---\nUser request:\n${prompt}`;
 
   const anthropicKey = process.env.ANTHROPIC_API_KEY;
   const model =

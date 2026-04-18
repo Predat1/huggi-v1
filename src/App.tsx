@@ -52,6 +52,9 @@ import { DEFAULT_PREVIEW_CODE } from './defaultPreviewCode';
 import { generateAppUpdate } from './services/geminiService';
 import { streamChatText } from './utils/streamChatText';
 import LandingPage from './components/LandingPage';
+import JSZip from 'jszip';
+import { saveAs } from 'file-saver';
+import { getAuthUser, onAuthStateChange, signIn, signUp } from './lib/supabaseClient';
 
 type Message = {
   id: string;
@@ -127,6 +130,18 @@ export default function App() {
   const [activeSidebarTab, setActiveSidebarTab] = useState<SidebarTab>('chat');
   const [activeBottomTab, setActiveBottomTab] = useState<'terminal' | 'code'>('terminal');
   const editorRef = useRef<any>(null);
+
+  const [user, setUser] = useState<any>(null);
+  const [showAuthModal, setShowAuthModal] = useState(false);
+  const [authEmail, setAuthEmail] = useState('');
+  const [authPass, setAuthPass] = useState('');
+  const [authMode, setAuthMode] = useState<'login' | 'signup'>('login');
+
+  useEffect(() => {
+    getAuthUser().then(setUser);
+    const { data: { subscription } } = onAuthStateChange(setUser);
+    return () => subscription?.unsubscribe();
+  }, []);
 
   const handleEditorDidMount = (editor: any) => {
     editorRef.current = editor;
@@ -384,6 +399,21 @@ export default function App() {
     })();
   };
 
+  const handleExportZip = async () => {
+    try {
+      showToast('Préparation du ZIP...', 'info');
+      const zip = new JSZip();
+      for (const [path, content] of Object.entries(filesMap)) {
+        zip.file(path, content);
+      }
+      const content = await zip.generateAsync({ type: 'blob' });
+      saveAs(content, `huggy-project-${projectId || 'local'}.zip`);
+      showToast('Export ZIP réussi !', 'success');
+    } catch (e) {
+      showToast('Erreur lors de l\'export ZIP', 'info');
+    }
+  };
+
   // Auto-save logic
   useEffect(() => {
     let intervalId: NodeJS.Timeout;
@@ -491,6 +521,10 @@ export default function App() {
   };
 
   const handleSendMessage = () => {
+    if (!user) {
+      setShowAuthModal(true);
+      return;
+    }
     if (!inputValue.trim()) return;
 
     const newUserMsg: Message = {
@@ -536,9 +570,11 @@ export default function App() {
       let fullResponse = '';
 
       try {
+        const historyForAI = messages.map(m => ({ role: m.sender === 'VOUS' ? 'user' : 'assistant', content: m.text }));
         const gen = await generateAppUpdate(newUserMsg.text, {
           currentCode: originalCode,
           projectId,
+          chatHistory: historyForAI
         });
         if (gen.files.length) {
           for (const f of gen.files) {
@@ -743,6 +779,33 @@ export default function App() {
         )}
       </AnimatePresence>
 
+      <AnimatePresence>
+        {showAuthModal && (
+          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 z-[500] flex items-center justify-center bg-slate-900/50 backdrop-blur-sm px-4">
+            <div className="bg-white p-6 rounded-2xl shadow-xl w-full max-w-sm relative pointer-events-auto">
+              <button className="absolute top-4 right-4 text-slate-400 hover:text-slate-900" onClick={() => setShowAuthModal(false)}>✕</button>
+              <h2 className="text-xl font-bold mb-4">{authMode === 'login' ? 'Connexion' : 'Inscription'}</h2>
+              <p className="text-sm text-slate-500 mb-4">Connectez-vous pour utiliser l'IA Huggy.</p>
+              <input type="email" placeholder="Email" className="w-full mb-3 p-3 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" value={authEmail} onChange={e => setAuthEmail(e.target.value)} />
+              <input type="password" placeholder="Mot de passe" className="w-full mb-4 p-3 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" value={authPass} onChange={e => setAuthPass(e.target.value)} />
+              <button 
+                className={`w-full mb-3 text-white font-bold py-3 rounded-lg transition-transform active:scale-95 ${ACCENT_COLORS[activeAccentColor].bg}`}
+                onClick={async () => {
+                  const res = authMode === 'login' ? await signIn(authEmail, authPass) : await signUp(authEmail, authPass);
+                  if (res?.error) showToast(res.error, 'info');
+                  else { setShowAuthModal(false); showToast('Succès', 'success'); }
+                }}
+              >
+                {authMode === 'login' ? 'Se connecter' : 'Créer un compte'}
+              </button>
+              <button className="text-sm text-slate-500 hover:text-slate-900 underline w-full text-center" onClick={() => setAuthMode(authMode === 'login' ? 'signup' : 'login')}>
+                {authMode === 'login' ? 'Pas de compte ? Inscrivez-vous' : 'Déjà un compte ? Connectez-vous'}
+              </button>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
       {/* Top Navigation Bar */}
       <header className="h-14 border-b border-slate-200 bg-white/95 backdrop-blur-md supports-[backdrop-filter]:bg-white/80 flex items-center justify-between px-4 z-10 shrink-0 transition-shadow duration-200 shadow-[0_1px_0_rgba(15,23,42,0.04)]">
         <div className="flex items-center gap-2 sm:gap-4 min-w-0">
@@ -797,15 +860,24 @@ export default function App() {
               SaaS en ligne
             </button>
           )}
-          <button 
-            onClick={handlePublish}
-            disabled={isPublishing}
-            className={`flex items-center gap-2 px-4 py-2 ${ACCENT_COLORS[activeAccentColor].bg} hover:opacity-90 disabled:opacity-50 text-white rounded-lg text-sm font-bold transition-all active:scale-95 shadow-lg shadow-blue-600/20`}
-          >
-            <Cloud size={16} className={isPublishing ? 'animate-bounce' : ''} />
-            {isPublishing ? 'Publication...' : 'Publier'}
-            <ChevronDown size={16} />
-          </button>
+          <div className="flex items-center gap-2">
+            <button 
+              onClick={handleExportZip}
+              className="flex items-center gap-2 px-3 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-lg text-sm font-bold transition-all active:scale-95 border border-slate-200"
+            >
+              <Download size={16} />
+              <span className="hidden sm:inline">Export ZIP</span>
+            </button>
+            <button 
+              onClick={handlePublish}
+              disabled={isPublishing}
+              className={`flex items-center gap-2 px-4 py-2 ${ACCENT_COLORS[activeAccentColor].bg} hover:opacity-90 disabled:opacity-50 text-white rounded-lg text-sm font-bold transition-all active:scale-95 shadow-lg shadow-blue-600/20`}
+            >
+              <Cloud size={16} className={isPublishing ? 'animate-bounce' : ''} />
+              {isPublishing ? 'Publication...' : 'Publier'}
+              <ChevronDown size={16} />
+            </button>
+          </div>
         </div>
       </header>
 
