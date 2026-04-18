@@ -311,6 +311,16 @@ export default function App() {
     };
   }, [studioMode]);
 
+  // Auto-send prompt from landing page
+  useEffect(() => {
+    if (studioMode && inputValue && messages.length === 1 && !isGenerating) {
+      const t = setTimeout(() => {
+        handleSendMessage();
+      }, 500);
+      return () => clearTimeout(t);
+    }
+  }, [studioMode, user]); // Trigger when studio opens or user loads
+
   useEffect(() => {
     if (!projectId || !databaseEnabled) return;
     const path = activeFilePath;
@@ -950,7 +960,7 @@ export default function App() {
 
       <div className="flex flex-1 overflow-hidden">
         {/* Left Sidebar */}
-        <aside className="w-[380px] border-r border-slate-200 bg-white flex flex-col shrink-0">
+        <aside className="w-[440px] border-r border-slate-200 bg-white flex flex-col shrink-0">
           <div className="p-4 border-b border-slate-100 flex items-center justify-between relative">
             <div 
               onClick={() => setShowProjectMenu(!showProjectMenu)}
@@ -1038,7 +1048,7 @@ export default function App() {
                             )}
                           </div>
                         )}
-                        <div className={`rounded-2xl px-4 py-3 text-sm leading-relaxed ${
+                        <div className={`rounded-2xl px-5 py-3.5 text-[16px] leading-relaxed ${
                           msg.sender === 'VOUS'
                             ? 'bg-blue-600 text-white rounded-tr-sm'
                             : 'bg-slate-50 text-slate-800 border border-slate-100 rounded-tl-sm'
@@ -1096,12 +1106,12 @@ export default function App() {
                         )}
                         {/* Streaming text or thinking dots */}
                         {streamingMessage ? (
-                          <div className="bg-slate-50 text-slate-800 border border-slate-100 rounded-2xl rounded-tl-sm px-4 py-3 text-sm leading-relaxed">
+                          <div className="bg-slate-50 text-slate-800 border border-slate-100 rounded-2xl rounded-tl-sm px-5 py-3.5 text-[16px] leading-relaxed">
                             {streamingMessage}
                             <span className="inline-block w-0.5 h-3.5 bg-slate-400 ml-0.5 align-bottom animate-pulse" />
                           </div>
                         ) : (
-                          <div className="bg-slate-50 border border-slate-100 rounded-2xl rounded-tl-sm px-4 py-3 flex items-center gap-1.5">
+                          <div className="bg-slate-50 border border-slate-100 rounded-2xl rounded-tl-sm px-5 py-3.5 flex items-center gap-1.5">
                             {[0,1,2].map(i => (
                               <span key={i} className="w-1.5 h-1.5 rounded-full bg-slate-400 animate-bounce" style={{ animationDelay: `${i * 0.12}s` }} />
                             ))}
