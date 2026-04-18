@@ -115,34 +115,34 @@ export default function HuggyChatInput({
   const canSend = (value.trim().length > 0 || tags.length > 0) && !isLoading;
 
   return (
-    <div className={`flex flex-col items-center gap-2 w-full ${className}`}>
+    <div className={`flex flex-col items-center gap-1.5 w-full ${className}`}>
       {/* ── Main input card ── */}
       <div
-        className="w-full rounded-[32px] border border-slate-200 overflow-hidden relative shadow-xl bg-white/80 backdrop-blur-xl"
+        className="w-full rounded-2xl border border-slate-200 overflow-hidden relative shadow-lg bg-white/80 backdrop-blur-xl"
       >
-        {/* Branding (Subtle - Adapted for Light Mode) */}
+        {/* Branding (Subtle) */}
         {!disclaimer && (
-          <div className="absolute top-4 right-6 select-none pointer-events-none opacity-5">
-            <span className="text-[10px] font-black tracking-[0.2em] text-slate-900 uppercase italic">HUGGY</span>
+          <div className="absolute top-3 right-5 select-none pointer-events-none opacity-5">
+            <span className="text-[9px] font-black tracking-[0.2em] text-slate-900 uppercase italic">HUGGY</span>
           </div>
         )}
 
-        {/* Tag row (Light Mode) */}
+        {/* Tag row (Compact) */}
         {tags.length > 0 && (
-          <div className="flex flex-wrap gap-1.5 px-7 pt-6">
+          <div className="flex flex-wrap gap-1.5 px-5 pt-4">
             {tags.map((tag) => (
               <div
                 key={tag.id}
-                className="flex items-center gap-2 py-2 pl-2 pr-3 rounded-full border border-slate-200 border-dashed bg-slate-50 text-[14px] font-medium text-slate-700 group/tag transition-all hover:bg-slate-100"
+                className="flex items-center gap-1.5 py-1 pl-1 pr-2 rounded-full border border-slate-200 border-dashed bg-slate-50 text-[13px] font-medium text-slate-700 group/tag transition-all hover:bg-slate-100"
               >
                 <div 
-                  className="w-7 h-7 rounded-full flex items-center justify-center overflow-hidden shrink-0 border border-slate-200 shadow-sm"
+                  className="w-6 h-6 rounded-full flex items-center justify-center overflow-hidden shrink-0 border border-slate-200 shadow-sm"
                   style={{ background: tag.color ?? '#378ADD' }}
                 >
                   {tag.avatar ? (
                     <img src={tag.avatar} alt="" className="w-full h-full object-cover" />
                   ) : (
-                    <span className="text-[11px] font-bold text-white uppercase">{tag.label.slice(0, 1)}</span>
+                    <span className="text-[10px] font-bold text-white uppercase">{tag.label.slice(0, 1)}</span>
                   )}
                 </div>
                 <span>{tag.label}</span>
@@ -150,7 +150,7 @@ export default function HuggyChatInput({
                   onClick={() => removeTag(tag.id)}
                   className="text-slate-400 hover:text-slate-900 transition-colors"
                 >
-                  <X size={16} />
+                  <X size={12} />
                 </button>
               </div>
             ))}
@@ -158,7 +158,7 @@ export default function HuggyChatInput({
         )}
 
         {/* Textarea Area */}
-        <div className="px-8 pt-6 pb-4">
+        <div className="px-5 pt-4 pb-2">
           <textarea
             ref={textareaRef}
             value={value}
@@ -167,27 +167,27 @@ export default function HuggyChatInput({
             disabled={isLoading}
             placeholder={placeholder}
             rows={1}
-            className="w-full bg-transparent text-slate-900 text-[21px] font-medium placeholder-slate-300 resize-none focus:outline-none leading-relaxed disabled:opacity-50"
-            style={{ caretColor: '#6366F1', minHeight: '42px' }}
+            className="w-full bg-transparent text-slate-900 text-[16px] font-medium placeholder-slate-300 resize-none focus:outline-none leading-relaxed disabled:opacity-50"
+            style={{ caretColor: '#6366F1', minHeight: '32px' }}
           />
         </div>
 
         {/* ── Toolbar ── */}
-        <div className="flex items-center justify-between px-7 pb-7 pt-1">
+        <div className="flex items-center justify-between px-4 pb-4 pt-1">
           {/* Left Toolbar */}
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-1">
             {/* Plus */}
-            <button className="w-11 h-11 rounded-full flex items-center justify-center text-slate-400 hover:text-slate-900 hover:bg-slate-50 transition-all">
-              <Plus size={24} strokeWidth={2} />
+            <button className="w-9 h-9 rounded-full flex items-center justify-center text-slate-400 hover:text-slate-900 hover:bg-slate-50 transition-all">
+              <Plus size={20} strokeWidth={2} />
             </button>
 
-            {/* Model Badge (High Contrast Light Mode) */}
-            <div className="flex items-center gap-2 px-5 h-12 rounded-[24px] bg-slate-50 border border-slate-200 hover:bg-white hover:shadow-md transition-all cursor-pointer group">
-              <div className="w-5 h-5 flex items-center justify-center">
-                <svg width="22" height="22" viewBox="0 0 24 24" fill="none">
-                  <path d="M12 2L14.5 9.5L22 12L14.5 14.5L12 22L9.5 14.5L2 12L9.5 9.5L12 2Z" fill="url(#sparkle-grad-light)" />
+            {/* Model Badge */}
+            <div className="flex items-center gap-1.5 px-3.5 h-9 rounded-full bg-slate-50 border border-slate-200 hover:bg-white hover:shadow-sm transition-all cursor-pointer group">
+              <div className="w-4 h-4 flex items-center justify-center">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
+                  <path d="M12 2L14.5 9.5L22 12L14.5 14.5L12 22L9.5 14.5L2 12L9.5 9.5L12 2Z" fill="url(#sparkle-grad-compact)" />
                   <defs>
-                    <linearGradient id="sparkle-grad-light" x1="2" y1="2" x2="22" y2="22" gradientUnits="userSpaceOnUse">
+                    <linearGradient id="sparkle-grad-compact" x1="2" y1="2" x2="22" y2="22" gradientUnits="userSpaceOnUse">
                       <stop offset="0%" stopColor="#FB923C" />
                       <stop offset="50%" stopColor="#818CF8" />
                       <stop offset="100%" stopColor="#2DD4BF" />
@@ -195,18 +195,18 @@ export default function HuggyChatInput({
                   </defs>
                 </svg>
               </div>
-              <span className="text-slate-800 text-[16px] font-bold">{modelLabel === 'Huggy AI' ? 'Gemini 3 Pro' : modelLabel}</span>
-              <span className="px-1.5 py-0.5 rounded-md bg-slate-200/50 text-slate-500 text-[10px] font-black uppercase tracking-tight ml-0.5">Beta</span>
+              <span className="text-slate-800 text-[13px] font-bold">{modelLabel === 'Huggy AI' ? 'Gemini 3 Pro' : modelLabel}</span>
+              <span className="text-slate-400 text-[9px] font-black uppercase tracking-tight ml-0.5">Beta</span>
             </div>
 
             {/* Lens/Search */}
-            <button className="w-11 h-11 rounded-full flex items-center justify-center text-slate-400 hover:text-slate-900 hover:bg-slate-50 transition-all">
-              <Search size={21} strokeWidth={2.5} />
+            <button className="w-9 h-9 rounded-full flex items-center justify-center text-slate-400 hover:text-slate-900 hover:bg-slate-50 transition-all">
+              <Search size={18} strokeWidth={2.5} />
             </button>
 
-            {/* Magic/Magic Button (Vibrant Indigo) */}
-            <button className="w-11 h-11 rounded-[14px] bg-[#4F46E5] flex items-center justify-center text-white shadow-lg shadow-indigo-600/20 hover:bg-[#4338CA] transition-all">
-              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+            {/* Magic */}
+            <button className="w-9 h-9 rounded-xl bg-[#4F46E5] flex items-center justify-center text-white shadow-lg shadow-indigo-600/20 hover:bg-[#4338CA] transition-all">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
                 <path d="m11 11 5 5" />
                 <path d="m14 11 3 3" />
                 <path d="m11 14 3 3" />
@@ -216,59 +216,56 @@ export default function HuggyChatInput({
             </button>
 
             {/* More */}
-            <button className="w-11 h-11 rounded-full flex items-center justify-center text-slate-400 hover:text-slate-900 hover:bg-slate-50 transition-all">
-              <MoreHorizontal size={24} strokeWidth={2.5} />
+            <button className="w-9 h-9 rounded-full flex items-center justify-center text-slate-400 hover:text-slate-900 hover:bg-slate-50 transition-all">
+              <MoreHorizontal size={20} strokeWidth={2.5} />
             </button>
           </div>
 
           {/* Right Controls */}
-          <div className="flex items-center gap-3.5">
-            {/* Mic Waveform Icon (Soft Theme) */}
+          <div className="flex items-center gap-2.5">
+            {/* Mic */}
             <button
               onClick={() => setIsListening(!isListening)}
-              className={`w-12 h-12 rounded-[18px] flex items-center justify-center border transition-all ${
+              className={`w-10 h-10 rounded-xl flex items-center justify-center border transition-all ${
                 isListening 
                 ? 'bg-rose-50 border-rose-200 text-rose-500 shadow-inner' 
-                : 'bg-slate-50 border-slate-200 text-slate-400 hover:text-slate-900 hover:border-slate-300 hover:bg-white hover:shadow-sm'
+                : 'bg-slate-50 border-slate-200 text-slate-400 hover:text-slate-900 hover:border-slate-300'
               }`}
             >
-              <div className="flex items-center gap-[3px]">
-                {[3, 6, 3].map((h, i) => (
+              <div className="flex items-center gap-[2px]">
+                {[3, 5, 3].map((h, i) => (
                   <div 
                     key={i} 
-                    className={`w-[3px] rounded-full transition-all duration-300 ${isListening ? 'bg-rose-400 animate-pulse' : 'bg-current'}`} 
-                    style={{ height: isListening ? `${Math.random() * 14 + 8}px` : `${h * 3.5}px` }} 
+                    className={`w-[2px] rounded-full transition-all duration-300 ${isListening ? 'bg-rose-400 animate-pulse' : 'bg-current'}`} 
+                    style={{ height: isListening ? `${Math.random() * 12 + 6}px` : `${h * 3}px` }} 
                   />
                 ))}
               </div>
             </button>
 
-            {/* Send Circle (Premium Indigo) */}
+            {/* Send */}
             <button
               onClick={handleSend}
               disabled={!canSend}
-              className={`w-13 h-13 min-w-[52px] min-h-[52px] rounded-full flex items-center justify-center transition-all ${
+              className={`w-11 h-11 min-w-[44px] min-h-[44px] rounded-full flex items-center justify-center transition-all ${
                 canSend 
                 ? 'bg-[#4F46E5] hover:bg-[#3730A3] text-white shadow-xl shadow-indigo-600/40 active:scale-95' 
                 : 'bg-slate-100 text-slate-300 cursor-not-allowed'
               }`}
             >
               {isLoading ? (
-                <div className="w-6 h-6 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
               ) : (
-                <ArrowUp size={26} strokeWidth={3} />
+                <ArrowUp size={22} strokeWidth={3} />
               )}
             </button>
           </div>
         </div>
       </div>
 
-      {/* Spacing Adjustment Placeholder */}
-      <div className="h-2" />
-
-      {/* Premium Disclaimer (Adapted for Light Mode) */}
+      {/* Premium Disclaimer (Compact) */}
       {disclaimer && (
-        <p className="text-[13px] text-slate-400 text-center leading-relaxed mt-2 font-medium tracking-tight px-4 max-w-sm">
+        <p className="text-[12px] text-slate-400 text-center leading-relaxed mt-1 font-medium tracking-tight px-4 max-w-sm">
           {disclaimer.replace('Acme', 'Huggy')}
         </p>
       )}
