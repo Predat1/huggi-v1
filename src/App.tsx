@@ -54,6 +54,7 @@ import { DEFAULT_PREVIEW_CODE } from './defaultPreviewCode';
 import { generateAppUpdate, getMe } from './services/geminiService';
 import { streamChatText } from './utils/streamChatText';
 import LandingPage from './components/LandingPage';
+import UserDashboard from './components/UserDashboard';
 import JSZip from 'jszip';
 import { saveAs } from 'file-saver';
 import { getAuthUser, onAuthStateChange, signIn, signUp } from './lib/supabaseClient';
@@ -570,17 +571,18 @@ export default function App() {
     updateTerminalLines([`[SYSTEM] Restored to version from ${msg.timestamp.toLocaleTimeString()}`, `[SYSTEM] src/App.tsx reverted.`]);
   };
 
-  const handleSendMessage = () => {
+  const handleSendMessage = (textOverride?: string | React.MouseEvent | React.KeyboardEvent | React.FormEvent) => {
     if (!user) {
       setShowAuthModal(true);
       return;
     }
-    if (!inputValue.trim()) return;
+    const textToUse = typeof textOverride === 'string' ? textOverride : inputValue;
+    if (!textToUse.trim()) return;
 
     const newUserMsg: Message = {
       id: Date.now().toString(),
       sender: 'VOUS',
-      text: inputValue,
+      text: textToUse,
       timestamp: new Date()
     };
 
@@ -814,29 +816,56 @@ export default function App() {
   return (
     <AnimatePresence mode="wait" initial={false}>
       {!studioMode ? (
-        <motion.div
-          key="landing"
-          className="min-h-screen"
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          exit={{ opacity: 0 }}
-          transition={{ duration: 0.22, ease: [0.22, 1, 0.36, 1] }}
-        >
-          <LandingPage
-            accent={ACCENT_COLORS[activeAccentColor]}
-            onOpenStudio={(initialPrompt) => {
-              if (initialPrompt) setInputValue(initialPrompt);
-              setStudioMode(true);
-              if (!new URLSearchParams(window.location.search).get('project')) {
-                window.history.replaceState(
-                  {},
-                  '',
-                  `${window.location.pathname}?studio=1`,
-                );
-              }
-            }}
-          />
-        </motion.div>
+        user ? (
+          <motion.div
+            key="dashboard"
+            className="min-h-screen"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.22, ease: [0.22, 1, 0.36, 1] }}
+          >
+            <UserDashboard
+              onOpenStudio={(initialPrompt, projId) => {
+                if (projId) setProjectId(projId);
+                setStudioMode(true);
+                if (initialPrompt) {
+                  setInputValue(initialPrompt);
+                  setTimeout(() => handleSendMessage(initialPrompt), 100);
+                }
+              }}
+              onSignOut={() => signOut().then(() => setUser(null))}
+              onOpenBillingPortal={handleBillingPortal}
+            />
+          </motion.div>
+        ) : (
+          <motion.div
+            key="landing"
+            className="min-h-screen"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.22, ease: [0.22, 1, 0.36, 1] }}
+          >
+            <LandingPage
+              accent={ACCENT_COLORS[activeAccentColor]}
+              onOpenStudio={(initialPrompt) => {
+                if (initialPrompt) setInputValue(initialPrompt);
+                setStudioMode(true);
+                if (!new URLSearchParams(window.location.search).get('project')) {
+                  window.history.replaceState(
+                    {},
+                    '',
+                    `${window.location.pathname}?studio=1`,
+                  );
+                }
+                if (initialPrompt) {
+                  setTimeout(() => handleSendMessage(initialPrompt), 100);
+                }
+              }}
+            />
+          </motion.div>
+        )
       ) : (
         <motion.div
           key="studio"
