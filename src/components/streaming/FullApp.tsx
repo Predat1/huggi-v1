@@ -119,7 +119,7 @@ function FileTreeGrouped({ files }: { files: FileNode[] }) {
 
 // ─── Tool pill ────────────────────────────────────────────────────────────────
 
-function ToolPillView({ pill }: { pill: ToolPill }) {
+function ToolPillView({ pill, key }: { pill: ToolPill, key?: string | number }) {
   const isRunning = pill.status === "running";
   const isError = pill.status === "error";
   const bg = isRunning ? "#FAEEDA" : isError ? "#FCEBEB" : "#E1F5EE";

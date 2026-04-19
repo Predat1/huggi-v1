@@ -17,6 +17,7 @@ interface MessageBubbleProps {
   message: ChatMessageProps;
   onCopy?: () => void;
   isCopied?: boolean;
+  key?: string | number;
 }
 
 export function MessageBubble({ message, onCopy, isCopied = false }: MessageBubbleProps) {
@@ -184,7 +185,7 @@ function CodeContent({ content }: CodeContentProps) {
           <CodeBlock
             key={idx}
             code={block.content}
-            language={block.language}
+            language={block.language || 'jsx'}
           />
         ) : block.content.trim() ? (
           <p key={idx} className="whitespace-pre-wrap leading-relaxed">
@@ -198,7 +199,8 @@ function CodeContent({ content }: CodeContentProps) {
 
 interface CodeBlockProps {
   code: string;
-  language?: string;
+  language: string;
+  key?: string | number;
 }
 
 function CodeBlock({ code, language = 'jsx' }: CodeBlockProps) {

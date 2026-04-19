@@ -20,5 +20,5 @@ export { StreamStatusIndicator, StreamMetrics, CancelStreamButton } from './Stre
 export type { StreamStatus } from './StreamStatus';
 
 // Existing components
-export { LandingPage } from './LandingPage';
-export { UserDashboard } from './UserDashboard';
+export { default as LandingPage } from './LandingPage';
+export { default as UserDashboard } from './UserDashboard';

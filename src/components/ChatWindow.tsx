@@ -1,7 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { Send, Loader2, AlertCircle, Copy, CheckCircle2, Zap } from 'lucide-react';
-import { StreamController, type ChatMessage } from '@/services/streamingService';
+import { StreamController, type ChatMessage } from '../services/streamingService';
 
 type ChatWindowProps = {
   messages: ChatMessage[];

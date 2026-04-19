@@ -29,6 +29,7 @@ export function createPool() {
 
 /** @param {import('pg').Pool} pool */
 export async function initSchema(pool) {
+  await pool.query(`
     CREATE EXTENSION IF NOT EXISTS "pgcrypto";
 
     CREATE TABLE IF NOT EXISTS profiles (
@@ -49,6 +50,8 @@ export async function initSchema(pool) {
       owner_id UUID REFERENCES profiles(id) ON DELETE SET NULL,
       created_at TIMESTAMPTZ NOT NULL DEFAULT now()
     );
+
+    ALTER TABLE projects ADD COLUMN IF NOT EXISTS owner_id UUID REFERENCES profiles(id) ON DELETE SET NULL;
 
     CREATE TABLE IF NOT EXISTS project_secrets (
       project_id UUID NOT NULL REFERENCES projects(id) ON DELETE CASCADE,

@@ -623,7 +623,7 @@ export default function App() {
       const isGreeting = /^(hello|hi|hey|bonjour|salut|yo|coucou|hola|test|ca va|ça va|how are you|qsdqsd|qsd|abc)/i.test(inputLower) && inputLower.length < 30;
 
       if (isGreeting) {
-        fullResponse = `Bonjour ! Je suis Huggy, votre architecte IA. Je suis prêt à transformer vos idées en applications concrètes. Que puis-je construire pour vous aujourd'hui ? (Ex: "Crée-moi un dashboard SaaS avec Stripe")`;
+        fullResponse = `Bonjour ! Je suis Huggy, votre architecte IA. Je suis prêt à transformer vos idées en applications concrètes. Que puis-je construire pour vous aujourd'hui ? (Ex: "Crée-moi un dashboard de gestion de ventes")`;
       } else {
         try {
           const historyForAI = messages.map(m => ({ role: m.sender === 'VOUS' ? 'user' : 'assistant', content: m.text }));
@@ -799,7 +799,7 @@ export default function App() {
 
   const handleBillingPortal = async () => {
     try {
-      showToast('Ouverture du portail Stripe...', 'info');
+      showToast('Ouverture de l\'espace de facturation...', 'info');
       const res = await fetch('/api/billing/portal', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -807,7 +807,7 @@ export default function App() {
       });
       const data = await res.json();
       if (data.url) window.location.href = data.url;
-      else showToast(data.error || 'Erreur Stripe', 'info');
+      else showToast(data.error || 'Erreur de paiement', 'info');
     } catch(e) { showToast('Erreur serveur', 'info'); }
   };
 

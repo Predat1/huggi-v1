@@ -521,6 +521,107 @@ app.post('/api/projects/:id/deploy', async (req, res) => {
   }
 });
 
+app.post('/api/projects/:id/export/github', async (req, res) => {
+  if (!pool) return res.status(503).json({ error: 'Service unavailable' });
+  try {
+    const { userId, githubToken, repoName, isPrivate } = req.body || {};
+    if (!isUuid(req.params.id)) return res.status(400).json({ error: 'ID projet invalide.' });
+    if (!githubToken || !repoName) return res.status(400).json({ error: 'Token et repoName requis.' });
+
+    const project = await getProject(pool, req.params.id);
+    if (!project) return res.status(404).json({ error: 'Projet introuvable.' });
+    
+    // Security check
+    if (project.owner_id && project.owner_id !== userId) {
+      return res.status(403).json({ error: 'Action non autorisée.' });
+    }
+
+    const rows = await listFiles(pool, project.id);
+    if (!rows.length) return res.status(400).json({ error: 'Aucun fichier.' });
+
+    // 1. Get GitHub username
+    const userRes = await fetch('https://api.github.com/user', {
+      headers: {
+        Authorization: `Bearer ${githubToken}`,
+        Accept: 'application/vnd.github.v3+json',
+        'User-Agent': 'Huggy-SaaS-Export'
+      }
+    });
+    if (!userRes.ok) throw new Error('Token GitHub invalide ou expiré.');
+    const userData = await userRes.json();
+    const owner = userData.login;
+
+    // 2. Create repo
+    const createRes = await fetch('https://api.github.com/user/repos', {
+      method: 'POST',
+      headers: {
+        Authorization: `Bearer ${githubToken}`,
+        Accept: 'application/vnd.github.v3+json',
+        'User-Agent': 'Huggy-SaaS-Export',
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({
+        name: repoName,
+        private: !!isPrivate,
+        auto_init: true
+      })
+    });
+    
+    let repoData;
+    if (createRes.ok) {
+      repoData = await createRes.json();
+    } else {
+      const err = await createRes.json();
+      if (err.errors?.[0]?.message === 'name already exists on this account') {
+        repoData = { name: repoName, html_url: `https://github.com/${owner}/${repoName}` };
+      } else {
+        throw new Error(`Erreur création dépôt: ${err.message || 'inconnue'}`);
+      }
+    }
+
+    // Wait a bit for GitHub repo to be fully ready after auto_init
+    await new Promise(r => setTimeout(r, 2000));
+    
+    // 3. Upload files sequentially
+    for (const file of rows) {
+      const contentBase64 = Buffer.from(file.content).toString('base64');
+      
+      let sha;
+      const getRes = await fetch(`https://api.github.com/repos/${owner}/${repoData.name}/contents/${file.path}`, {
+        headers: {
+          Authorization: `Bearer ${githubToken}`,
+          Accept: 'application/vnd.github.v3+json',
+          'User-Agent': 'Huggy-SaaS-Export'
+        }
+      });
+      if (getRes.ok) {
+        const getJson = await getRes.json();
+        sha = getJson.sha;
+      }
+
+      await fetch(`https://api.github.com/repos/${owner}/${repoData.name}/contents/${file.path}`, {
+        method: 'PUT',
+        headers: {
+          Authorization: `Bearer ${githubToken}`,
+          Accept: 'application/vnd.github.v3+json',
+          'User-Agent': 'Huggy-SaaS-Export',
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          message: `Add/update ${file.path} via Huggy`,
+          content: contentBase64,
+          sha
+        })
+      });
+    }
+
+    res.json({ ok: true, url: repoData.html_url });
+  } catch (e) {
+    console.error('[export/github]', e);
+    res.status(500).json({ error: safeError(e) });
+  }
+});
+
 /* ——— IA ——— */
 
 app.post('/api/generate-app/stream', rateLimiter, async (req, res) => {

@@ -84,7 +84,7 @@ function StatusDot({ status }: { status: AgentStatus }) {
   );
 }
 
-function ToolPillView({ pill }: { pill: ToolPill }) {
+function ToolPillView({ pill, key }: { pill: ToolPill, key?: string | number }) {
   const isRunning = pill.status === "running";
   const isError = pill.status === "error";
 
@@ -138,7 +138,7 @@ function ToolPillView({ pill }: { pill: ToolPill }) {
   );
 }
 
-function FileTreeItem({ file }: { file: FileNode }) {
+function FileTreeItem({ file, key }: { file: FileNode, key?: string | number }) {
   const dotColor =
     file.state === "new"
       ? "#1D9E75"

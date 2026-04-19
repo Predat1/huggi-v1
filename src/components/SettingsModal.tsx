@@ -130,7 +130,7 @@ export function SettingsModal({ isOpen, onClose, projectId, userId }: SettingsMo
                 {secrets.length === 0 && <p className="text-xs text-slate-400 p-3 italic">Aucun secret.</p>}
               </div>
               <div className="flex gap-2 pt-2">
-                <input type="text" value={newKey} onChange={e => setNewKey(e.target.value)} placeholder="VITE_SUPABASE_URL" className="w-1/3 px-3 py-2 rounded-lg border border-slate-200 text-xs font-mono" />
+                <input type="text" value={newKey} onChange={e => setNewKey(e.target.value)} placeholder="NOM_DE_LA_VARIABLE" className="w-1/3 px-3 py-2 rounded-lg border border-slate-200 text-xs font-mono" />
                 <input type="text" value={newValue} onChange={e => setNewValue(e.target.value)} placeholder="Valeur secrète" className="flex-1 px-3 py-2 rounded-lg border border-slate-200 text-xs font-mono" />
                 <button onClick={handleAddSecret} disabled={loading || !newKey} className="p-2 bg-blue-50 text-blue-600 hover:bg-blue-100 rounded-lg"><Plus size={18} /></button>
               </div>
