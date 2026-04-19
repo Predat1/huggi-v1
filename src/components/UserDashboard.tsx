@@ -84,10 +84,10 @@ export default function UserDashboard({
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.1 }}
             onSubmit={handleGenerate}
-            className="w-full relative group"
+            className="w-full relative group/input p-[2px] rounded-[25px] overflow-hidden shadow-2xl shadow-blue-900/20"
           >
-            <div className="absolute -inset-0.5 bg-gradient-to-r from-blue-500 to-emerald-500 rounded-3xl blur opacity-20 group-hover:opacity-40 transition duration-500" />
-            <div className="relative bg-[#0c101c] border border-white/10 rounded-3xl overflow-hidden shadow-2xl transition-all focus-within:border-blue-500/50">
+            <div className="absolute inset-[-1000%] animate-[spin_4s_linear_infinite] bg-[conic-gradient(from_90deg_at_50%_50%,transparent_0%,#3b82f6_30%,#10b981_70%,transparent_100%)] opacity-80 group-focus-within/input:opacity-100 transition-opacity duration-500" />
+            <div className="relative bg-[#0c101c] rounded-[23px] overflow-hidden transition-all">
               <textarea
                 value={prompt}
                 onChange={e => setPrompt(e.target.value)}
