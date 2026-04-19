@@ -86,12 +86,13 @@ export function ChatWindow({
             </motion.div>
           ) : (
             messages.map((msg) => (
-              <MessageBubble
-                key={msg.id}
-                message={msg}
-                onCopy={() => copyToClipboard(msg.content, msg.id)}
-                isCopied={copiedId === msg.id}
-              />
+              <React.Fragment key={msg.id}>
+                <MessageBubble
+                  message={msg}
+                  onCopy={() => copyToClipboard(msg.content, msg.id)}
+                  isCopied={copiedId === msg.id}
+                />
+              </React.Fragment>
             ))
           )}
         </AnimatePresence>

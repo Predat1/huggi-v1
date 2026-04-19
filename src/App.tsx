@@ -57,7 +57,7 @@ import LandingPage from './components/LandingPage';
 import UserDashboard from './components/UserDashboard';
 import JSZip from 'jszip';
 import { saveAs } from 'file-saver';
-import { getAuthUser, onAuthStateChange, signIn, signUp } from './lib/supabaseClient';
+import { getAuthUser, onAuthStateChange, signIn, signUp, signOut } from './lib/supabaseClient';
 import { FullAppStream, StreamEvent } from './components/streaming';
 import { StreamController } from './services/streamingService';
 import { SettingsModal } from './components/SettingsModal';

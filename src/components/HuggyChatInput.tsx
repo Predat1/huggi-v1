@@ -218,6 +218,7 @@ export default function HuggyChatInput({
             </button>
           </div>
         </div>
+        </div>
       </div>
 
       {/* Premium Disclaimer (Compact) */}
