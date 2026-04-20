@@ -980,78 +980,139 @@ export default function App() {
         )}
       </AnimatePresence>
 
-      {/* Top Navigation Bar */}
-      <header className="h-14 border-b border-slate-200 bg-white/95 backdrop-blur-md supports-[backdrop-filter]:bg-white/80 flex items-center justify-between px-4 z-10 shrink-0 transition-shadow duration-200 shadow-[0_1px_0_rgba(15,23,42,0.04)]">
-        <div className="flex items-center gap-2 sm:gap-4 min-w-0">
+      {/* Top Navigation Bar — Premium SaaS */}
+      <header className="h-14 border-b border-slate-200/80 bg-white/90 backdrop-blur-xl flex items-center justify-between px-3 sm:px-5 z-10 shrink-0 shadow-[0_1px_3px_rgba(15,23,42,0.04)]">
+        {/* Left: Brand */}
+        <div className="flex items-center gap-2 sm:gap-3 min-w-0">
           <button
             type="button"
-            onClick={() => {
-              setStudioMode(false);
-              window.history.replaceState({}, '', window.location.pathname);
-            }}
-            className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-[11px] font-bold text-slate-600 hover:text-slate-900 hover:bg-slate-100 transition-colors duration-200 shrink-0"
+            onClick={() => { setStudioMode(false); window.history.replaceState({}, '', window.location.pathname); }}
+            className="flex items-center gap-1.5 px-2 py-1.5 rounded-lg text-[11px] font-bold text-slate-500 hover:text-slate-900 hover:bg-slate-100 transition-all duration-200 shrink-0 group"
           >
-            <Home size={14} className="text-slate-400" aria-hidden />
-            <span className="hidden sm:inline">Accueil</span>
+            <Home size={14} className="text-slate-400 group-hover:text-blue-600 transition-colors" aria-hidden />
           </button>
-          <div className="h-6 w-[1px] bg-slate-200 hidden sm:block" />
-          <div className={`w-8 h-8 ${ACCENT_COLORS[activeAccentColor].bg} rounded-lg flex items-center justify-center text-white shadow-lg shrink-0`}>
-            <Zap size={20} fill="currentColor" />
-          </div>
-          <div className="h-6 w-[1px] bg-slate-200" />
+          <div className="h-5 w-[1px] bg-slate-200/70 hidden sm:block" />
           <div className="flex items-center gap-2 min-w-0">
-            <span className="text-sm font-black tracking-tighter text-slate-900 truncate">HUGGY</span>
-            <span className="px-2 py-0.5 bg-slate-100 text-[10px] font-black text-slate-400 rounded-full uppercase tracking-widest shrink-0">Studio</span>
+            <div className={`w-7 h-7 bg-gradient-to-br from-blue-600 to-violet-600 rounded-lg flex items-center justify-center text-white shadow-lg shadow-blue-600/25 shrink-0`}>
+              <Zap size={16} fill="currentColor" />
+            </div>
+            <span className="text-sm font-black tracking-tight text-slate-900 truncate">HUGGY</span>
+            <span className="px-1.5 py-0.5 bg-gradient-to-r from-blue-50 to-violet-50 text-[9px] font-black text-blue-600 rounded-full uppercase tracking-widest shrink-0 border border-blue-100/50">Studio</span>
           </div>
         </div>
 
-        <div className="flex items-center gap-2 sm:gap-3">
-          <div className="hidden sm:flex items-center gap-2 mr-2">
+        {/* Center: Cloud Space + Theme */}
+        <div className="hidden md:flex items-center gap-2">
+          {/* Cloud Space Indicator */}
+          {projectId && (
+            <div className="flex items-center gap-2 px-3 py-1.5 bg-slate-50 rounded-lg border border-slate-200/80">
+              <Cloud size={13} className="text-emerald-500" />
+              <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">Cloud</span>
+              <div className="w-16 h-1.5 bg-slate-200 rounded-full overflow-hidden">
+                <div className="h-full bg-gradient-to-r from-emerald-400 to-emerald-500 rounded-full" style={{ width: '35%' }} />
+              </div>
+              <span className="text-[10px] font-semibold text-emerald-600">Active</span>
+            </div>
+          )}
+          {/* Theme/Design Picker */}
+          <div className="relative">
             <button
-              type="button"
-              onClick={() => setShowExportModal(true)}
-              className="flex items-center gap-2 px-3 py-1.5 text-[11px] font-bold text-slate-600 bg-slate-50 border border-slate-200 hover:border-slate-300 hover:bg-white rounded-lg transition-all duration-200 shadow-sm group"
+              onClick={() => setShowDesignMenu(!showDesignMenu)}
+              className="flex items-center gap-1.5 px-3 py-1.5 bg-slate-50 hover:bg-slate-100 rounded-lg border border-slate-200/80 transition-all text-[11px] font-bold text-slate-600 group"
             >
-              <Github size={14} className="text-slate-900 group-hover:scale-110 transition-transform" />
-              <span>Sync with GitHub</span>
+              <Palette size={13} className="text-slate-400 group-hover:text-violet-500 transition-colors" />
+              Thème
+              <ChevronDown size={12} className={`text-slate-400 transition-transform ${showDesignMenu ? 'rotate-180' : ''}`} />
             </button>
+            <AnimatePresence>
+              {showDesignMenu && (
+                <motion.div
+                  initial={{ opacity: 0, y: 6, scale: 0.95 }}
+                  animate={{ opacity: 1, y: 0, scale: 1 }}
+                  exit={{ opacity: 0, y: 6, scale: 0.95 }}
+                  transition={{ duration: 0.15 }}
+                  className="absolute top-full mt-2 right-0 w-56 bg-white rounded-xl border border-slate-200 shadow-2xl shadow-slate-900/10 p-3 z-50"
+                >
+                  <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">Couleur d'accent</p>
+                  <div className="grid grid-cols-4 gap-2 mb-3">
+                    {(['blue', 'purple', 'emerald', 'rose'] as const).map((color) => (
+                      <button
+                        key={color}
+                        onClick={() => { setActiveAccentColor(color); setShowDesignMenu(false); }}
+                        className={`w-full aspect-square rounded-xl transition-all duration-200 hover:scale-110 ${
+                          ACCENT_COLORS[color].bg
+                        } ${activeAccentColor === color ? 'ring-2 ring-offset-2 ring-slate-900 scale-110' : 'opacity-70 hover:opacity-100'}`}
+                      />
+                    ))}
+                  </div>
+                  <div className="h-[1px] bg-slate-100 my-2" />
+                  <button
+                    onClick={() => { setShowSettingsModal(true); setShowDesignMenu(false); }}
+                    className="w-full flex items-center gap-2 px-3 py-2 hover:bg-slate-50 rounded-lg text-xs font-bold text-slate-600 transition-colors"
+                  >
+                    <Settings size={13} />
+                    Paramètres avancés
+                  </button>
+                </motion.div>
+              )}
+            </AnimatePresence>
           </div>
+        </div>
+
+        {/* Right: Actions */}
+        <div className="flex items-center gap-1.5 sm:gap-2">
+          {credits !== null && (
+            <div className="hidden lg:flex items-center gap-1.5 px-2.5 py-1.5 bg-gradient-to-r from-amber-50 to-orange-50 rounded-lg border border-amber-200/60">
+              <Sparkles size={12} className="text-amber-500" />
+              <span className="text-[10px] font-black text-amber-700">{credits}</span>
+            </div>
+          )}
+          <button
+            type="button"
+            onClick={() => setShowExportModal(true)}
+            className="hidden sm:flex items-center gap-1.5 px-2.5 py-1.5 text-[11px] font-bold text-slate-600 bg-slate-50 border border-slate-200 hover:border-slate-300 hover:bg-white rounded-lg transition-all shadow-sm group"
+          >
+            <Github size={13} className="text-slate-900 group-hover:scale-110 transition-transform" />
+            <span className="hidden xl:inline">GitHub</span>
+          </button>
+          <button
+            onClick={handleExportZip}
+            className="flex items-center gap-1.5 px-2.5 py-1.5 bg-slate-50 hover:bg-slate-100 text-slate-600 rounded-lg text-[11px] font-bold transition-all active:scale-95 border border-slate-200"
+          >
+            <Download size={14} />
+            <span className="hidden sm:inline">ZIP</span>
+          </button>
           {deployments.length > 0 && (
             <button
               type="button"
-              onClick={() =>
-                window.open(deployments[0].url, '_blank', 'noopener,noreferrer')
-              }
-              className="hidden sm:inline-flex items-center gap-1.5 px-3 py-2 rounded-lg text-[11px] font-bold text-emerald-800 bg-emerald-50 border border-emerald-200/90 hover:bg-emerald-100 transition-colors shrink-0"
+              onClick={() => window.open(deployments[0].url, '_blank', 'noopener,noreferrer')}
+              className="hidden sm:inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-[11px] font-bold text-emerald-700 bg-emerald-50 border border-emerald-200/80 hover:bg-emerald-100 transition-colors shrink-0"
             >
-              <ExternalLink size={14} aria-hidden />
-              SaaS en ligne
+              <ExternalLink size={13} aria-hidden />
+              <span className="hidden xl:inline">En ligne</span>
             </button>
           )}
-          <div className="flex items-center gap-2">
-            {credits !== null && (
-              <div className="hidden lg:flex items-center gap-2 px-3 py-1.5 bg-slate-100 rounded-lg border border-slate-200">
-                <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Credits</span>
-                <span className="text-xs font-bold text-slate-700">{credits}</span>
-              </div>
-            )}
-            <button 
-              onClick={handleExportZip}
-              className="flex items-center gap-2 px-3 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-lg text-sm font-bold transition-all active:scale-95 border border-slate-200"
-            >
-              <Download size={16} />
-              <span className="hidden sm:inline">Export ZIP</span>
-            </button>
-            <button 
+          {/* Premium Publish Button */}
+          <div className="relative">
+            <button
               onClick={handlePublish}
               disabled={isPublishing}
-              className={`flex items-center gap-2 px-4 py-2 ${ACCENT_COLORS[activeAccentColor].bg} hover:opacity-90 disabled:opacity-50 text-white rounded-lg text-sm font-bold transition-all active:scale-95 shadow-lg shadow-blue-600/20`}
+              className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-blue-600 to-violet-600 hover:from-blue-700 hover:to-violet-700 disabled:opacity-50 text-white rounded-xl text-sm font-bold transition-all active:scale-95 shadow-lg shadow-blue-600/25 group"
             >
-              <Cloud size={16} className={isPublishing ? 'animate-bounce' : ''} />
+              <Globe size={15} className={`${isPublishing ? 'animate-spin' : 'group-hover:scale-110'} transition-transform`} />
               {isPublishing ? 'Publication...' : 'Publier'}
-              <ChevronDown size={16} />
             </button>
           </div>
+          {/* User Avatar */}
+          {user && (
+            <button
+              onClick={() => signOut().then(() => setUser(null))}
+              className="w-8 h-8 rounded-full bg-gradient-to-br from-slate-200 to-slate-300 flex items-center justify-center text-[11px] font-black text-slate-600 hover:ring-2 hover:ring-blue-200 transition-all shrink-0"
+              title={user.email || 'Mon compte'}
+            >
+              {(user.email || 'U')[0].toUpperCase()}
+            </button>
+          )}
         </div>
       </header>
 
