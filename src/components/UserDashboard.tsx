@@ -1,6 +1,27 @@
 import React, { useState, useEffect } from 'react';
-import { motion } from 'motion/react';
-import { ArrowUpRight, FolderOpen, LogOut, Sparkles, TerminalSquare, Zap, Clock, Plus } from 'lucide-react';
+import { motion, AnimatePresence } from 'motion/react';
+import {
+  Home,
+  Search,
+  BookOpen,
+  Plug,
+  FolderOpen,
+  ChevronDown,
+  Gift,
+  Zap,
+  Plus,
+  Mic,
+  ArrowUp,
+  Clock,
+  ArrowRight,
+  LogOut,
+  CreditCard,
+  Sparkles,
+  Settings,
+  Users,
+  Eye,
+  LayoutGrid,
+} from 'lucide-react';
 import { getAuthUser } from '../lib/supabaseClient';
 
 type UserDashboardProps = {
@@ -8,6 +29,8 @@ type UserDashboardProps = {
   onSignOut: () => void;
   onOpenBillingPortal?: () => void;
 };
+
+type ProjectTab = 'my-projects' | 'recent' | 'shared' | 'templates';
 
 export default function UserDashboard({
   onOpenStudio,
@@ -18,17 +41,19 @@ export default function UserDashboard({
   const [user, setUser] = useState<any>(null);
   const [projects, setProjects] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
+  const [activeTab, setActiveTab] = useState<ProjectTab>('my-projects');
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
+  const [showUserMenu, setShowUserMenu] = useState(false);
 
   useEffect(() => {
     getAuthUser().then(u => {
       setUser(u);
       if (u) {
-        // Fetch real projects from the API
-        fetch(`/api/projects`) // We use the standard /api/projects endpoint if it exists
+        fetch(`/api/projects`)
           .then(r => r.json())
           .then(data => {
             if (Array.isArray(data)) {
-               setProjects(data);
+              setProjects(data);
             }
           })
           .catch(err => console.error("Erreur chargement projets", err));
@@ -43,156 +68,441 @@ export default function UserDashboard({
     onOpenStudio(prompt);
   };
 
+  const userName = user?.user_metadata?.full_name || user?.email?.split('@')[0] || 'User';
+  const userInitial = userName.charAt(0).toUpperCase();
+
+  const TABS: { id: ProjectTab; label: string }[] = [
+    { id: 'my-projects', label: 'Mes projets' },
+    { id: 'recent', label: 'Récemment vus' },
+    { id: 'shared', label: 'Partagés avec moi' },
+    { id: 'templates', label: 'Templates' },
+  ];
+
+  const TEMPLATES = [
+    { name: 'Dashboard SaaS', emoji: '📊', desc: 'KPIs, graphiques et gestion de données' },
+    { name: 'Landing Page', emoji: '🚀', desc: 'Conversion-optimized marketing page' },
+    { name: 'E-commerce', emoji: '🛒', desc: 'Catalogue produits avec panier' },
+    { name: 'CRM Client', emoji: '👥', desc: 'Gestion de la relation client' },
+    { name: 'Portfolio', emoji: '🎨', desc: 'Showcase professionnel créatif' },
+    { name: 'Blog & CMS', emoji: '📝', desc: 'Gestion de contenu dynamique' },
+  ];
+
   return (
-    <div className="min-h-screen bg-[#060913] text-white flex flex-col font-sans selection:bg-blue-500/30">
-      {/* Top Navbar */}
-      <header className="h-16 border-b border-white/10 flex items-center justify-between px-6 shrink-0 relative z-20">
-        <div className="flex items-center gap-3">
-          <div className="w-8 h-8 rounded-lg bg-blue-600 flex items-center justify-center shadow-lg shadow-blue-600/20">
-            <Zap size={18} className="text-white" />
-          </div>
-          <span className="font-bold text-lg tracking-tight">Huggy<span className="text-blue-500">.</span></span>
-        </div>
-        <div className="flex items-center gap-4">
-          <button onClick={onOpenBillingPortal} className="text-sm font-medium text-slate-400 hover:text-white transition-colors">
-            Facturation
-          </button>
-          <div className="w-px h-4 bg-white/10" />
-          <button onClick={onSignOut} className="flex items-center gap-2 text-sm font-medium text-slate-400 hover:text-white transition-colors">
-            <LogOut size={14} />
-            Déconnexion
-          </button>
-        </div>
-      </header>
+    <div className="h-screen flex bg-[#0a0a0a] text-white font-sans overflow-hidden selection:bg-purple-500/30">
 
-      {/* Main Content */}
-      <main className="flex-1 flex flex-col items-center pt-24 px-6 relative overflow-hidden">
-        {/* Background glow */}
-        <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[800px] h-[600px] bg-blue-600/10 rounded-full blur-[120px] pointer-events-none" />
-
-        <div className="w-full max-w-3xl z-10 flex flex-col items-center">
-          <motion.h1 
-            initial={{ opacity: 0, y: 10 }}
-            animate={{ opacity: 1, y: 0 }}
-            className="text-4xl md:text-[54px] leading-tight font-black text-center tracking-tight mb-10"
-          >
-            Que voulez-vous <br/> <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-emerald-400">construire</span> aujourd'hui ?
-          </motion.h1>
-
-          <motion.form 
-            initial={{ opacity: 0, y: 15 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.1 }}
-            onSubmit={handleGenerate}
-            className="w-full relative group/input p-[2px] rounded-[25px] overflow-hidden shadow-2xl shadow-blue-900/20"
-          >
-            <div className="absolute inset-[-1000%] animate-[spin_4s_linear_infinite] bg-[conic-gradient(from_90deg_at_50%_50%,transparent_0%,#3b82f6_30%,#10b981_70%,transparent_100%)] opacity-80 group-focus-within/input:opacity-100 transition-opacity duration-500" />
-            <div className="relative bg-[#0c101c] rounded-[23px] overflow-hidden transition-all">
-              <textarea
-                value={prompt}
-                onChange={e => setPrompt(e.target.value)}
-                onKeyDown={e => {
-                  if (e.key === 'Enter' && !e.shiftKey) {
-                    e.preventDefault();
-                    handleGenerate(e);
-                  }
-                }}
-                placeholder="Décrivez l'application de vos rêves (ex: Un dashboard CRM avec mode sombre...)"
-                className="w-full min-h-[140px] bg-transparent text-white placeholder-slate-500 p-6 resize-none outline-none text-lg leading-relaxed font-medium"
-                autoFocus
-              />
-              <div className="flex items-center justify-between px-4 py-3 bg-[#111727] border-t border-white/5">
-                <div className="flex items-center gap-4 text-[11px] font-bold uppercase tracking-widest text-slate-400">
-                  <span className="flex items-center gap-1.5"><Sparkles size={14} className="text-blue-400" /> Huggy AI</span>
-                  <span className="flex items-center gap-1.5"><TerminalSquare size={14} /> Fullstack App</span>
-                </div>
-                <button
-                  type="submit"
-                  disabled={!prompt.trim() || loading}
-                  className="px-6 py-2.5 bg-white text-slate-900 hover:bg-slate-200 disabled:opacity-50 disabled:hover:bg-white rounded-xl text-sm font-black flex items-center gap-2 transition-all active:scale-95"
-                >
-                  {loading ? 'Génération...' : 'Créer l\'app'}
-                  <ArrowUpRight size={16} />
-                </button>
+      {/* ═══════ SIDEBAR ═══════ */}
+      <aside
+        className={`shrink-0 flex flex-col border-r border-white/[0.06] bg-[#0a0a0a] transition-all duration-300 ${
+          sidebarCollapsed ? 'w-[68px]' : 'w-[260px]'
+        }`}
+      >
+        {/* Logo */}
+        <div className="h-14 flex items-center justify-between px-4 border-b border-white/[0.06]">
+          {!sidebarCollapsed && (
+            <div className="flex items-center gap-2.5">
+              <div className="w-7 h-7 rounded-lg bg-gradient-to-br from-purple-500 to-pink-500 flex items-center justify-center shadow-lg shadow-purple-500/20">
+                <Zap size={14} className="text-white" />
               </div>
+              <span className="font-bold text-[15px] tracking-tight text-white">Huggy</span>
             </div>
-          </motion.form>
-
-          {/* Quick Actions / Templates */}
-          <motion.div 
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ delay: 0.2 }}
-            className="flex flex-wrap items-center justify-center gap-3 mt-6"
+          )}
+          {sidebarCollapsed && (
+            <div className="w-7 h-7 rounded-lg bg-gradient-to-br from-purple-500 to-pink-500 flex items-center justify-center mx-auto shadow-lg shadow-purple-500/20">
+              <Zap size={14} className="text-white" />
+            </div>
+          )}
+          <button
+            onClick={() => setSidebarCollapsed(!sidebarCollapsed)}
+            className="w-7 h-7 rounded-md hover:bg-white/[0.06] flex items-center justify-center text-slate-500 hover:text-white transition-colors"
           >
-            {[
-              "🚀 Landing Page SaaS",
-              "📊 Dashboard Analytics",
-              "🛒 Application E-commerce",
-              "📝 Gestionnaire de tâches"
-            ].map(suggestion => (
-              <button 
-                key={suggestion}
-                type="button"
-                onClick={() => setPrompt(suggestion)}
-                className="px-4 py-2 rounded-full border border-white/10 bg-white/5 text-xs font-medium text-slate-300 hover:bg-white/10 hover:text-white transition-colors"
-              >
-                {suggestion}
-              </button>
-            ))}
-          </motion.div>
+            <LayoutGrid size={14} />
+          </button>
+        </div>
 
-          {/* Recent Projects */}
-          <motion.div 
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ delay: 0.3 }}
-            className="w-full mt-20 pb-12"
-          >
-            <div className="flex items-center justify-between mb-6">
-              <h2 className="text-base font-bold flex items-center gap-2 text-slate-200">
-                <FolderOpen size={16} className="text-blue-400" />
-                Vos projets
-              </h2>
-              <button 
-                onClick={() => onOpenStudio()} 
-                className="text-sm font-medium text-slate-400 hover:text-white flex items-center gap-1 transition-colors"
+        {/* User Workspace Selector */}
+        {!sidebarCollapsed && (
+          <div className="px-3 pt-3 pb-1">
+            <button
+              onClick={() => setShowUserMenu(!showUserMenu)}
+              className="w-full flex items-center gap-2.5 px-2.5 py-2 rounded-lg hover:bg-white/[0.06] transition-colors group"
+            >
+              <div className="w-7 h-7 rounded-lg bg-gradient-to-br from-emerald-500 to-teal-600 flex items-center justify-center text-[11px] font-bold text-white shadow-sm">
+                {userInitial}
+              </div>
+              <span className="text-[13px] font-semibold text-slate-200 truncate flex-1 text-left">
+                {userName}'s Huggy
+              </span>
+              <ChevronDown size={14} className="text-slate-500 group-hover:text-slate-300 transition-colors" />
+            </button>
+          </div>
+        )}
+
+        {/* Nav Links */}
+        <nav className="flex-1 px-3 pt-2 space-y-0.5 overflow-y-auto">
+          {[
+            { icon: Home, label: 'Accueil', active: true },
+            { icon: Search, label: 'Recherche', shortcut: '⌘K' },
+            { icon: BookOpen, label: 'Ressources' },
+            { icon: Plug, label: 'Connecteurs' },
+          ].map((item) => (
+            <button
+              key={item.label}
+              className={`w-full flex items-center gap-3 px-2.5 py-2 rounded-lg text-[13px] font-medium transition-colors ${
+                item.active
+                  ? 'bg-white/[0.08] text-white'
+                  : 'text-slate-400 hover:text-white hover:bg-white/[0.04]'
+              } ${sidebarCollapsed ? 'justify-center' : ''}`}
+            >
+              <item.icon size={16} className={item.active ? 'text-white' : 'text-slate-500'} />
+              {!sidebarCollapsed && (
+                <>
+                  <span className="flex-1 text-left">{item.label}</span>
+                  {item.shortcut && (
+                    <span className="text-[10px] font-mono text-slate-600 bg-white/[0.06] px-1.5 py-0.5 rounded">
+                      {item.shortcut}
+                    </span>
+                  )}
+                </>
+              )}
+            </button>
+          ))}
+
+          {/* Projects Section */}
+          {!sidebarCollapsed && (
+            <div className="pt-5">
+              <div className="flex items-center justify-between px-2.5 mb-2">
+                <span className="text-[11px] font-semibold uppercase tracking-wider text-slate-500">Projets</span>
+              </div>
+              <button
+                onClick={() => {}}
+                className="w-full flex items-center gap-3 px-2.5 py-2 rounded-lg text-[13px] font-medium text-slate-400 hover:text-white hover:bg-white/[0.04] transition-colors"
               >
-                Ouvrir un espace vierge <ArrowUpRight size={14} />
+                <FolderOpen size={16} className="text-slate-500" />
+                <span className="flex-1 text-left">Tous les projets</span>
+                <ChevronDown size={14} className="text-slate-600" />
               </button>
             </div>
-            
-            {projects.length > 0 ? (
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-                {/* Always show a "New Project" card */}
-                <div onClick={() => onOpenStudio()} className="bg-blue-600/10 border border-blue-500/20 rounded-2xl p-5 cursor-pointer hover:bg-blue-600/20 transition-all flex flex-col items-center justify-center min-h-[120px] group">
-                  <div className="w-10 h-10 rounded-full bg-blue-500/20 flex items-center justify-center text-blue-400 mb-3 group-hover:scale-110 transition-transform">
-                    <Plus size={20} />
-                  </div>
-                  <span className="font-bold text-sm text-blue-100">Nouveau Projet</span>
+          )}
+        </nav>
+
+        {/* Bottom Cards */}
+        <div className="px-3 pb-3 space-y-2">
+          {!sidebarCollapsed ? (
+            <>
+              {/* Share Card */}
+              <div className="px-3 py-3 rounded-xl bg-white/[0.04] border border-white/[0.06] flex items-center gap-3 cursor-pointer hover:bg-white/[0.06] transition-colors group">
+                <div className="w-8 h-8 rounded-lg bg-purple-500/15 flex items-center justify-center text-purple-400 group-hover:bg-purple-500/25 transition-colors">
+                  <Gift size={16} />
                 </div>
+                <div className="flex-1 min-w-0">
+                  <p className="text-[12px] font-semibold text-slate-200">Partager Huggy</p>
+                  <p className="text-[11px] text-slate-500">100 crédits par parrainage</p>
+                </div>
+              </div>
 
-                {projects.map(p => (
-                  <div key={p.id} onClick={() => onOpenStudio('', p.id)} className="bg-[#0c101c] border border-white/10 rounded-2xl p-5 cursor-pointer hover:border-white/20 hover:bg-[#111727] transition-all group relative overflow-hidden">
-                    <div className="absolute top-0 left-0 w-1 h-full bg-slate-800 group-hover:bg-blue-500 transition-colors" />
-                    <h3 className="font-bold text-white mb-2 group-hover:text-blue-400 transition-colors truncate">{p.name || 'Projet sans titre'}</h3>
-                    <div className="flex items-center gap-4 text-[11px] text-slate-500 font-medium">
-                      <span className="flex items-center gap-1"><Clock size={12} /> {new Date(p.created_at).toLocaleDateString()}</span>
-                    </div>
+              {/* Upgrade Card */}
+              <button
+                onClick={onOpenBillingPortal}
+                className="w-full px-3 py-3 rounded-xl bg-gradient-to-r from-purple-500/10 to-pink-500/10 border border-purple-500/15 flex items-center gap-3 cursor-pointer hover:from-purple-500/15 hover:to-pink-500/15 transition-all group"
+              >
+                <div className="w-8 h-8 rounded-lg bg-purple-500/20 flex items-center justify-center text-purple-400 group-hover:bg-purple-500/30 transition-colors">
+                  <Zap size={16} />
+                </div>
+                <div className="flex-1 min-w-0 text-left">
+                  <p className="text-[12px] font-semibold text-slate-200">Passer à Business</p>
+                  <p className="text-[11px] text-slate-500">Débloquer plus de fonctionnalités</p>
+                </div>
+              </button>
+            </>
+          ) : (
+            <>
+              <button className="w-full flex justify-center py-2 rounded-lg hover:bg-white/[0.06] text-slate-500 hover:text-purple-400 transition-colors">
+                <Gift size={18} />
+              </button>
+              <button
+                onClick={onOpenBillingPortal}
+                className="w-full flex justify-center py-2 rounded-lg hover:bg-white/[0.06] text-slate-500 hover:text-purple-400 transition-colors"
+              >
+                <Zap size={18} />
+              </button>
+            </>
+          )}
+
+          {/* User Avatar Row */}
+          <div className={`flex items-center pt-2 border-t border-white/[0.06] ${sidebarCollapsed ? 'justify-center' : 'justify-between px-1'}`}>
+            <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-emerald-500 to-teal-600 flex items-center justify-center text-[12px] font-bold text-white cursor-pointer">
+              {userInitial}
+            </div>
+            {!sidebarCollapsed && (
+              <button
+                onClick={onSignOut}
+                className="w-8 h-8 rounded-lg hover:bg-white/[0.06] flex items-center justify-center text-slate-500 hover:text-red-400 transition-colors"
+                title="Déconnexion"
+              >
+                <LogOut size={15} />
+              </button>
+            )}
+          </div>
+        </div>
+      </aside>
+
+      {/* ═══════ MAIN CONTENT ═══════ */}
+      <main className="flex-1 flex flex-col overflow-hidden">
+
+        {/* ── HERO SECTION with gradient ── */}
+        <div className="relative flex-shrink-0">
+          {/* Gradient Background */}
+          <div
+            className="absolute inset-0 z-0"
+            style={{
+              background: 'linear-gradient(135deg, #1a0533 0%, #3b0764 20%, #7c3aed 35%, #a855f7 45%, #ec4899 55%, #f97316 70%, #3b82f6 85%, #06b6d4 100%)',
+            }}
+          />
+          {/* Noise/mesh overlay for depth */}
+          <div className="absolute inset-0 z-[1] opacity-40" style={{
+            background: 'radial-gradient(ellipse at 30% 20%, rgba(139, 92, 246, 0.5) 0%, transparent 50%), radial-gradient(ellipse at 70% 60%, rgba(236, 72, 153, 0.4) 0%, transparent 50%), radial-gradient(ellipse at 50% 90%, rgba(59, 130, 246, 0.3) 0%, transparent 50%)',
+          }} />
+          {/* Blur softener at bottom */}
+          <div className="absolute bottom-0 left-0 right-0 h-20 bg-gradient-to-t from-[#0f0f0f] to-transparent z-[2]" />
+
+          <div className="relative z-10 px-8 pt-10 pb-16 flex flex-col items-center text-center">
+            {/* Promo Badge */}
+            <motion.div
+              initial={{ opacity: 0, y: -10 }}
+              animate={{ opacity: 1, y: 0 }}
+              className="mb-8"
+            >
+              <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-white/10 backdrop-blur-md border border-white/10 text-[13px] font-medium text-white/90 cursor-pointer hover:bg-white/15 transition-colors">
+                <span className="px-2 py-0.5 rounded-full bg-purple-500 text-[11px] font-bold text-white">Promo</span>
+                Les crédits comptent double jusqu'au 30 Avril
+                <ArrowRight size={14} className="text-white/60" />
+              </div>
+            </motion.div>
+
+            {/* Main Heading */}
+            <motion.h1
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.05 }}
+              className="text-3xl sm:text-4xl md:text-[46px] font-bold tracking-tight text-white leading-[1.15] mb-8"
+            >
+              Que voulez-vous créer,{' '}
+              <span className="text-white/90">{userName}</span> ?
+            </motion.h1>
+
+            {/* AI Prompt Input */}
+            <motion.form
+              initial={{ opacity: 0, y: 15 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.1 }}
+              onSubmit={handleGenerate}
+              className="w-full max-w-[680px]"
+            >
+              <div className="relative rounded-2xl bg-[#1a1a1a]/80 backdrop-blur-xl border border-white/[0.08] shadow-2xl shadow-black/40 overflow-hidden hover:border-white/[0.12] transition-colors focus-within:border-white/[0.15]">
+                <textarea
+                  value={prompt}
+                  onChange={e => setPrompt(e.target.value)}
+                  onKeyDown={e => {
+                    if (e.key === 'Enter' && !e.shiftKey) {
+                      e.preventDefault();
+                      handleGenerate(e);
+                    }
+                  }}
+                  placeholder="Demandez à Huggy d'analyser vos données et..."
+                  className="w-full min-h-[56px] max-h-[160px] bg-transparent text-white placeholder-slate-500 px-5 pt-4 pb-1 resize-none outline-none text-[15px] leading-relaxed font-medium"
+                  rows={1}
+                  autoFocus
+                />
+                <div className="flex items-center justify-between px-3 py-2.5">
+                  <div className="flex items-center gap-1">
+                    <button
+                      type="button"
+                      className="w-8 h-8 rounded-lg hover:bg-white/[0.06] flex items-center justify-center text-slate-500 hover:text-white transition-colors"
+                    >
+                      <Plus size={18} />
+                    </button>
                   </div>
+                  <div className="flex items-center gap-2">
+                    <button
+                      type="button"
+                      className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[13px] font-medium text-slate-400 hover:text-white hover:bg-white/[0.06] transition-colors"
+                    >
+                      Build
+                      <ChevronDown size={13} />
+                    </button>
+                    <button
+                      type="button"
+                      className="w-8 h-8 rounded-lg hover:bg-white/[0.06] flex items-center justify-center text-slate-500 hover:text-white transition-colors"
+                    >
+                      <Mic size={16} />
+                    </button>
+                    <button
+                      type="submit"
+                      disabled={!prompt.trim() || loading}
+                      className="w-8 h-8 rounded-full bg-white/10 hover:bg-white/20 disabled:opacity-30 disabled:hover:bg-white/10 flex items-center justify-center text-white transition-all border border-white/10"
+                    >
+                      <ArrowUp size={16} />
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </motion.form>
+          </div>
+        </div>
+
+        {/* ── PROJECTS SECTION (dark bottom) ── */}
+        <div className="flex-1 bg-[#0f0f0f] overflow-y-auto">
+          <div className="max-w-[1100px] mx-auto px-8 py-6">
+
+            {/* Tabs Row */}
+            <div className="flex items-center justify-between mb-6">
+              <div className="flex items-center gap-1">
+                {TABS.map(tab => (
+                  <button
+                    key={tab.id}
+                    onClick={() => setActiveTab(tab.id)}
+                    className={`px-4 py-2 rounded-lg text-[13px] font-medium transition-colors ${
+                      activeTab === tab.id
+                        ? 'bg-white/[0.08] text-white'
+                        : 'text-slate-500 hover:text-slate-300 hover:bg-white/[0.04]'
+                    }`}
+                  >
+                    {tab.label}
+                  </button>
                 ))}
               </div>
-            ) : (
-              <div className="text-center py-12 border border-white/10 border-dashed rounded-3xl bg-[#0c101c]/50">
-                <FolderOpen size={32} className="mx-auto text-slate-600 mb-3" />
-                <p className="text-slate-300 font-medium text-sm">Aucun projet pour le moment.</p>
-                <p className="text-slate-500 text-xs mt-1">Lancez-vous en décrivant votre idée ci-dessus !</p>
-              </div>
-            )}
-          </motion.div>
+              <button
+                onClick={() => onOpenStudio()}
+                className="flex items-center gap-1.5 text-[13px] font-medium text-slate-400 hover:text-white transition-colors group"
+              >
+                Voir tout
+                <ArrowRight size={14} className="group-hover:translate-x-0.5 transition-transform" />
+              </button>
+            </div>
 
+            {/* Tab Content */}
+            <AnimatePresence mode="wait">
+              {activeTab === 'my-projects' && (
+                <motion.div
+                  key="my-projects"
+                  initial={{ opacity: 0, y: 8 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0 }}
+                  transition={{ duration: 0.2 }}
+                >
+                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+                    {/* New Project Card */}
+                    <div
+                      onClick={() => onOpenStudio()}
+                      className="group relative bg-white/[0.03] border border-dashed border-white/[0.08] rounded-2xl p-5 cursor-pointer hover:bg-white/[0.05] hover:border-white/[0.12] transition-all flex flex-col items-center justify-center min-h-[160px]"
+                    >
+                      <div className="w-12 h-12 rounded-xl bg-purple-500/10 flex items-center justify-center text-purple-400 mb-3 group-hover:bg-purple-500/20 group-hover:scale-110 transition-all">
+                        <Plus size={22} />
+                      </div>
+                      <span className="text-[13px] font-semibold text-slate-400 group-hover:text-white transition-colors">
+                        Nouveau projet
+                      </span>
+                    </div>
+
+                    {/* Project Cards */}
+                    {projects.map(p => (
+                      <div
+                        key={p.id}
+                        onClick={() => onOpenStudio('', p.id)}
+                        className="group relative bg-white/[0.03] border border-white/[0.06] rounded-2xl overflow-hidden cursor-pointer hover:bg-white/[0.05] hover:border-white/[0.10] transition-all"
+                      >
+                        {/* Project Preview Area */}
+                        <div className="h-[100px] bg-gradient-to-br from-slate-800/50 to-slate-900/50 flex items-center justify-center border-b border-white/[0.04]">
+                          <Eye size={20} className="text-slate-600 group-hover:text-slate-500 transition-colors" />
+                        </div>
+                        <div className="p-4">
+                          <h3 className="text-[13px] font-semibold text-white truncate group-hover:text-purple-300 transition-colors">
+                            {p.name || 'Projet sans titre'}
+                          </h3>
+                          <div className="flex items-center gap-2 mt-2 text-[11px] text-slate-500">
+                            <Clock size={11} />
+                            <span>{new Date(p.created_at).toLocaleDateString('fr-FR', { day: 'numeric', month: 'short' })}</span>
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+
+                  {projects.length === 0 && (
+                    <div className="text-center py-16">
+                      <div className="w-16 h-16 mx-auto mb-4 rounded-2xl bg-white/[0.03] border border-white/[0.06] flex items-center justify-center">
+                        <FolderOpen size={24} className="text-slate-600" />
+                      </div>
+                      <p className="text-[14px] font-medium text-slate-400">Aucun projet pour le moment</p>
+                      <p className="text-[12px] text-slate-600 mt-1">Décrivez votre idée ci-dessus pour commencer</p>
+                    </div>
+                  )}
+                </motion.div>
+              )}
+
+              {activeTab === 'templates' && (
+                <motion.div
+                  key="templates"
+                  initial={{ opacity: 0, y: 8 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0 }}
+                  transition={{ duration: 0.2 }}
+                >
+                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                    {TEMPLATES.map(t => (
+                      <div
+                        key={t.name}
+                        onClick={() => onOpenStudio(`Crée une application : ${t.name} — ${t.desc}`)}
+                        className="group bg-white/[0.03] border border-white/[0.06] rounded-2xl p-5 cursor-pointer hover:bg-white/[0.05] hover:border-white/[0.10] transition-all"
+                      >
+                        <span className="text-2xl mb-3 block">{t.emoji}</span>
+                        <h3 className="text-[14px] font-semibold text-white group-hover:text-purple-300 transition-colors">
+                          {t.name}
+                        </h3>
+                        <p className="text-[12px] text-slate-500 mt-1.5 leading-relaxed">{t.desc}</p>
+                      </div>
+                    ))}
+                  </div>
+                </motion.div>
+              )}
+
+              {(activeTab === 'recent' || activeTab === 'shared') && (
+                <motion.div
+                  key={activeTab}
+                  initial={{ opacity: 0, y: 8 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0 }}
+                  transition={{ duration: 0.2 }}
+                >
+                  <div className="text-center py-16">
+                    <div className="w-16 h-16 mx-auto mb-4 rounded-2xl bg-white/[0.03] border border-white/[0.06] flex items-center justify-center">
+                      {activeTab === 'recent' ? (
+                        <Clock size={24} className="text-slate-600" />
+                      ) : (
+                        <Users size={24} className="text-slate-600" />
+                      )}
+                    </div>
+                    <p className="text-[14px] font-medium text-slate-400">
+                      {activeTab === 'recent' ? 'Aucun projet récent' : 'Aucun projet partagé'}
+                    </p>
+                    <p className="text-[12px] text-slate-600 mt-1">
+                      {activeTab === 'recent'
+                        ? 'Vos projets consultés récemment apparaîtront ici'
+                        : 'Les projets partagés avec vous apparaîtront ici'}
+                    </p>
+                  </div>
+                </motion.div>
+              )}
+            </AnimatePresence>
+
+          </div>
         </div>
       </main>
+
+      {/* Click-away for user menu */}
+      {showUserMenu && (
+        <div className="fixed inset-0 z-[100]" onClick={() => setShowUserMenu(false)} />
+      )}
     </div>
   );
 }
