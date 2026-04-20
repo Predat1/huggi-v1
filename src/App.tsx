@@ -174,14 +174,7 @@ const PreviewContent = ({ mode, filesMap, onCodeError }: { mode: PreviewMode; fi
   );
 };
 
-const INITIAL_MESSAGES: Message[] = [
-  {
-    id: '1',
-    sender: 'HUGGY',
-    text: "Bonjour ! Je suis Huggy, votre assistant de design intelligent. Que souhaitez-vous construire aujourd'hui ?",
-    timestamp: new Date()
-  }
-];
+const INITIAL_MESSAGES: Message[] = [];
 
 const PREVIEW_ENTRY = 'src/App.tsx';
 
