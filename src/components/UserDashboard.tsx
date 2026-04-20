@@ -11,7 +11,8 @@ import {
   Figma, 
   MoreHorizontal,
   ChevronRight,
-  Zap
+  Zap,
+  Check
 } from 'lucide-react';
 import HuggyChatInput from './HuggyChatInput';
 

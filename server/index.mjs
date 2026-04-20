@@ -9,6 +9,7 @@ import fs from 'fs';
 import { mkdir } from 'fs/promises';
 import { createPool, initSchema } from './lib/db.mjs';
 import { runChat, runGenerate, runChatStream, runGenerateStream } from './lib/aiGenerate.mjs';
+import { runAgenticPipeline, runPostGenerationReview } from './lib/agents.mjs';
 import {
   PREVIEW_ENTRY,
   createProject,
@@ -758,13 +759,55 @@ app.post('/api/generate-app', rateLimiter, async (req, res) => {
         ? currentCode
         : allFiles[PREVIEW_ENTRY] || DEFAULT_PREVIEW_CODE;
 
+    // ─── Agentic Pipeline: PM plans, Coder generates, VR reviews ───
+    let refinedPrompt = prompt;
+    let agentPlan = null;
+    let agentReview = null;
+    let agentDatabase = null;
+
+    // Step 1: Product Manager plans the architecture
+    try {
+      const pipeline = await runAgenticPipeline(prompt, {
+        chatHistory,
+        currentEntryCode,
+        allFiles,
+      });
+      refinedPrompt = pipeline.refinedPrompt || prompt;
+      agentPlan = pipeline.plan;
+      agentDatabase = pipeline.database;
+    } catch (e) {
+      console.warn('[Agent:PM] Fallback to raw prompt:', e.message);
+    }
+
+    // Step 2: Coder generates code (using refined prompt from PM)
     const result = await runGenerate({
-      prompt,
+      prompt: refinedPrompt,
       chatHistory,
       currentEntryCode,
       allFiles,
     });
 
+    // Step 3: Visual Reviewer checks quality
+    if (result.files?.length > 0) {
+      try {
+        agentReview = await runPostGenerationReview(result.files, prompt);
+        // If VR rejected and provided corrections, apply them
+        if (!agentReview.approved && agentReview.corrections?.length > 0) {
+          for (const correction of agentReview.corrections) {
+            const idx = result.files.findIndex(f => f.path === correction.path);
+            if (idx >= 0) {
+              result.files[idx].content = correction.content;
+            } else {
+              result.files.push(correction);
+            }
+          }
+        }
+      } catch (e) {
+        console.warn('[Agent:VR] Review skipped:', e.message);
+      }
+    }
+
+    // Persist files to DB
     if (pool && projectId) {
       if (!isUuid(projectId)) return res.status(400).json({ error: 'projectId invalide.' });
       const project = await getProject(pool, projectId);
@@ -785,6 +828,12 @@ app.post('/api/generate-app', rateLimiter, async (req, res) => {
       reply: result.reply || '',
       export: result.export || null,
       provider: result.provider,
+      // New agentic metadata
+      agents: {
+        plan: agentPlan ? { summary: agentPlan.summary, complexity: agentPlan.complexity, pages: agentPlan.pages?.length || 0 } : null,
+        review: agentReview ? { score: agentReview.score, approved: agentReview.approved, issues: agentReview.issues?.length || 0 } : null,
+        database: agentDatabase?.needsDatabase ? { tables: agentPlan?.dataModel?.length || 0, explanation: agentDatabase.explanation } : null,
+      },
     });
   } catch (e) {
     console.error('[generate-app]', e);

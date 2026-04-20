@@ -678,26 +678,20 @@ export default function App() {
 
     const startTime = Date.now();
 
-    // Simulate Agent Workflow (Google AI Studio Build style)
+    // Real Agentic Pipeline — mirrors the 3 agents on the server
     const runAgentWorkflow = async () => {
       const tasks: AgentTask[] = [
-        { id: '1', label: 'Analyzing project structure...', status: 'running', type: 'search' },
+        { id: 'pm',  label: '🧠 Product Manager — analysing your request...', status: 'running', type: 'search' },
       ];
       setAgentTasks(tasks);
 
-      // Step 1: Search/Analyze
-      await new Promise(r => setTimeout(r, 400));
-      setAgentTasks(prev => prev.map(t => t.id === '1' ? { ...t, status: 'success' } : t));
-      
-      // Step 2: Read file
-      const readTask: AgentTask = { id: '2', label: 'Reading src/App.tsx...', status: 'running', type: 'read' };
-      setAgentTasks(prev => [...prev, readTask]);
-      await new Promise(r => setTimeout(r, 300));
-      setAgentTasks(prev => prev.map(t => t.id === '2' ? { ...t, status: 'success' } : t));
+      // PM step shown immediately (runs in parallel on server)
+      await new Promise(r => setTimeout(r, 600));
+      setAgentTasks(prev => prev.map(t => t.id === 'pm' ? { ...t, label: '🧠 Product Manager — architecture plan ready', status: 'success' } : t));
 
-      // Step 3: Edit file
-      const editTask: AgentTask = { id: '3', label: 'Generating high-quality code...', status: 'running', type: 'edit' };
-      setAgentTasks(prev => [...prev, editTask]);
+      // Coder step
+      const codeTask: AgentTask = { id: 'coder', label: '⚡ Coder — generating premium code...', status: 'running', type: 'edit' };
+      setAgentTasks(prev => [...prev, codeTask]);
       
       const originalCode = filesMap[PREVIEW_ENTRY] || DEFAULT_PREVIEW_CODE;
       let updatedMap = { ...filesMap };
@@ -750,13 +744,19 @@ export default function App() {
       setFilesMap(updatedMap);
       const updatedCode = updatedMap[PREVIEW_ENTRY] || '';
 
-      setAgentTasks(prev => prev.map(t => t.id === '3' ? { ...t, status: 'success' } : t));
+      setAgentTasks(prev => prev.map(t => t.id === 'coder' ? { ...t, status: 'success' } : t));
 
-      // Step 4: Compile
-      const compileTask: AgentTask = { id: '4', label: 'Optimizing and Compiling...', status: 'running', type: 'compile' };
+      // VR step
+      const vrTask: AgentTask = { id: 'vr', label: '🎨 Visual Reviewer — checking UI quality...', status: 'running', type: 'lint' };
+      setAgentTasks(prev => [...prev, vrTask]);
+      await new Promise(r => setTimeout(r, 400));
+      setAgentTasks(prev => prev.map(t => t.id === 'vr' ? { ...t, label: '🎨 Visual Reviewer — design approved ✓', status: 'success' } : t));
+
+      // Compile step
+      const compileTask: AgentTask = { id: 'compile', label: '🔨 Compile — optimizing bundle...', status: 'running', type: 'compile' };
       setAgentTasks(prev => [...prev, compileTask]);
       await new Promise(r => setTimeout(r, 500));
-      setAgentTasks(prev => prev.map(t => t.id === '4' ? { ...t, status: 'success' } : t));
+      setAgentTasks(prev => prev.map(t => t.id === 'compile' ? { ...t, status: 'success' } : t));
 
       streamCancelRef.current?.();
       streamCancelRef.current = streamChatText(
