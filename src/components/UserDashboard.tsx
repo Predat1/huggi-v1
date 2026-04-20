@@ -151,18 +151,18 @@ export default function UserDashboard({ user, credits, onOpenStudio, onLogout }:
               <div className="w-14 h-14 bg-blue-600 rounded-2xl flex items-center justify-center mb-6 shadow-[0_0_30px_rgba(37,99,235,0.4)]">
                 <Zap size={28} fill="currentColor" className="text-white" />
               </div>
-              <h2 className="text-2xl font-bold text-white mb-2">Bienvenue sur Huggy Studio ⚡</h2>
+              <h2 className="text-2xl font-bold text-white mb-2">Bienvenue sur Huggy ⚡</h2>
               <p className="text-slate-400 mb-6 leading-relaxed">
-                Décrivez votre idée en français et Huggy génère une application complète en quelques secondes. Vous pouvez ensuite modifier, exporter ou publier directement.
+                Transformez vos idées en applications prêtes à l'emploi. Voici comment démarrer votre voyage de création :
               </p>
-              <div className="space-y-3 mb-8">
+              <div className="space-y-4 mb-8">
                 {[
-                  '🧠 Décrivez votre app en une phrase',
-                  '⚡ Huggy génère le code React + Tailwind',
-                  '🎨 Affinez avec des instructions supplémentaires',
-                  '🚀 Publiez en un clic sous votre domaine',
+                  '✍️ Décrivez votre besoin dans le chat',
+                  '✨ Regardez l\'IA coder en temps réel',
+                  '🛠️ Affinez le design et les fonctionnalités',
+                  '🌍 Publiez votre app sur le web en un clic',
                 ].map((step, i) => (
-                  <div key={i} className="flex items-center gap-3 text-sm text-slate-300">
+                  <div key={i} className="flex items-center gap-4 text-sm text-slate-300">
                     <div className="w-6 h-6 rounded-full bg-blue-600/20 border border-blue-500/30 flex items-center justify-center text-blue-400 text-xs font-bold shrink-0">{i + 1}</div>
                     {step}
                   </div>
@@ -203,7 +203,7 @@ export default function UserDashboard({ user, credits, onOpenStudio, onLogout }:
         </div>
 
         {/* Navigation */}
-        <nav className="flex-1 px-3 py-2 space-y-0.5">
+        <nav className="flex-1 px-4 py-4 space-y-2.5">
           {[
             { id: 'home', label: 'Dashboard', icon: Home },
             { id: 'template', label: 'Templates', icon: LayoutTemplate },
@@ -214,7 +214,7 @@ export default function UserDashboard({ user, credits, onOpenStudio, onLogout }:
             <button
               key={id}
               onClick={() => setActiveTab(id as any)}
-              className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all ${activeTab === id ? 'bg-white/10 text-white' : 'text-slate-400 hover:text-white hover:bg-white/5'}`}
+              className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium transition-all ${activeTab === id ? 'bg-white/10 text-white' : 'text-slate-400 hover:text-white hover:bg-white/5'}`}
             >
               <Icon size={16} />
               {label}
@@ -268,7 +268,7 @@ export default function UserDashboard({ user, credits, onOpenStudio, onLogout }:
             <motion.div
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
-              className="text-center mb-10"
+              className="text-center mb-16"
             >
               <h1 className="text-4xl md:text-5xl font-bold text-white mb-4 tracking-tight">
                 Que souhaitez-vous<br className="hidden md:block" /> construire ?
@@ -291,7 +291,7 @@ export default function UserDashboard({ user, credits, onOpenStudio, onLogout }:
                   modelLabel="Huggy AI"
                 />
               </div>
-              <div className="flex items-center justify-center gap-8 mt-6">
+              <div className="flex items-center justify-center gap-12 mt-10">
                 {[['React & Tailwind', '⚛️'], ['Code exportable', '📦'], ['Preview instantanée', '⚡']].map(([label, icon]) => (
                   <div key={label} className="flex items-center gap-2 text-xs text-slate-500">
                     <span>{icon}</span>{label}
@@ -300,8 +300,44 @@ export default function UserDashboard({ user, credits, onOpenStudio, onLogout }:
               </div>
             </motion.div>
 
+            {/* Recent Projects for returning users */}
+            {projects.length > 0 && (
+              <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.2 }}
+                className="w-full max-w-4xl mt-16"
+              >
+                <div className="flex items-center justify-between mb-6">
+                  <h2 className="text-lg font-bold text-white flex items-center gap-2">
+                    <Clock size={18} className="text-blue-400" />
+                    Reprendre mes travaux
+                  </h2>
+                  <button onClick={() => setActiveTab('projects')} className="text-xs text-slate-500 hover:text-white transition-colors">Voir tout</button>
+                </div>
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  {projects.slice(0, 3).map((proj) => (
+                    <div
+                      key={proj.id}
+                      onClick={() => onOpenStudio(undefined, proj.id)}
+                      className="group p-5 bg-white/[0.03] border border-white/5 hover:border-white/10 rounded-2xl transition-all cursor-pointer"
+                    >
+                      <div className="flex items-center justify-between mb-3">
+                        <div className="w-8 h-8 bg-blue-600/10 rounded-lg flex items-center justify-center">
+                          <Folder size={14} className="text-blue-400" />
+                        </div>
+                        <ChevronRight size={14} className="text-slate-600 group-hover:text-white transition-colors" />
+                      </div>
+                      <h3 className="text-white font-bold text-sm mb-1 truncate">{proj.name || 'Projet sans nom'}</h3>
+                      <p className="text-[10px] text-slate-500">{timeAgo(proj.updated_at || proj.created_at)}</p>
+                    </div>
+                  ))}
+                </div>
+              </motion.div>
+            )}
+
             {/* Quick template chips */}
-            <div className="flex flex-wrap gap-2 mt-8 justify-center max-w-2xl">
+            <div className="flex flex-wrap gap-3 mt-12 justify-center max-w-2xl">
               {TEMPLATES.slice(0, 4).map(t => (
                 <button
                   key={t.id}
@@ -317,12 +353,12 @@ export default function UserDashboard({ user, credits, onOpenStudio, onLogout }:
 
         {/* Templates Tab */}
         {activeTab === 'template' && (
-          <div className="flex-1 overflow-y-auto p-8 custom-scrollbar">
-            <div className="flex items-center justify-between mb-6">
+          <div className="flex-1 overflow-y-auto p-12 custom-scrollbar">
+            <div className="flex items-center justify-between mb-10">
               <h1 className="text-2xl font-bold text-white">Templates</h1>
               <span className="text-xs text-slate-500">{TEMPLATES.length} templates disponibles</span>
             </div>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-5">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8">
               {TEMPLATES.map((tpl, i) => (
                 <motion.div
                   key={tpl.id}
@@ -354,8 +390,8 @@ export default function UserDashboard({ user, credits, onOpenStudio, onLogout }:
 
         {/* Projects Tab */}
         {activeTab === 'projects' && (
-          <div className="flex-1 overflow-y-auto p-8 custom-scrollbar">
-            <div className="flex items-center justify-between mb-6">
+          <div className="flex-1 overflow-y-auto p-12 custom-scrollbar">
+            <div className="flex items-center justify-between mb-10">
               <h1 className="text-2xl font-bold text-white">Mes Projets</h1>
               <button
                 onClick={() => onOpenStudio()}
@@ -402,7 +438,7 @@ export default function UserDashboard({ user, credits, onOpenStudio, onLogout }:
                 )}
               </div>
             ) : (
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                 {filteredProjects.map((proj, i) => (
                   <motion.div
                     key={proj.id}
@@ -451,8 +487,8 @@ export default function UserDashboard({ user, credits, onOpenStudio, onLogout }:
 
         {/* Gallery Tab */}
         {activeTab === 'gallery' && (
-          <div className="flex-1 overflow-y-auto p-8 custom-scrollbar">
-            <div className="flex items-center justify-between mb-6">
+          <div className="flex-1 overflow-y-auto p-12 custom-scrollbar">
+            <div className="flex items-center justify-between mb-10">
               <h1 className="text-2xl font-bold text-white">Galerie Publique</h1>
               <span className="text-xs text-slate-500">Projets publiés par la communauté</span>
             </div>

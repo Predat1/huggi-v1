@@ -65,7 +65,7 @@ export function ChatWindow({
   return (
     <div className="flex flex-col h-full bg-gradient-to-b from-white to-slate-50">
       {/* Messages */}
-      <div className="flex-1 overflow-y-auto px-4 py-6 space-y-4 scrollbar-hide">
+      <div className="flex-1 overflow-y-auto px-6 py-10 space-y-10 scrollbar-hide">
         <AnimatePresence mode="popLayout">
           {messages.length === 0 ? (
             <motion.div
@@ -100,7 +100,7 @@ export function ChatWindow({
       </div>
 
       {/* Input Area */}
-      <div className="border-t border-slate-200 bg-white p-4 shadow-sm">
+      <div className="border-t border-slate-200 bg-white p-8 shadow-sm">
         <div className="max-w-4xl mx-auto">
           <div className="relative rounded-xl border border-slate-200 bg-white shadow-sm focus-within:ring-2 focus-within:ring-blue-500/20 focus-within:border-blue-500 transition-all">
             <textarea
@@ -157,7 +157,7 @@ function MessageBubble({ message, onCopy, isCopied = false }: MessageBubbleProps
       className={`flex ${isUser ? 'justify-end' : 'justify-start'}`}
     >
       <div
-        className={`max-w-xl lg:max-w-2xl rounded-lg px-4 py-3 ${
+        className={`max-w-xl lg:max-w-2xl rounded-2xl px-6 py-4 ${
           isUser
             ? 'bg-blue-600 text-white rounded-br-none'
             : 'bg-slate-100 text-slate-900 rounded-bl-none'

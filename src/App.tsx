@@ -190,6 +190,7 @@ const PREVIEW_ENTRY = 'src/App.tsx';
 export default function App() {
   const [messages, setMessages] = useState<Message[]>(INITIAL_MESSAGES);
   const [inputValue, setInputValue] = useState('');
+  const [pendingPrompt, setPendingPrompt] = useState<string | null>(null);
   const [previewMode, setPreviewMode] = useState<PreviewMode>('desktop');
   const [activeSidebarTab, setActiveSidebarTab] = useState<SidebarTab>('chat');
   const [activeBottomTab, setActiveBottomTab] = useState<'terminal' | 'code'>('terminal');
@@ -256,6 +257,13 @@ export default function App() {
       setUser(u);
       if (u) {
         getMe({ userId: u.id, email: u.email }).then(data => setCredits(data.credits));
+        // If there was a pending prompt, trigger studio
+        if (pendingPrompt) {
+          setStudioMode(true);
+          setInputValue(pendingPrompt);
+          setTimeout(() => handleSendMessage(pendingPrompt), 100);
+          setPendingPrompt(null);
+        }
       } else {
         setCredits(null);
       }
@@ -998,16 +1006,18 @@ export default function App() {
             ) : (
               <LandingPage
                 accent={ACCENT_COLORS[activeAccentColor]}
+                userId={user?.id}
                 onLogin={() => setShowAuthModal(true)}
                 onOpenStudio={(initialPrompt) => {
+                  if (!user) {
+                    if (initialPrompt) setPendingPrompt(initialPrompt);
+                    setShowAuthModal(true);
+                    return;
+                  }
                   if (initialPrompt) setInputValue(initialPrompt);
                   setStudioMode(true);
                   if (!new URLSearchParams(window.location.search).get('project')) {
-                    window.history.replaceState(
-                      {},
-                      '',
-                      `${window.location.pathname}?studio=1`,
-                    );
+                    window.history.replaceState({}, '', `${window.location.pathname}?studio=1`);
                   }
                   if (initialPrompt) {
                     setTimeout(() => handleSendMessage(initialPrompt), 100);
@@ -1067,18 +1077,29 @@ export default function App() {
         )}
       </AnimatePresence>
 
-      {/* Top Navigation Bar — Premium SaaS */}
-      <header className="h-14 border-b border-slate-200/80 bg-white/90 backdrop-blur-xl flex items-center justify-between px-3 sm:px-5 z-10 shrink-0 shadow-[0_1px_3px_rgba(15,23,42,0.04)]">
-        {/* Left: Brand */}
-        <div className="flex items-center gap-2 sm:gap-3 min-w-0">
+        {/* Left: Brand & Back button */}
+        <div className="flex items-center gap-4 min-w-0">
+          <button 
+            onClick={() => {
+              setStudioMode(false);
+              window.history.replaceState({}, '', window.location.pathname);
+            }}
+            className="flex items-center gap-2 p-1.5 hover:bg-slate-100 rounded-lg transition-colors text-slate-500 hover:text-slate-900 group"
+            title="Retour au Dashboard"
+          >
+            <Home size={18} className="group-hover:scale-110 transition-transform" />
+          </button>
+          <div className="h-4 w-px bg-slate-200" />
           <div className="flex items-center gap-2 min-w-0">
             <div className={`w-7 h-7 bg-gradient-to-br from-blue-600 to-blue-700 rounded-lg flex items-center justify-center text-white shadow-lg shadow-blue-600/25 shrink-0`}>
               <Zap size={16} fill="currentColor" />
             </div>
-            <span className="text-sm font-black tracking-tight text-slate-900 truncate">HUGGY</span>
+            <span className="text-sm font-black tracking-tight text-slate-900 truncate uppercase">Huggy</span>
             <span className="px-1.5 py-0.5 bg-gradient-to-r from-blue-50 to-blue-100 text-[9px] font-black text-blue-600 rounded-full uppercase tracking-widest shrink-0 border border-blue-100/50">Studio</span>
           </div>
         </div>
+Line 1081 in original was after the Brand closing tag.
+Actually, let's target lines 1071-1081.
 
         {/* Right: Actions */}
         <div className="flex items-center gap-1.5 sm:gap-2">

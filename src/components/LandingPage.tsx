@@ -209,7 +209,7 @@ export default function LandingPage({ accent, onOpenStudio, onLogin, userId }: L
           </div>
 
           {/* Center Side: Navigation */}
-          <nav className="hidden md:flex items-center justify-center gap-7 text-sm font-bold text-slate-500">
+          <nav className="hidden md:flex items-center justify-center gap-10 text-sm font-bold text-slate-500">
             <a href="#features" onClick={go('features')} className="hover:text-slate-900 transition-colors duration-200">
               Features
             </a>
@@ -237,7 +237,7 @@ export default function LandingPage({ accent, onOpenStudio, onLogin, userId }: L
             </button>
             <button
               type="button"
-              onClick={() => onOpenStudio()}
+              onClick={() => onOpenStudio(buildInput.trim() || undefined)}
               className={`hidden sm:flex items-center gap-2 px-5 py-2.5 ${accent.bg} hover:opacity-90 text-white rounded-xl text-sm font-bold transition-all duration-200 shadow-lg shadow-blue-600/20 active:scale-[0.98]`}
             >
               <Sparkles size={16} />
@@ -279,7 +279,7 @@ export default function LandingPage({ accent, onOpenStudio, onLogin, userId }: L
               type="button"
               onClick={() => {
                 setMobileNavOpen(false);
-                onOpenStudio();
+                onOpenStudio(buildInput.trim() || undefined);
               }}
               className={`mt-3 flex items-center justify-center gap-2 px-5 py-3 ${accent.bg} text-white rounded-xl text-sm font-bold`}
             >
@@ -291,25 +291,25 @@ export default function LandingPage({ accent, onOpenStudio, onLogin, userId }: L
 
       <div id="top" className="overflow-y-auto">
         <div className="max-w-6xl mx-auto px-6">
-          <main className="pt-10 pb-6">
+          <main className="pt-20 pb-12">
             <div className="text-center">
               <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-blue-50 border border-blue-100 text-blue-600 text-xs font-black tracking-wide">
                 <Sparkles size={14} />
                 AI-POWERED APP BUILDER
               </div>
 
-              <h1 className="mt-10 text-4xl sm:text-6xl lg:text-[76px] leading-none font-black tracking-tight">
+              <h1 className="mt-16 text-4xl sm:text-6xl lg:text-[76px] leading-none font-black tracking-tight">
                 <span className="block text-[#0F172A]">Build any SaaS</span>
                 <span className="block text-blue-600 italic">instantly.</span>
               </h1>
 
-              <p className="mt-6 mx-auto max-w-xl text-slate-500 text-base leading-relaxed">
+              <p className="mt-8 mx-auto max-w-xl text-slate-500 text-base leading-relaxed">
                 Describe your project, Huggy does the rest. AI-generated code, UI, dashboards, and data tables in seconds.
               </p>
 
-              <div className="mt-10 max-w-3xl mx-auto">
+              <div className="mt-14 max-w-3xl mx-auto">
                 <div className="rounded-3xl overflow-hidden shadow-2xl shadow-slate-900/10 bg-white border border-slate-100">
-                  <div className="p-4">
+                  <div className="p-6">
                     <HuggyChatInput
                       onSend={(prompt) => {
                         if (prompt.trim()) setBuildInput(prompt);
@@ -323,14 +323,14 @@ export default function LandingPage({ accent, onOpenStudio, onLogin, userId }: L
               </div>
 
               {/* --- FEATURES SECTION (Redesigned: Glassmorphism) --- */}
-              <div id="features" className="mt-20 scroll-mt-28">
-                <div className="flex items-center gap-3 mb-10 overflow-hidden">
+              <div id="features" className="mt-40 scroll-mt-28">
+                <div className="flex items-center gap-3 mb-16 overflow-hidden">
                   <div className="h-px bg-slate-200 flex-1" />
                   <span className="text-[10px] font-black text-slate-400 uppercase tracking-[0.3em] whitespace-nowrap">Capabilities</span>
                   <div className="h-px bg-slate-200 flex-1" />
                 </div>
                 
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 text-left">
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-10 text-left">
                   {[
                     { icon: FileCode, accent: 'blue', t: 'SaaS Platform Builder', d: 'Concevez des dashboards complexes et des interfaces client en un clin d\'œil.' },
                     { icon: BarChart3, accent: 'indigo', t: 'Analytics & Insights', d: 'Générez des graphiques interactifs et des rapports de données en temps réel.' },
@@ -339,7 +339,7 @@ export default function LandingPage({ accent, onOpenStudio, onLogin, userId }: L
                   ].map((c) => (
                     <div
                       key={c.t}
-                      className="group relative p-8 bg-white border border-slate-100 rounded-[32px] overflow-hidden transition-all duration-500 hover:shadow-2xl hover:shadow-blue-500/10 hover:-translate-y-2"
+                      className="group relative p-10 bg-white border border-slate-100 rounded-[32px] overflow-hidden transition-all duration-500 hover:shadow-2xl hover:shadow-blue-500/10 hover:-translate-y-2"
                     >
                       <div className={`absolute top-0 right-0 w-32 h-32 bg-${c.accent}-500/5 blur-3xl rounded-full -mr-16 -mt-16 group-hover:bg-${c.accent}-500/10 transition-colors`} />
                       <div className={`w-14 h-14 rounded-2xl bg-${c.accent}-50 flex items-center justify-center text-${c.accent}-600 mb-6 group-hover:scale-110 transition-transform duration-500 border border-${c.accent}-100/50`}>
@@ -357,8 +357,8 @@ export default function LandingPage({ accent, onOpenStudio, onLogin, userId }: L
           </main>
 
           {/* --- HOW IT WORKS (Redesigned: Visual Timeline) --- */}
-          <section id="how-it-works" className="scroll-mt-28 py-24">
-            <div className="relative rounded-[48px] bg-slate-100/50 border border-slate-200/60 p-12 overflow-hidden">
+          <section id="how-it-works" className="scroll-mt-28 py-32">
+            <div className="relative rounded-[48px] bg-slate-100/50 border border-slate-200/60 p-16 overflow-hidden">
                <div className="absolute top-0 left-1/2 -translate-x-1/2 w-px h-full bg-gradient-to-b from-blue-500/20 via-blue-200/10 to-transparent hidden lg:block" />
                
                <div className="relative text-center mb-16">
@@ -366,7 +366,7 @@ export default function LandingPage({ accent, onOpenStudio, onLogin, userId }: L
                  <p className="text-3xl sm:text-4xl font-black text-[#0F172A] tracking-tight">De l'idée au déploiement en 60s.</p>
                </div>
 
-               <div className="grid lg:grid-cols-3 gap-12 relative">
+               <div className="grid lg:grid-cols-3 gap-20 relative">
                  {[
                    { n: '01', t: 'Inspiration AI', d: 'Décrivez votre vision en langage naturel. Huggy analyse et structure votre application instantanément.' },
                    { n: '02', t: 'Édition Immersive', d: 'Ajustez votre interface en temps réel dans notre studio de classe mondiale. Code propre et optimisé.' },
@@ -386,10 +386,10 @@ export default function LandingPage({ accent, onOpenStudio, onLogin, userId }: L
         </div>
 
         {/* --- TESTIMONIALS (Redesigned: Premium Grid) --- */}
-        <section id="testimonials" className="scroll-mt-28 py-32 px-6 relative overflow-hidden bg-white">
+        <section id="testimonials" className="scroll-mt-28 py-48 px-6 relative overflow-hidden bg-white">
           <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_right,rgba(37,99,235,0.03),transparent)]" />
           <div className="max-w-6xl mx-auto relative">
-            <div className="text-center mb-20">
+            <div className="text-center mb-24">
               <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-blue-50 text-blue-600 text-[10px] font-black tracking-widest border border-blue-100 shadow-sm mb-6">
                 <Star size={14} className="fill-blue-600" />
                 COMMUNITY VOICE
@@ -398,7 +398,7 @@ export default function LandingPage({ accent, onOpenStudio, onLogin, userId }: L
               <p className="mt-6 text-lg text-slate-500 max-w-2xl mx-auto font-medium">Rejoignez des milliers de créateurs qui repoussent les limites du possible.</p>
             </div>
 
-            <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-8">
+            <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-12">
               {TESTIMONIALS.map((t, idx) => (
                 <article
                   key={t.name}
@@ -422,13 +422,13 @@ export default function LandingPage({ accent, onOpenStudio, onLogin, userId }: L
 
         <div className="max-w-6xl mx-auto px-6">
           {/* --- PRICING (Redesigned: High-End Cards) --- */}
-          <section id="pricing" className="scroll-mt-28 py-24 border-t border-slate-100">
-            <div className="text-center mb-16">
+          <section id="pricing" className="scroll-mt-28 py-32 border-t border-slate-100">
+            <div className="text-center mb-20">
               <h2 className="text-4xl font-black text-slate-900 mb-4 italic">Tarification Scalable</h2>
               <p className="text-slate-500 font-medium text-lg">Investissez dans votre vitesse de livraison.</p>
             </div>
             
-            <div className="grid md:grid-cols-3 gap-10">
+            <div className="grid md:grid-cols-3 gap-14">
               {[
                 { id: 'hobby', name: 'Starter', price: '0 €', desc: 'Idéal pour explorer et tester vos premières idées.', feat: '500 Crédits IA / 1 Projet' },
                 { id: 'pro', name: 'Premium', price: '29 €', desc: 'Pour les créateurs sérieux et les startups.', feat: '5 000 Crédits / 10 Projets / Export Source', hi: true },
@@ -548,7 +548,7 @@ export default function LandingPage({ accent, onOpenStudio, onLogin, userId }: L
               <div className="mt-6 flex flex-col sm:flex-row gap-3 justify-center">
                 <button
                   type="button"
-                  onClick={() => onOpenStudio()}
+                  onClick={() => onOpenStudio(buildInput.trim() || undefined)}
                   className={`inline-flex items-center justify-center gap-2 px-8 py-3 rounded-xl ${accent.bg} text-white font-bold text-sm shadow-lg shadow-blue-600/25 hover:opacity-90 transition-all active:scale-[0.98]`}
                 >
                   Start building for free
