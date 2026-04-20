@@ -278,7 +278,40 @@ if (previewRootDomain) {
   });
 }
 
-/** Chemins /live/:slug/* (MVP Railway sans wildcard DNS) avec limite de bande passante/requêtes externes */
+/** 
+ * Subdomain Wildcard Routing (Vercel/Bolt style)
+ * e.g., project-slug.huggy.sbs
+ */
+app.use((req, res, next) => {
+  const host = req.get('host') || '';
+  
+  // Only process if PREVIEW_ROOT_DOMAIN is set and host is a subdomain
+  if (previewRootDomain && host.endsWith(previewRootDomain) && host !== previewRootDomain && !host.startsWith('www.' + previewRootDomain)) {
+    const slug = host.replace('.' + previewRootDomain, '').split(':')[0];
+    
+    // Rate Limiting
+    const ip = req.ip || req.socket?.remoteAddress || 'unknown';
+    let entry = _rlMap.get(`proxy-${slug}-${ip}`);
+    if (!entry || Date.now() - entry.start > 60000) entry = { start: Date.now(), count: 0 };
+    entry.count++;
+    _rlMap.set(`proxy-${slug}-${ip}`, entry);
+    if (entry.count > 200) {
+      return res.status(429).send("Alerte: Hébergement auto saturé (limite de 200 rps activée sur ce projet Huggy). Veuillez passer au plan Scale.");
+    }
+
+    const dir = path.join(sitesDir, slug);
+    if (!fs.existsSync(dir)) {
+      return res.status(404).send('Preview introuvable ou build en cours.');
+    }
+    return express.static(dir, { index: 'index.html' })(req, res, () => {
+      if (!res.writableEnded) res.status(404).send('Fichier introuvable.');
+    });
+  }
+  
+  next();
+});
+
+/** Chemins /live/:slug/* (Fallback sans wildcard DNS) avec limite de bande passante/requêtes externes */
 app.use('/live/:slug', (req, res, next) => {
   const { slug } = req.params;
   if (!/^[\w-]+$/.test(slug)) return res.status(400).send('Slug invalide.');
