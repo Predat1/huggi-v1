@@ -54,7 +54,6 @@ import { DEFAULT_PREVIEW_CODE } from './defaultPreviewCode';
 import { generateAppUpdate, getMe } from './services/geminiService';
 import { streamChatText } from './utils/streamChatText';
 import LandingPage from './components/LandingPage';
-import UserDashboard from './components/UserDashboard';
 import JSZip from 'jszip';
 import { saveAs } from 'file-saver';
 import { getAuthUser, onAuthStateChange, signIn, signUp, signOut } from './lib/supabaseClient';
@@ -816,29 +815,6 @@ export default function App() {
   return (
     <AnimatePresence mode="wait" initial={false}>
       {!studioMode ? (
-        user ? (
-          <motion.div
-            key="dashboard"
-            className="min-h-screen"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            transition={{ duration: 0.22, ease: [0.22, 1, 0.36, 1] }}
-          >
-            <UserDashboard
-              onOpenStudio={(initialPrompt, projId) => {
-                if (projId) setProjectId(projId);
-                setStudioMode(true);
-                if (initialPrompt) {
-                  setInputValue(initialPrompt);
-                  setTimeout(() => handleSendMessage(initialPrompt), 100);
-                }
-              }}
-              onSignOut={() => signOut().then(() => setUser(null))}
-              onOpenBillingPortal={handleBillingPortal}
-            />
-          </motion.div>
-        ) : (
           <motion.div
             key="landing"
             className="min-h-screen"
@@ -865,7 +841,6 @@ export default function App() {
               }}
             />
           </motion.div>
-        )
       ) : (
         <motion.div
           key="studio"
