@@ -994,11 +994,11 @@ export default function App() {
           </button>
           <div className="h-5 w-[1px] bg-slate-200/70 hidden sm:block" />
           <div className="flex items-center gap-2 min-w-0">
-            <div className={`w-7 h-7 bg-gradient-to-br from-blue-600 to-violet-600 rounded-lg flex items-center justify-center text-white shadow-lg shadow-blue-600/25 shrink-0`}>
+            <div className={`w-7 h-7 bg-gradient-to-br from-blue-600 to-blue-700 rounded-lg flex items-center justify-center text-white shadow-lg shadow-blue-600/25 shrink-0`}>
               <Zap size={16} fill="currentColor" />
             </div>
             <span className="text-sm font-black tracking-tight text-slate-900 truncate">HUGGY</span>
-            <span className="px-1.5 py-0.5 bg-gradient-to-r from-blue-50 to-violet-50 text-[9px] font-black text-blue-600 rounded-full uppercase tracking-widest shrink-0 border border-blue-100/50">Studio</span>
+            <span className="px-1.5 py-0.5 bg-gradient-to-r from-blue-50 to-blue-100 text-[9px] font-black text-blue-600 rounded-full uppercase tracking-widest shrink-0 border border-blue-100/50">Studio</span>
           </div>
         </div>
 
@@ -1021,7 +1021,7 @@ export default function App() {
               onClick={() => setShowDesignMenu(!showDesignMenu)}
               className="flex items-center gap-1.5 px-3 py-1.5 bg-slate-50 hover:bg-slate-100 rounded-lg border border-slate-200/80 transition-all text-[11px] font-bold text-slate-600 group"
             >
-              <Palette size={13} className="text-slate-400 group-hover:text-violet-500 transition-colors" />
+              <Palette size={13} className="text-slate-400 group-hover:text-blue-500 transition-colors" />
               Thème
               <ChevronDown size={12} className={`text-slate-400 transition-transform ${showDesignMenu ? 'rotate-180' : ''}`} />
             </button>
@@ -1098,7 +1098,7 @@ export default function App() {
             <button
               onClick={handlePublish}
               disabled={isPublishing}
-              className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-blue-600 to-violet-600 hover:from-blue-700 hover:to-violet-700 disabled:opacity-50 text-white rounded-xl text-sm font-bold transition-all active:scale-95 shadow-lg shadow-blue-600/25 group"
+              className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 disabled:opacity-50 text-white rounded-xl text-sm font-bold transition-all active:scale-95 shadow-lg shadow-blue-600/25 group"
             >
               <Globe size={15} className={`${isPublishing ? 'animate-spin' : 'group-hover:scale-110'} transition-transform`} />
               {isPublishing ? 'Publication...' : 'Publier'}
@@ -1196,7 +1196,7 @@ export default function App() {
                   {messages.length === 0 && !isGenerating && (
                     <div className="flex flex-col items-center justify-center h-full gap-5 text-center px-4">
                       <div className="relative">
-                        <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-blue-600 to-violet-600 flex items-center justify-center shadow-2xl shadow-blue-600/30">
+                        <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-blue-600 to-blue-700 flex items-center justify-center shadow-2xl shadow-blue-600/30">
                           <Zap size={28} className="text-white" fill="currentColor" />
                         </div>
                         <div className="absolute -bottom-1 -right-1 w-5 h-5 rounded-full bg-emerald-400 border-2 border-white flex items-center justify-center">
@@ -1239,7 +1239,7 @@ export default function App() {
                       <div className={`max-w-[88%] ${msg.sender === 'VOUS' ? 'items-end' : 'items-start'} flex flex-col gap-1.5`}>
                         {msg.sender === 'HUGGY' && (
                           <div className="flex items-center gap-1.5 px-1">
-                            <div className="w-5 h-5 rounded-lg bg-gradient-to-br from-blue-600 to-violet-600 flex items-center justify-center shadow-sm">
+                            <div className="w-5 h-5 rounded-lg bg-gradient-to-br from-blue-600 to-blue-700 flex items-center justify-center shadow-sm">
                               <Zap size={10} className="text-white" fill="currentColor" />
                             </div>
                             <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Huggy</span>
@@ -1250,7 +1250,7 @@ export default function App() {
                         )}
                         <div className={`rounded-2xl px-4 py-3 text-[14px] leading-relaxed group/msg relative ${
                           msg.sender === 'VOUS'
-                            ? 'bg-gradient-to-br from-blue-600 to-violet-600 text-white rounded-tr-md shadow-lg shadow-blue-600/15'
+                            ? 'bg-gradient-to-br from-blue-600 to-blue-700 text-white rounded-tr-md shadow-lg shadow-blue-600/15'
                             : 'bg-white text-slate-700 border border-slate-100 rounded-tl-md shadow-sm'
                         }`}>
                           {msg.text}
@@ -1294,7 +1294,7 @@ export default function App() {
                     >
                       <div className="max-w-[88%] flex flex-col gap-2 items-start">
                         <div className="flex items-center gap-1.5 px-1">
-                          <div className="w-5 h-5 rounded-lg bg-gradient-to-br from-blue-600 to-violet-600 flex items-center justify-center shadow-sm">
+                          <div className="w-5 h-5 rounded-lg bg-gradient-to-br from-blue-600 to-blue-700 flex items-center justify-center shadow-sm">
                             <Zap size={10} className="text-white animate-pulse" fill="currentColor" />
                           </div>
                           <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Huggy</span>
