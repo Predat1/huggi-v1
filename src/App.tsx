@@ -55,6 +55,7 @@ import { DEFAULT_PREVIEW_CODE } from './defaultPreviewCode';
 import { generateAppUpdate, getMe, requestAutoCorrection } from './services/geminiService';
 import { streamChatText } from './utils/streamChatText';
 import LandingPage from './components/LandingPage';
+import UserDashboard from './components/UserDashboard';
 import JSZip from 'jszip';
 import { saveAs } from 'file-saver';
 import { getAuthUser, onAuthStateChange, signIn, signUp, signOut } from './lib/supabaseClient';
@@ -905,23 +906,45 @@ export default function App() {
             exit={{ opacity: 0 }}
             transition={{ duration: 0.22, ease: [0.22, 1, 0.36, 1] }}
           >
-            <LandingPage
-              accent={ACCENT_COLORS[activeAccentColor]}
-              onOpenStudio={(initialPrompt) => {
-                if (initialPrompt) setInputValue(initialPrompt);
-                setStudioMode(true);
-                if (!new URLSearchParams(window.location.search).get('project')) {
-                  window.history.replaceState(
-                    {},
-                    '',
-                    `${window.location.pathname}?studio=1`,
-                  );
-                }
-                if (initialPrompt) {
-                  setTimeout(() => handleSendMessage(initialPrompt), 100);
-                }
-              }}
-            />
+            {user ? (
+              <UserDashboard
+                user={user}
+                credits={credits}
+                onLogout={() => signOut().then(() => setUser(null))}
+                onOpenStudio={(initialPrompt) => {
+                  if (initialPrompt) setInputValue(initialPrompt);
+                  setStudioMode(true);
+                  if (!new URLSearchParams(window.location.search).get('project')) {
+                    window.history.replaceState(
+                      {},
+                      '',
+                      `${window.location.pathname}?studio=1`,
+                    );
+                  }
+                  if (initialPrompt) {
+                    setTimeout(() => handleSendMessage(initialPrompt), 100);
+                  }
+                }}
+              />
+            ) : (
+              <LandingPage
+                accent={ACCENT_COLORS[activeAccentColor]}
+                onOpenStudio={(initialPrompt) => {
+                  if (initialPrompt) setInputValue(initialPrompt);
+                  setStudioMode(true);
+                  if (!new URLSearchParams(window.location.search).get('project')) {
+                    window.history.replaceState(
+                      {},
+                      '',
+                      `${window.location.pathname}?studio=1`,
+                    );
+                  }
+                  if (initialPrompt) {
+                    setTimeout(() => handleSendMessage(initialPrompt), 100);
+                  }
+                }}
+              />
+            )}
           </motion.div>
       ) : (
         <motion.div
