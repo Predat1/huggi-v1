@@ -45,7 +45,8 @@ import {
   Sparkles,
   Home,
   Globe,
-  Github
+  Github,
+  X
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { SandpackProvider, SandpackLayout, SandpackPreview, useSandpack } from "@codesandbox/sandpack-react";
@@ -1191,117 +1192,160 @@ export default function App() {
             {activeSidebarTab === 'chat' ? (
               <>
                 {/* ── Chat Messages ── */}
-                <div className="flex-1 overflow-y-auto p-4 space-y-4 scrollbar-hide">
+                <div className="flex-1 overflow-y-auto p-4 space-y-5 scrollbar-hide">
                   {messages.length === 0 && !isGenerating && (
-                    <div className="flex flex-col items-center justify-center h-full gap-4 text-center">
-                      <div className="w-16 h-16 rounded-3xl bg-gradient-to-br from-blue-500 to-violet-600 flex items-center justify-center shadow-xl shadow-blue-500/20">
-                        <Zap size={28} className="text-white" fill="currentColor" />
+                    <div className="flex flex-col items-center justify-center h-full gap-5 text-center px-4">
+                      <div className="relative">
+                        <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-blue-600 to-violet-600 flex items-center justify-center shadow-2xl shadow-blue-600/30">
+                          <Zap size={28} className="text-white" fill="currentColor" />
+                        </div>
+                        <div className="absolute -bottom-1 -right-1 w-5 h-5 rounded-full bg-emerald-400 border-2 border-white flex items-center justify-center">
+                          <Check size={10} className="text-white" />
+                        </div>
                       </div>
                       <div>
-                        <p className="text-sm font-black text-slate-700">Huggy Studio</p>
-                        <p className="text-xs text-slate-400 mt-1 max-w-[220px]">Décris l'application ou interface que tu veux créer.</p>
+                        <p className="text-base font-black text-slate-800">Huggy Studio</p>
+                        <p className="text-xs text-slate-400 mt-1.5 max-w-[260px] leading-relaxed">Décrivez l'application que vous souhaitez créer. L'IA construira tout pour vous.</p>
+                      </div>
+                      {/* Suggested prompts */}
+                      <div className="flex flex-col gap-2 w-full max-w-[280px] mt-2">
+                        {[
+                          { icon: '🎯', text: 'Dashboard de ventes moderne' },
+                          { icon: '🛒', text: 'E-commerce avec panier' },
+                          { icon: '📊', text: 'Analytics SaaS premium' },
+                        ].map((suggestion, i) => (
+                          <button
+                            key={i}
+                            onClick={() => { setInputValue(suggestion.text); setTimeout(() => handleSendMessage(suggestion.text), 50); }}
+                            className="flex items-center gap-2.5 px-4 py-2.5 bg-slate-50 hover:bg-blue-50 border border-slate-200 hover:border-blue-200 rounded-xl text-xs font-medium text-slate-600 hover:text-blue-700 transition-all text-left group"
+                          >
+                            <span className="text-sm">{suggestion.icon}</span>
+                            <span className="flex-1">{suggestion.text}</span>
+                            <ArrowUp size={12} className="text-slate-300 group-hover:text-blue-500 transition-colors" />
+                          </button>
+                        ))}
                       </div>
                     </div>
                   )}
 
                   {messages.map((msg) => (
-                    <div key={msg.id} className={`flex ${msg.sender === 'VOUS' ? 'justify-end' : 'justify-start'}`}>
-                      <div className={`max-w-[85%] ${msg.sender === 'VOUS' ? 'items-end' : 'items-start'} flex flex-col gap-1.5`}>
+                    <motion.div
+                      key={msg.id}
+                      initial={{ opacity: 0, y: 8 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ duration: 0.2, ease: [0.22, 1, 0.36, 1] }}
+                      className={`flex ${msg.sender === 'VOUS' ? 'justify-end' : 'justify-start'}`}
+                    >
+                      <div className={`max-w-[88%] ${msg.sender === 'VOUS' ? 'items-end' : 'items-start'} flex flex-col gap-1.5`}>
                         {msg.sender === 'HUGGY' && (
                           <div className="flex items-center gap-1.5 px-1">
-                            <div className="w-4 h-4 rounded-md bg-gradient-to-br from-blue-500 to-violet-600 flex items-center justify-center">
-                              <Zap size={9} className="text-white" fill="currentColor" />
+                            <div className="w-5 h-5 rounded-lg bg-gradient-to-br from-blue-600 to-violet-600 flex items-center justify-center shadow-sm">
+                              <Zap size={10} className="text-white" fill="currentColor" />
                             </div>
                             <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Huggy</span>
                             {msg.durationMs && (
-                              <span className="text-[9px] text-slate-300 font-medium">· {(msg.durationMs / 1000).toFixed(1)}s</span>
+                              <span className="text-[9px] text-slate-300 font-medium ml-0.5">· {(msg.durationMs / 1000).toFixed(1)}s</span>
                             )}
                           </div>
                         )}
-                        <div className={`rounded-2xl px-5 py-3 text-[15px] leading-relaxed shadow-sm ${
+                        <div className={`rounded-2xl px-4 py-3 text-[14px] leading-relaxed group/msg relative ${
                           msg.sender === 'VOUS'
-                            ? 'bg-blue-600 text-white rounded-tr-sm'
-                            : 'bg-slate-50 text-slate-800 border border-slate-100 rounded-tl-sm'
+                            ? 'bg-gradient-to-br from-blue-600 to-violet-600 text-white rounded-tr-md shadow-lg shadow-blue-600/15'
+                            : 'bg-white text-slate-700 border border-slate-100 rounded-tl-md shadow-sm'
                         }`}>
                           {msg.text}
+                          {/* Copy button */}
+                          {msg.sender === 'HUGGY' && (
+                            <button
+                              onClick={() => { navigator.clipboard.writeText(msg.text); showToast('Copié !', 'success'); }}
+                              className="absolute top-2 right-2 p-1 rounded-md text-slate-300 hover:text-slate-600 hover:bg-slate-50 opacity-0 group-hover/msg:opacity-100 transition-all"
+                              title="Copier"
+                            >
+                              <Copy size={11} />
+                            </button>
+                          )}
                         </div>
                         {msg.changedFiles && msg.changedFiles.length > 0 && (
-                          <div className="flex items-center gap-2 px-1">
-                            <div className="flex items-center gap-1 px-2 py-0.5 bg-emerald-50 text-emerald-600 rounded-full text-[9px] font-bold border border-emerald-100">
-                              <FileCode size={9} />
-                              {msg.changedFiles.length} fichier(s)
+                          <div className="flex items-center gap-1.5 px-1 mt-0.5">
+                            <div className="flex items-center gap-1 px-2 py-1 bg-emerald-50 text-emerald-600 rounded-lg text-[10px] font-bold border border-emerald-100/80">
+                              <FileCode size={10} />
+                              {msg.changedFiles.length} fichier(s) modifié(s)
                             </div>
                             <button
                               onClick={() => handleRestore(msg)}
                               disabled={isRestoring}
-                              className="flex items-center gap-1 px-2 py-0.5 bg-blue-50 text-blue-600 rounded-full text-[9px] font-bold border border-blue-100 hover:bg-blue-100 transition-colors disabled:opacity-50"
+                              className="flex items-center gap-1 px-2 py-1 bg-blue-50 text-blue-600 rounded-lg text-[10px] font-bold border border-blue-100/80 hover:bg-blue-100 transition-colors disabled:opacity-50"
                             >
-                              <RotateCcw size={9} className={isRestoring ? 'animate-spin' : ''} />
+                              <RotateCcw size={10} className={isRestoring ? 'animate-spin' : ''} />
                               Restaurer
                             </button>
                           </div>
                         )}
                       </div>
-                    </div>
+                    </motion.div>
                   ))}
 
                   {/* ── Streaming / Generating state ── */}
                   {isGenerating && (
-                    <div className="flex justify-start">
-                      <div className="max-w-[85%] flex flex-col gap-1.5 items-start">
+                    <motion.div
+                      initial={{ opacity: 0, y: 10 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      className="flex justify-start"
+                    >
+                      <div className="max-w-[88%] flex flex-col gap-2 items-start">
                         <div className="flex items-center gap-1.5 px-1">
-                          <div className="w-4 h-4 rounded-md bg-gradient-to-br from-blue-500 to-violet-600 flex items-center justify-center">
-                            <Zap size={9} className="text-white" fill="currentColor" />
+                          <div className="w-5 h-5 rounded-lg bg-gradient-to-br from-blue-600 to-violet-600 flex items-center justify-center shadow-sm">
+                            <Zap size={10} className="text-white animate-pulse" fill="currentColor" />
                           </div>
                           <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Huggy</span>
+                          <span className="text-[9px] text-blue-500 font-semibold animate-pulse">en réflexion...</span>
                         </div>
-                        {/* Tool pills (Collapsible) */}
+                        {/* Agent task cards */}
                         {agentTasks.length > 0 && (
-                          <details className="w-full group/details" open={agentTasks.some(t => t.status === 'running')}>
-                            <summary className="flex items-center gap-1.5 px-1 py-1 cursor-pointer select-none">
-                              <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest group-hover/details:text-slate-600 transition-colors">
-                                {agentTasks.filter(t => t.status === 'success').length}/{agentTasks.length} Tâches terminées
-                              </span>
-                              <ChevronDown size={10} className="text-slate-300 group-open/details:rotate-180 transition-transform" />
-                            </summary>
-                            <div className="flex flex-col gap-1 w-full mt-1">
-                              {agentTasks.map((task) => (
-                                <div key={task.id} className={`flex items-center gap-2 px-3 py-1.5 rounded-lg text-[11px] font-mono border ${
+                          <div className="flex flex-col gap-1.5 w-full">
+                            {agentTasks.map((task) => (
+                              <motion.div
+                                key={task.id}
+                                initial={{ opacity: 0, x: -8 }}
+                                animate={{ opacity: 1, x: 0 }}
+                                className={`flex items-center gap-2 px-3 py-2 rounded-xl text-[11px] font-medium border backdrop-blur-sm ${
                                   task.status === 'running'
-                                    ? 'bg-amber-50 border-amber-200 text-amber-800 shadow-sm'
+                                    ? 'bg-amber-50/80 border-amber-200/60 text-amber-800'
                                     : task.status === 'error'
-                                    ? 'bg-red-50 border-red-200 text-red-700'
-                                    : 'bg-emerald-50/50 border-emerald-100 text-emerald-600'
-                                }`}>
-                                  <span className={`w-1.5 h-1.5 rounded-full flex-shrink-0 ${
-                                    task.status === 'running' ? 'bg-amber-400 animate-pulse' : task.status === 'error' ? 'bg-red-400' : 'bg-emerald-400'
-                                  }`} />
-                                  {task.type === 'read' ? '◎' : task.type === 'edit' ? '✎' : task.type === 'install' ? '↓' : task.type === 'compile' ? '⚙' : '⚡'} {task.label}
-                                </div>
-                              ))}
-                            </div>
-                          </details>
-                        )}
-                        {/* Streaming text or thinking dots */}
-                        {streamingMessage ? (
-                          <div className="bg-slate-50 text-slate-800 border border-slate-100 rounded-2xl rounded-tl-sm px-7 py-4.5 text-[16px] leading-relaxed shadow-sm">
-                            {streamingMessage}
-                            <span className="inline-block w-0.5 h-3.5 bg-slate-400 ml-0.5 align-bottom animate-pulse" />
-                          </div>
-                        ) : (
-                          <div className="bg-slate-50 border border-slate-100 rounded-2xl rounded-tl-sm px-5 py-3.5 flex items-center gap-1.5">
-                            {[0,1,2].map(i => (
-                              <span key={i} className="w-1.5 h-1.5 rounded-full bg-slate-400 animate-bounce" style={{ animationDelay: `${i * 0.12}s` }} />
+                                    ? 'bg-red-50/80 border-red-200/60 text-red-700'
+                                    : 'bg-emerald-50/60 border-emerald-100/60 text-emerald-700'
+                                }`}
+                              >
+                                {task.status === 'running' ? (
+                                  <Loader2 size={12} className="animate-spin text-amber-500 shrink-0" />
+                                ) : task.status === 'success' ? (
+                                  <Check size={12} className="text-emerald-500 shrink-0" />
+                                ) : (
+                                  <X size={12} className="text-red-500 shrink-0" />
+                                )}
+                                <span className="truncate">{task.label}</span>
+                              </motion.div>
                             ))}
                           </div>
                         )}
+                        {/* Streaming text or thinking shimmer */}
+                        {streamingMessage ? (
+                          <div className="bg-white text-slate-700 border border-slate-100 rounded-2xl rounded-tl-md px-4 py-3 text-[14px] leading-relaxed shadow-sm">
+                            {streamingMessage}
+                            <span className="inline-block w-[2px] h-4 bg-blue-500 ml-0.5 align-text-bottom huggy-stream-caret" />
+                          </div>
+                        ) : (
+                          <div className="bg-white border border-slate-100 rounded-2xl rounded-tl-md px-4 py-3 flex items-center gap-1 shadow-sm">
+                            <div className="huggy-thinking-shimmer rounded-lg h-4 w-32" />
+                          </div>
+                        )}
                       </div>
-                    </div>
+                    </motion.div>
                   )}
                 </div>
 
                 {/* ── Chat Input ── */}
-                <div className="shrink-0 p-4 pb-8 bg-white border-t border-slate-100">
+                <div className="shrink-0 p-3 bg-gradient-to-t from-white via-white to-white/80 border-t border-slate-100/50">
                   <HuggyChatInput
                     onSend={(prompt) => {
                       if (prompt) {
@@ -1310,7 +1354,7 @@ export default function App() {
                       }
                     }}
                     isLoading={isGenerating}
-                    placeholder="Ask AI anything"
+                    placeholder="Décrivez ce que vous voulez construire..."
                     modelLabel="Huggy AI"
                   />
                 </div>
