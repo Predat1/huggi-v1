@@ -408,35 +408,6 @@ export default function App() {
     }
   }, [studioMode, user]); // Trigger when studio opens or user loads
 
-  // ── Keyboard Shortcuts ──────────────────────────────────────────────
-  useEffect(() => {
-    if (!studioMode) return;
-    const handler = (e: KeyboardEvent) => {
-      // Ctrl+Enter → Send message
-      if (e.ctrlKey && e.key === 'Enter') {
-        e.preventDefault();
-        if (inputValue.trim() && !isGenerating) handleSendMessage();
-      }
-      // Ctrl+E → Export ZIP
-      if (e.ctrlKey && e.key === 'e') {
-        e.preventDefault();
-        handleExportZip();
-      }
-      // Ctrl+Shift+P → Publish
-      if (e.ctrlKey && e.shiftKey && e.key === 'P') {
-        e.preventDefault();
-        handlePublish();
-      }
-      // Escape → Close all modals
-      if (e.key === 'Escape') {
-        setShowExportModal(false);
-        setShowSettingsModal(false);
-        setShowAuthModal(false);
-      }
-    };
-    window.addEventListener('keydown', handler);
-    return () => window.removeEventListener('keydown', handler);
-  }, [studioMode, inputValue, isGenerating]);
 
   useEffect(() => {
     if (!projectId || !databaseEnabled) return;
@@ -602,6 +573,36 @@ export default function App() {
   const [streamingMessage, setStreamingMessage] = useState<string>('');
   const [agentTasks, setAgentTasks] = useState<AgentTask[]>([]);
   const streamCancelRef = useRef<(() => void) | null>(null);
+
+  // ── Keyboard Shortcuts ──────────────────────────────────────────────
+  useEffect(() => {
+    if (!studioMode) return;
+    const handler = (e: KeyboardEvent) => {
+      // Ctrl+Enter → Send message
+      if (e.ctrlKey && e.key === 'Enter') {
+        e.preventDefault();
+        if (inputValue.trim() && !isGenerating) handleSendMessage();
+      }
+      // Ctrl+E → Export ZIP
+      if (e.ctrlKey && e.key === 'e') {
+        e.preventDefault();
+        handleExportZip();
+      }
+      // Ctrl+Shift+P → Publish
+      if (e.ctrlKey && e.shiftKey && e.key === 'P') {
+        e.preventDefault();
+        handlePublish();
+      }
+      // Escape → Close all modals
+      if (e.key === 'Escape') {
+        setShowExportModal(false);
+        setShowSettingsModal(false);
+        setShowAuthModal(false);
+      }
+    };
+    window.addEventListener('keydown', handler);
+    return () => window.removeEventListener('keydown', handler);
+  }, [studioMode, inputValue, isGenerating]);
 
   useEffect(() => {
     return () => {
