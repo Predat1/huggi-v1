@@ -1071,17 +1071,10 @@ export default function App() {
           <button
             type="button"
             onClick={() => setShowExportModal(true)}
-            className="hidden sm:flex items-center gap-1.5 px-2.5 py-1.5 text-[11px] font-bold text-slate-600 bg-slate-50 border border-slate-200 hover:border-slate-300 hover:bg-white rounded-lg transition-all shadow-sm group"
+            title="Synchroniser avec GitHub"
+            className="hidden sm:flex items-center justify-center p-1.5 text-slate-600 bg-slate-50 border border-slate-200 hover:border-slate-300 hover:bg-white rounded-lg transition-all shadow-sm group"
           >
-            <Github size={13} className="text-slate-900 group-hover:scale-110 transition-transform" />
-            <span className="hidden xl:inline">GitHub</span>
-          </button>
-          <button
-            onClick={handleExportZip}
-            className="flex items-center gap-1.5 px-2.5 py-1.5 bg-slate-50 hover:bg-slate-100 text-slate-600 rounded-lg text-[11px] font-bold transition-all active:scale-95 border border-slate-200"
-          >
-            <Download size={14} />
-            <span className="hidden sm:inline">ZIP</span>
+            <Github size={15} className="text-slate-900 group-hover:scale-110 transition-transform" />
           </button>
           {deployments.length > 0 && (
             <button
