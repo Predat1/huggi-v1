@@ -58,9 +58,11 @@ const SHORTCUTS = [
 ];
 
 export default function UserDashboard({ user, credits, onOpenStudio, onLogout }: UserDashboardProps) {
-  const [activeTab, setActiveTab] = useState<'home' | 'template' | 'projects' | 'shortcuts'>('home');
+  const [activeTab, setActiveTab] = useState<'home' | 'template' | 'projects' | 'gallery' | 'shortcuts'>('home');
   const [projects, setProjects] = useState<Project[]>([]);
+  const [galleryProjects, setGalleryProjects] = useState<any[]>([]);
   const [loadingProjects, setLoadingProjects] = useState(false);
+  const [loadingGallery, setLoadingGallery] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [showOnboarding, setShowOnboarding] = useState(() => {
     return !localStorage.getItem('huggy_onboarded');
@@ -78,6 +80,36 @@ export default function UserDashboard({ user, credits, onOpenStudio, onLogout }:
       .catch(() => setProjects([]))
       .finally(() => setLoadingProjects(false));
   }, [user?.id, activeTab]);
+
+  // Load gallery projects
+  useEffect(() => {
+    if (activeTab !== 'gallery') return;
+    setLoadingGallery(true);
+    fetch(`/api/gallery`)
+      .then(r => r.json())
+      .then(data => {
+        setGalleryProjects(Array.isArray(data.projects) ? data.projects : []);
+      })
+      .catch(() => setGalleryProjects([]))
+      .finally(() => setLoadingGallery(false));
+  }, [activeTab]);
+
+  const handleDeleteProject = async (e: React.MouseEvent, projectId: string) => {
+    e.stopPropagation();
+    if (!confirm('Êtes-vous sûr de vouloir supprimer ce projet ? Cette action est irréversible.')) return;
+    try {
+      const res = await fetch(`/api/projects/${projectId}`, {
+        method: 'DELETE',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ userId: user.id })
+      });
+      if (res.ok) {
+        setProjects(prev => prev.filter(p => p.id !== projectId));
+      }
+    } catch (e) {
+      console.error('Failed to delete project', e);
+    }
+  };
 
   const dismissOnboarding = () => {
     localStorage.setItem('huggy_onboarded', '1');
@@ -175,6 +207,7 @@ export default function UserDashboard({ user, credits, onOpenStudio, onLogout }:
           {[
             { id: 'home', label: 'Dashboard', icon: Home },
             { id: 'template', label: 'Templates', icon: LayoutTemplate },
+            { id: 'gallery', label: 'Galerie Publique', icon: Globe },
             { id: 'projects', label: 'Mes projets', icon: Folder },
             { id: 'shortcuts', label: 'Raccourcis', icon: Keyboard },
           ].map(({ id, label, icon: Icon }) => (
@@ -384,12 +417,21 @@ export default function UserDashboard({ user, credits, onOpenStudio, onLogout }:
                         <Zap size={16} className="text-blue-400" />
                       </div>
                       <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                        {(proj.slug || proj.custom_domain) && (
+                          <button
+                            onClick={e => { e.stopPropagation(); window.open(proj.custom_domain ? `https://${proj.custom_domain}` : `/live/${proj.slug}`, '_blank'); }}
+                            className="p-1.5 hover:bg-white/10 rounded-lg transition-colors"
+                            title="Voir en ligne"
+                          >
+                            <ExternalLink size={13} className="text-slate-400" />
+                          </button>
+                        )}
                         <button
-                          onClick={e => { e.stopPropagation(); window.open(`/live/${proj.slug || proj.id}`, '_blank'); }}
-                          className="p-1.5 hover:bg-white/10 rounded-lg transition-colors"
-                          title="Voir en ligne"
+                          onClick={e => handleDeleteProject(e, proj.id)}
+                          className="p-1.5 hover:bg-red-500/20 rounded-lg transition-colors group/del"
+                          title="Supprimer"
                         >
-                          <ExternalLink size={13} className="text-slate-400" />
+                          <Trash2 size={13} className="text-slate-400 group-hover/del:text-red-400" />
                         </button>
                       </div>
                     </div>
@@ -400,6 +442,58 @@ export default function UserDashboard({ user, credits, onOpenStudio, onLogout }:
                       <Clock size={10} />
                       <span>Modifié {timeAgo(proj.updated_at || proj.created_at)}</span>
                     </div>
+                  </motion.div>
+                ))}
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* Gallery Tab */}
+        {activeTab === 'gallery' && (
+          <div className="flex-1 overflow-y-auto p-8 custom-scrollbar">
+            <div className="flex items-center justify-between mb-6">
+              <h1 className="text-2xl font-bold text-white">Galerie Publique</h1>
+              <span className="text-xs text-slate-500">Projets publiés par la communauté</span>
+            </div>
+
+            {loadingGallery ? (
+              <div className="flex items-center justify-center py-20 text-slate-500">
+                <div className="w-6 h-6 border-2 border-slate-600 border-t-blue-500 rounded-full animate-spin mr-3" />
+                Chargement de la galerie…
+              </div>
+            ) : galleryProjects.length === 0 ? (
+              <div className="text-center py-20">
+                <div className="w-16 h-16 bg-white/5 rounded-2xl flex items-center justify-center mx-auto mb-4">
+                  <Globe size={28} className="text-slate-600" />
+                </div>
+                <p className="text-slate-500 font-medium mb-2">Aucun projet public</p>
+                <p className="text-slate-600 text-sm mb-6">Publiez votre projet pour qu'il apparaisse ici !</p>
+              </div>
+            ) : (
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+                {galleryProjects.map((proj, i) => (
+                  <motion.div
+                    key={proj.id}
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: i * 0.05 }}
+                    className="group p-4 bg-white/[0.03] hover:bg-white/[0.06] border border-white/5 hover:border-white/10 rounded-2xl transition-all cursor-pointer flex flex-col"
+                    onClick={() => window.open(proj.custom_domain ? `https://${proj.custom_domain}` : `/live/${proj.slug}`, '_blank')}
+                  >
+                    <div className="aspect-[4/3] w-full bg-[#111] rounded-xl mb-4 flex items-center justify-center overflow-hidden relative border border-white/5">
+                      <div className="absolute inset-0 bg-gradient-to-br from-blue-500/10 to-purple-500/10" />
+                      <Globe size={32} className="text-slate-700 relative z-10" />
+                    </div>
+                    <div className="flex items-center justify-between mb-1">
+                      <h3 className="text-white font-bold text-sm truncate pr-2">
+                        {proj.name || `Projet ${proj.id.slice(0, 8)}`}
+                      </h3>
+                      <ExternalLink size={13} className="text-slate-500 shrink-0" />
+                    </div>
+                    <p className="text-[10px] text-slate-500 truncate">
+                      Par {proj.author ? proj.author.split('@')[0] : 'Anonyme'} • {timeAgo(proj.created_at)}
+                    </p>
                   </motion.div>
                 ))}
               </div>

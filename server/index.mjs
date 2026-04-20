@@ -25,6 +25,8 @@ import {
   deductCredits,
   getUserActiveProjectsCount,
   listProjects,
+  listGalleryProjects,
+  deleteProject,
   getProjectByDomain,
   getProjectSecrets,
   upsertProjectSecret,
@@ -397,6 +399,31 @@ app.get('/api/projects', rateLimiter, async (req, res) => {
     res.json({ projects });
   } catch (e) {
     console.error('[GET /api/projects]', e);
+    res.status(500).json({ error: safeError(e) });
+  }
+});
+
+app.delete('/api/projects/:id', rateLimiter, async (req, res) => {
+  try {
+    const { userId } = req.body;
+    const projectId = req.params.id;
+    if (!pool) return res.status(503).json({ error: 'DB unavailable' });
+    if (!userId || !projectId) return res.status(400).json({ error: 'userId and projectId requis.' });
+    await deleteProject(pool, projectId, userId);
+    res.json({ success: true });
+  } catch (e) {
+    console.error('[DELETE /api/projects]', e);
+    res.status(500).json({ error: safeError(e) });
+  }
+});
+
+app.get('/api/gallery', rateLimiter, async (req, res) => {
+  try {
+    if (!pool) return res.json({ projects: [] });
+    const projects = await listGalleryProjects(pool, 24);
+    res.json({ projects });
+  } catch (e) {
+    console.error('[GET /api/gallery]', e);
     res.status(500).json({ error: safeError(e) });
   }
 });

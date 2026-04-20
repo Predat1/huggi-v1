@@ -151,26 +151,34 @@ const PreviewContent = ({ mode, filesMap, onCodeError }: { mode: PreviewMode; fi
 </html>`;
 
   return (
-    <div className="w-full h-full bg-slate-50 flex flex-col overflow-hidden relative">
-      <SandpackProvider 
-        template="react-ts"
-        theme="light"
-        files={sandpackFiles}
-        customSetup={{
-          dependencies: {
-            "lucide-react": "latest",
-            "motion": "latest",
-            "framer-motion": "latest",
-            "clsx": "latest",
-            "tailwind-merge": "latest"
-          }
-        }}
+    <div className={`w-full h-full bg-slate-50 flex flex-col overflow-hidden relative ${mode !== 'desktop' ? 'items-center justify-center p-4 sm:p-8' : ''}`}>
+      <div 
+        className={`h-full bg-white transition-all duration-500 ease-[cubic-bezier(0.23,1,0.32,1)] ${
+          isMobile ? 'w-[375px] rounded-[2rem] border-[8px] border-slate-800 shadow-2xl overflow-hidden shrink-0' :
+          isTablet ? 'w-[768px] rounded-[1.5rem] border-[6px] border-slate-800 shadow-2xl overflow-hidden shrink-0' :
+          'w-full'
+        }`}
       >
-        <SandpackLayout style={{ height: "100%", width: "100%", border: "none" }}>
-          <SandpackPreview showOpenInCodeSandbox={false} showRefreshButton={true} style={{ height: "100%" }} />
-          <SandpackErrorListener onError={onCodeError} />
-        </SandpackLayout>
-      </SandpackProvider>
+        <SandpackProvider 
+          template="react-ts"
+          theme="light"
+          files={sandpackFiles}
+          customSetup={{
+            dependencies: {
+              "lucide-react": "latest",
+              "motion": "latest",
+              "framer-motion": "latest",
+              "clsx": "latest",
+              "tailwind-merge": "latest"
+            }
+          }}
+        >
+          <SandpackLayout style={{ height: "100%", width: "100%", border: "none" }}>
+            <SandpackPreview showOpenInCodeSandbox={false} showRefreshButton={true} style={{ height: "100%" }} />
+            <SandpackErrorListener onError={onCodeError} />
+          </SandpackLayout>
+        </SandpackProvider>
+      </div>
     </div>
   );
 };
@@ -351,10 +359,25 @@ export default function App() {
           const data = await res.json();
           if (cancelled) return;
           const map: Record<string, string> = {};
-          for (const f of data.files) map[f.path] = f.content;
+          for (const f of data.files) {
+            map[f.path] = f.content;
+          }
           setProjectId(pid);
           setFilesMap(map);
           setActiveFilePath(PREVIEW_ENTRY);
+          
+          // Agent Memory: Restore chat history
+          if (map['.huggy/history.json']) {
+            try {
+              const history = JSON.parse(map['.huggy/history.json']);
+              const parsedMessages = history.map((m: any) => ({
+                ...m,
+                timestamp: new Date(m.timestamp)
+              }));
+              if (parsedMessages.length > 0) setMessages(parsedMessages);
+            } catch (e) { console.error('Failed to parse history', e); }
+          }
+
           if (data.deployments?.length) {
             setDeployments(
               data.deployments.map(
@@ -425,6 +448,22 @@ export default function App() {
     }, 900);
     return () => clearTimeout(t);
   }, [filesMap, activeFilePath, projectId, databaseEnabled]);
+
+  // Agent Memory: Persist chat history
+  useEffect(() => {
+    if (!projectId || !databaseEnabled || messages.length === 0) return;
+    const t = setTimeout(() => {
+      fetch(`/api/projects/${projectId}/files`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ 
+          path: '.huggy/history.json', 
+          content: JSON.stringify(messages, null, 2) 
+        }),
+      }).catch(e => console.error('Failed to sync history:', e));
+    }, 2000);
+    return () => clearTimeout(t);
+  }, [messages, projectId, databaseEnabled]);
 
   const openProjectFile = (path: string) => {
     if (path === activeFilePath) return;

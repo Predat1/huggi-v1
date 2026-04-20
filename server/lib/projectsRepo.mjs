@@ -64,6 +64,25 @@ export async function listProjects(pool, ownerId) {
   return r.rows;
 }
 
+export async function listGalleryProjects(pool, limit = 12) {
+  const r = await pool.query(
+    `SELECT p.id, p.name, p.slug, p.custom_domain, p.created_at, pr.email as author 
+     FROM projects p 
+     LEFT JOIN profiles pr ON p.owner_id = pr.id 
+     WHERE p.custom_domain IS NOT NULL OR EXISTS (SELECT 1 FROM deployments d WHERE d.project_id = p.id AND d.status = 'live')
+     ORDER BY p.updated_at DESC LIMIT $1`,
+    [limit]
+  );
+  return r.rows;
+}
+
+export async function deleteProject(pool, projectId, ownerId) {
+  await pool.query(
+    `DELETE FROM projects WHERE id = $1 AND owner_id = $2`,
+    [projectId, ownerId]
+  );
+}
+
 /** @param {import('pg').Pool} pool */
 export async function listFiles(pool, projectId) {
   const r = await pool.query(
