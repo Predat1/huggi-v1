@@ -985,78 +985,12 @@ export default function App() {
       <header className="h-14 border-b border-slate-200/80 bg-white/90 backdrop-blur-xl flex items-center justify-between px-3 sm:px-5 z-10 shrink-0 shadow-[0_1px_3px_rgba(15,23,42,0.04)]">
         {/* Left: Brand */}
         <div className="flex items-center gap-2 sm:gap-3 min-w-0">
-          <button
-            type="button"
-            onClick={() => { setStudioMode(false); window.history.replaceState({}, '', window.location.pathname); }}
-            className="flex items-center gap-1.5 px-2 py-1.5 rounded-lg text-[11px] font-bold text-slate-500 hover:text-slate-900 hover:bg-slate-100 transition-all duration-200 shrink-0 group"
-          >
-            <Home size={14} className="text-slate-400 group-hover:text-blue-600 transition-colors" aria-hidden />
-          </button>
-          <div className="h-5 w-[1px] bg-slate-200/70 hidden sm:block" />
           <div className="flex items-center gap-2 min-w-0">
             <div className={`w-7 h-7 bg-gradient-to-br from-blue-600 to-blue-700 rounded-lg flex items-center justify-center text-white shadow-lg shadow-blue-600/25 shrink-0`}>
               <Zap size={16} fill="currentColor" />
             </div>
             <span className="text-sm font-black tracking-tight text-slate-900 truncate">HUGGY</span>
             <span className="px-1.5 py-0.5 bg-gradient-to-r from-blue-50 to-blue-100 text-[9px] font-black text-blue-600 rounded-full uppercase tracking-widest shrink-0 border border-blue-100/50">Studio</span>
-          </div>
-        </div>
-
-        {/* Center: Cloud Space + Theme */}
-        <div className="hidden md:flex items-center gap-2">
-          {/* Cloud Space Indicator */}
-          {projectId && (
-            <div className="flex items-center gap-2 px-3 py-1.5 bg-slate-50 rounded-lg border border-slate-200/80">
-              <Cloud size={13} className="text-emerald-500" />
-              <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">Cloud</span>
-              <div className="w-16 h-1.5 bg-slate-200 rounded-full overflow-hidden">
-                <div className="h-full bg-gradient-to-r from-emerald-400 to-emerald-500 rounded-full" style={{ width: '35%' }} />
-              </div>
-              <span className="text-[10px] font-semibold text-emerald-600">Active</span>
-            </div>
-          )}
-          {/* Theme/Design Picker */}
-          <div className="relative">
-            <button
-              onClick={() => setShowDesignMenu(!showDesignMenu)}
-              className="flex items-center gap-1.5 px-3 py-1.5 bg-slate-50 hover:bg-slate-100 rounded-lg border border-slate-200/80 transition-all text-[11px] font-bold text-slate-600 group"
-            >
-              <Palette size={13} className="text-slate-400 group-hover:text-blue-500 transition-colors" />
-              Thème
-              <ChevronDown size={12} className={`text-slate-400 transition-transform ${showDesignMenu ? 'rotate-180' : ''}`} />
-            </button>
-            <AnimatePresence>
-              {showDesignMenu && (
-                <motion.div
-                  initial={{ opacity: 0, y: 6, scale: 0.95 }}
-                  animate={{ opacity: 1, y: 0, scale: 1 }}
-                  exit={{ opacity: 0, y: 6, scale: 0.95 }}
-                  transition={{ duration: 0.15 }}
-                  className="absolute top-full mt-2 right-0 w-56 bg-white rounded-xl border border-slate-200 shadow-2xl shadow-slate-900/10 p-3 z-50"
-                >
-                  <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">Couleur d'accent</p>
-                  <div className="grid grid-cols-4 gap-2 mb-3">
-                    {(['blue', 'purple', 'emerald', 'rose'] as const).map((color) => (
-                      <button
-                        key={color}
-                        onClick={() => { setActiveAccentColor(color); setShowDesignMenu(false); }}
-                        className={`w-full aspect-square rounded-xl transition-all duration-200 hover:scale-110 ${
-                          ACCENT_COLORS[color].bg
-                        } ${activeAccentColor === color ? 'ring-2 ring-offset-2 ring-slate-900 scale-110' : 'opacity-70 hover:opacity-100'}`}
-                      />
-                    ))}
-                  </div>
-                  <div className="h-[1px] bg-slate-100 my-2" />
-                  <button
-                    onClick={() => { setShowSettingsModal(true); setShowDesignMenu(false); }}
-                    className="w-full flex items-center gap-2 px-3 py-2 hover:bg-slate-50 rounded-lg text-xs font-bold text-slate-600 transition-colors"
-                  >
-                    <Settings size={13} />
-                    Paramètres avancés
-                  </button>
-                </motion.div>
-              )}
-            </AnimatePresence>
           </div>
         </div>
 
