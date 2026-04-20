@@ -33,6 +33,7 @@ export type AccentStyle = {
 type LandingPageProps = {
   accent: AccentStyle;
   onOpenStudio: (initialPrompt?: string) => void;
+  onLogin?: () => void;
   userId?: string;
 };
 
@@ -129,7 +130,7 @@ function scrollToId(id: string, onDone?: () => void) {
   onDone?.();
 }
 
-export default function LandingPage({ accent, onOpenStudio, userId }: LandingPageProps) {
+export default function LandingPage({ accent, onOpenStudio, onLogin, userId }: LandingPageProps) {
   const [buildInput, setBuildInput] = useState('');
   const [openFaq, setOpenFaq] = useState<number | null>(null);
   const [mobileNavOpen, setMobileNavOpen] = useState(false);
@@ -228,13 +229,12 @@ export default function LandingPage({ accent, onOpenStudio, userId }: LandingPag
 
           {/* Right Side: Actions */}
           <div className="flex items-center justify-end gap-3">
-            <a
-              href="#contact"
-              onClick={go('contact')}
+            <button
+              onClick={() => onLogin && onLogin()}
               className="hidden sm:inline-block text-xs font-black uppercase tracking-wider text-slate-400 hover:text-slate-900 transition-colors duration-200"
             >
               Sign in
-            </a>
+            </button>
             <button
               type="button"
               onClick={() => onOpenStudio()}

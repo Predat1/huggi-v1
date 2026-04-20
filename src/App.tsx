@@ -929,6 +929,7 @@ export default function App() {
             ) : (
               <LandingPage
                 accent={ACCENT_COLORS[activeAccentColor]}
+                onLogin={() => setShowAuthModal(true)}
                 onOpenStudio={(initialPrompt) => {
                   if (initialPrompt) setInputValue(initialPrompt);
                   setStudioMode(true);
