@@ -6,6 +6,7 @@ export type GenerateAppResult = {
   code: string;
   files: { path: string; content: string }[];
   reply: string;
+  plan?: string;
   export?: {
     stack: 'nextjs-supabase-shadcn' | string;
     projectName?: string;
@@ -60,6 +61,7 @@ export const generateAppUpdate = async (
     code: string;
     files?: { path: string; content: string }[];
     reply?: string;
+    plan?: string;
     export?: GenerateAppResult['export'];
     provider?: string;
   }>('/api/generate-app', {
@@ -75,9 +77,34 @@ export const generateAppUpdate = async (
     code: data.code || '',
     files: data.files || [],
     reply: data.reply || '',
+    plan: data.plan || '',
     export: data.export ?? null,
     provider: data.provider,
   };
+};
+
+/**
+ * Auto-correction: send a broken code + error message back to the AI for fixing.
+ * This mimics Antigravity's self-healing loop.
+ */
+export const requestAutoCorrection = async (
+  brokenCode: string,
+  errorMessage: string,
+  params: {
+    projectId?: string | null;
+    userId?: string;
+    userEmail?: string;
+  },
+): Promise<GenerateAppResult> => {
+  const fixPrompt = `[AUTO-CORRECTION] The code I previously generated produced a runtime/syntax error in the live preview.\n\nError:\n${errorMessage}\n\nFix the code below so it renders without any errors. Return the corrected full code.\n\nBroken code:\n${brokenCode}`;
+
+  return generateAppUpdate(fixPrompt, {
+    currentCode: brokenCode,
+    projectId: params.projectId,
+    chatHistory: [],
+    userId: params.userId,
+    userEmail: params.userEmail,
+  });
 };
 
 export const generateChatResponse = async (prompt: string): Promise<string> => {
@@ -88,4 +115,3 @@ export const generateChatResponse = async (prompt: string): Promise<string> => {
 export const getMe = async (params: { userId: string; email?: string }): Promise<{ credits: number, is_pro: boolean }> => {
   return await postJson<{ credits: number, is_pro: boolean }>(`/api/me?userId=${params.userId}&email=${params.email || ''}`, {});
 };
-

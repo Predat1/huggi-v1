@@ -8,6 +8,44 @@
   }
 
   :root {
+    /* ── Huggy Design Tokens ── */
+    /* Primary */
+    --huggy-primary: #2563EB;
+    --huggy-primary-hover: #1D4ED8;
+    --huggy-primary-light: #DBEAFE;
+    --huggy-primary-ghost: rgba(37, 99, 235, 0.08);
+    /* Secondary */
+    --huggy-secondary: #10B981;
+    --huggy-secondary-hover: #059669;
+    --huggy-secondary-light: #D1FAE5;
+    /* Accent */
+    --huggy-accent: #8B5CF6;
+    --huggy-accent-light: #EDE9FE;
+    /* Neutrals */
+    --huggy-bg: #F8F9FB;
+    --huggy-bg-card: #FFFFFF;
+    --huggy-bg-dark: #0F172A;
+    --huggy-bg-dark-card: #1E293B;
+    --huggy-border: #E2E8F0;
+    --huggy-border-dark: #334155;
+    --huggy-text: #0F172A;
+    --huggy-text-secondary: #64748B;
+    --huggy-text-muted: #94A3B8;
+    --huggy-text-dark: #F1F5F9;
+    /* Radii */
+    --huggy-radius-sm: 0.5rem;
+    --huggy-radius-md: 0.75rem;
+    --huggy-radius-lg: 1rem;
+    --huggy-radius-xl: 1.5rem;
+    --huggy-radius-full: 9999px;
+    /* Shadows */
+    --huggy-shadow-sm: 0 1px 2px rgba(0,0,0,0.05);
+    --huggy-shadow-md: 0 4px 6px -1px rgba(0,0,0,0.07), 0 2px 4px -2px rgba(0,0,0,0.05);
+    --huggy-shadow-lg: 0 10px 15px -3px rgba(0,0,0,0.08), 0 4px 6px -4px rgba(0,0,0,0.04);
+    --huggy-shadow-glow: 0 0 20px rgba(37, 99, 235, 0.15);
+    /* Typography */
+    --huggy-font: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    /* Legacy compat */
     --bg-primary: #F8F9FB;
     --bg-secondary: #FFFFFF;
     --border-color: #E2E8F0;

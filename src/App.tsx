@@ -48,10 +48,10 @@ import {
   Github
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
-import { LiveProvider, LivePreview, LiveError } from 'react-live';
+import { SandpackProvider, SandpackLayout, SandpackPreview, useSandpack } from "@codesandbox/sandpack-react";
 import * as LucideIcons from 'lucide-react';
 import { DEFAULT_PREVIEW_CODE } from './defaultPreviewCode';
-import { generateAppUpdate, getMe } from './services/geminiService';
+import { generateAppUpdate, getMe, requestAutoCorrection } from './services/geminiService';
 import { streamChatText } from './utils/streamChatText';
 import LandingPage from './components/LandingPage';
 import JSZip from 'jszip';
@@ -96,25 +96,79 @@ const TERMINAL_THEMES: Record<TerminalTheme, { bg: string; text: string; prompt:
   ocean: { bg: 'bg-[#0f172a]', text: 'text-blue-200', prompt: 'text-cyan-400', border: 'border-blue-900/30', accent: 'bg-blue-900/20' },
 };
 
-const PreviewContent = ({ mode, code }: { mode: PreviewMode; code: string }) => {
+const SandpackErrorListener = ({ onError }: { onError?: (err: string) => void }) => {
+  const { sandpack } = useSandpack();
+  const { status, error } = sandpack;
+  
+  React.useEffect(() => {
+    if (status === 'idle' || status === 'done') {
+      if (error && error.message && onError) {
+        onError(error.message);
+      }
+    }
+  }, [error, status, onError]);
+  
+  return null;
+};
+
+const PreviewContent = ({ mode, filesMap, onCodeError }: { mode: PreviewMode; filesMap: Record<string, string>, onCodeError?: (err: string) => void }) => {
   const isMobile = mode === 'mobile';
   const isTablet = mode === 'tablet';
 
-  const scope = { 
-    React, 
-    ...LucideIcons, 
-    motion, 
-    AnimatePresence 
-  };
+  const sandpackFiles = Object.keys(filesMap).reduce((acc, key) => {
+    const formattedKey = key.startsWith('/') ? key : `/${key}`;
+    acc[formattedKey] = filesMap[key];
+    return acc;
+  }, {} as Record<string, string>);
+
+  sandpackFiles["/index.html"] = `<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Preview</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+      :root {
+        --huggy-primary: #2563EB;
+        --huggy-primary-hover: #1D4ED8;
+        --huggy-primary-light: #DBEAFE;
+        --huggy-secondary: #10B981;
+        --huggy-accent: #8B5CF6;
+        --huggy-bg: #F8F9FB;
+        --huggy-bg-card: #FFFFFF;
+        --huggy-text: #0F172A;
+        --huggy-text-secondary: #64748B;
+      }
+      body { font-family: 'Inter', sans-serif; background: var(--huggy-bg); color: var(--huggy-text); }
+    </style>
+  </head>
+  <body>
+    <div id="root"></div>
+  </body>
+</html>`;
 
   return (
     <div className="w-full h-full bg-slate-50 flex flex-col overflow-hidden relative">
-      <LiveProvider code={code} scope={scope} noInline={false}>
-        <div className="w-full h-full overflow-y-auto scrollbar-hide">
-          <LivePreview />
-          <LiveError className="p-4 bg-red-50 text-red-600 text-xs font-mono whitespace-pre-wrap border-t border-red-100" />
-        </div>
-      </LiveProvider>
+      <SandpackProvider 
+        template="react-ts"
+        theme="light"
+        files={sandpackFiles}
+        customSetup={{
+          dependencies: {
+            "lucide-react": "latest",
+            "motion": "latest",
+            "framer-motion": "latest",
+            "clsx": "latest",
+            "tailwind-merge": "latest"
+          }
+        }}
+      >
+        <SandpackLayout style={{ height: "100%", width: "100%", border: "none" }}>
+          <SandpackPreview showOpenInCodeSandbox={false} showRefreshButton={true} style={{ height: "100%" }} />
+          <SandpackErrorListener onError={onCodeError} />
+        </SandpackLayout>
+      </SandpackProvider>
     </div>
   );
 };
@@ -148,6 +202,40 @@ export default function App() {
   const [authEmail, setAuthEmail] = useState('');
   const [authPass, setAuthPass] = useState('');
   const [authMode, setAuthMode] = useState<'login' | 'signup'>('login');
+
+  const isAutoCorrectingRef = useRef(false);
+
+  const handleAutoCorrection = async (errorMessage: string) => {
+    if (isAutoCorrectingRef.current || !user || !projectId) return;
+    isAutoCorrectingRef.current = true;
+    
+    updateTerminalLines([`[SYSTEM] Erreur détectée dans la preview: ${errorMessage.substring(0, 50)}...`, `[SYSTEM] Lancement de l'auto-correction IA...`]);
+    
+    try {
+      const currentCode = filesMap[PREVIEW_ENTRY];
+      if (!currentCode) return;
+      
+      const gen = await requestAutoCorrection(currentCode, errorMessage, {
+        projectId,
+        userId: user.id,
+        userEmail: user.email
+      });
+      
+      if (gen.files.length) {
+        let updatedMap = { ...filesMap };
+        for (const f of gen.files) {
+          updatedMap[f.path] = f.content;
+        }
+        setFilesMap(updatedMap);
+        updateTerminalLines([`[SYSTEM] Auto-correction réussie. Code mis à jour.`]);
+      }
+    } catch (e) {
+      console.error("Auto-correction échouée:", e);
+      updateTerminalLines([`[SYSTEM] L'auto-correction a échoué.`]);
+    } finally {
+      setTimeout(() => { isAutoCorrectingRef.current = false; }, 10000);
+    }
+  };
 
   const streamControllerRef = useRef<StreamController | null>(null);
   useEffect(() => {
@@ -1448,7 +1536,8 @@ export default function App() {
                 <div className={`flex-1 ${getPreviewSize().inner} overflow-hidden relative`}>
                   <PreviewContent
                     mode={previewMode}
-                    code={filesMap[PREVIEW_ENTRY] ?? DEFAULT_PREVIEW_CODE}
+                    filesMap={filesMap}
+                    onCodeError={handleAutoCorrection}
                   />
                 </div>
               </motion.div>
