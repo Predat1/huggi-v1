@@ -55,6 +55,15 @@ export async function getUserActiveProjectsCount(pool, ownerId) {
   return parseInt(r.rows[0].count, 10) || 0;
 }
 
+export async function listProjects(pool, ownerId) {
+  if (!ownerId) return [];
+  const r = await pool.query(
+    `SELECT id, name, slug, custom_domain, created_at, updated_at FROM projects WHERE owner_id = $1 ORDER BY updated_at DESC, created_at DESC`,
+    [ownerId]
+  );
+  return r.rows;
+}
+
 /** @param {import('pg').Pool} pool */
 export async function listFiles(pool, projectId) {
   const r = await pool.query(

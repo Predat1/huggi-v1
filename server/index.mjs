@@ -24,6 +24,7 @@ import {
   getOrCreateProfile,
   deductCredits,
   getUserActiveProjectsCount,
+  listProjects,
   getProjectByDomain,
   getProjectSecrets,
   upsertProjectSecret,
@@ -383,6 +384,19 @@ app.post('/api/projects', async (req, res) => {
     res.status(201).json({ project, files });
   } catch (e) {
     console.error(e);
+    res.status(500).json({ error: safeError(e) });
+  }
+});
+
+app.get('/api/projects', rateLimiter, async (req, res) => {
+  try {
+    const { userId } = req.query;
+    if (!pool) return res.json({ projects: [] });
+    if (!userId) return res.status(400).json({ error: 'userId requis.' });
+    const projects = await listProjects(pool, userId);
+    res.json({ projects });
+  } catch (e) {
+    console.error('[GET /api/projects]', e);
     res.status(500).json({ error: safeError(e) });
   }
 });

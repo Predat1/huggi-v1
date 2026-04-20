@@ -408,6 +408,36 @@ export default function App() {
     }
   }, [studioMode, user]); // Trigger when studio opens or user loads
 
+  // ── Keyboard Shortcuts ──────────────────────────────────────────────
+  useEffect(() => {
+    if (!studioMode) return;
+    const handler = (e: KeyboardEvent) => {
+      // Ctrl+Enter → Send message
+      if (e.ctrlKey && e.key === 'Enter') {
+        e.preventDefault();
+        if (inputValue.trim() && !isGenerating) handleSendMessage();
+      }
+      // Ctrl+E → Export ZIP
+      if (e.ctrlKey && e.key === 'e') {
+        e.preventDefault();
+        handleExportZip();
+      }
+      // Ctrl+Shift+P → Publish
+      if (e.ctrlKey && e.shiftKey && e.key === 'P') {
+        e.preventDefault();
+        handlePublish();
+      }
+      // Escape → Close all modals
+      if (e.key === 'Escape') {
+        setShowExportModal(false);
+        setShowSettingsModal(false);
+        setShowAuthModal(false);
+      }
+    };
+    window.addEventListener('keydown', handler);
+    return () => window.removeEventListener('keydown', handler);
+  }, [studioMode, inputValue, isGenerating]);
+
   useEffect(() => {
     if (!projectId || !databaseEnabled) return;
     const path = activeFilePath;
@@ -911,15 +941,14 @@ export default function App() {
                 user={user}
                 credits={credits}
                 onLogout={() => signOut().then(() => setUser(null))}
-                onOpenStudio={(initialPrompt) => {
+                onOpenStudio={(initialPrompt, openProjectId) => {
                   if (initialPrompt) setInputValue(initialPrompt);
                   setStudioMode(true);
-                  if (!new URLSearchParams(window.location.search).get('project')) {
-                    window.history.replaceState(
-                      {},
-                      '',
-                      `${window.location.pathname}?studio=1`,
-                    );
+                  // If opening an existing project, navigate to it
+                  if (openProjectId) {
+                    window.history.replaceState({}, '', `${window.location.pathname}?project=${openProjectId}`);
+                  } else if (!new URLSearchParams(window.location.search).get('project')) {
+                    window.history.replaceState({}, '', `${window.location.pathname}?studio=1`);
                   }
                   if (initialPrompt) {
                     setTimeout(() => handleSendMessage(initialPrompt), 100);
@@ -1026,6 +1055,14 @@ export default function App() {
             className="hidden sm:flex items-center justify-center p-1.5 text-slate-600 bg-slate-50 border border-slate-200 hover:border-slate-300 hover:bg-white rounded-lg transition-all shadow-sm group"
           >
             <Github size={15} className="text-slate-900 group-hover:scale-110 transition-transform" />
+          </button>
+          <button
+            onClick={handleExportZip}
+            title="Exporter en ZIP (Ctrl+E)"
+            className="hidden sm:flex items-center gap-1.5 px-2.5 py-1.5 bg-slate-50 hover:bg-slate-100 text-slate-600 rounded-lg text-[11px] font-bold transition-all active:scale-95 border border-slate-200"
+          >
+            <Download size={13} />
+            <span className="hidden xl:inline">ZIP</span>
           </button>
           {deployments.length > 0 && (
             <button
