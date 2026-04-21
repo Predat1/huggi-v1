@@ -19,7 +19,7 @@ async function callAI(systemPrompt, userPrompt, opts = {}) {
   if (anthropicKey) {
     const client = new Anthropic({ apiKey: anthropicKey });
     const msg = await client.messages.create({
-      model: process.env.ANTHROPIC_MODEL || 'claude-3-haiku-20240307',
+      model: process.env.ANTHROPIC_MODEL || 'claude-4-5-haiku-latest',
       max_tokens: maxTokens,
       system: systemPrompt,
       messages: [{ role: 'user', content: userPrompt }],

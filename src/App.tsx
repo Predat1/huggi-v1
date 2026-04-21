@@ -300,7 +300,8 @@ export default function App() {
   const [studioMode, setStudioMode] = useState<boolean>(() => {
     if (typeof window === 'undefined') return false;
     const params = new URLSearchParams(window.location.search);
-    return Boolean(params.get('project')) || params.get('studio') === '1';
+    const path = window.location.pathname;
+    return Boolean(params.get('project')) || params.get('studio') === '1' || path.includes('/studio');
   });
   const [filesMap, setFilesMap] = useState<Record<string, string>>(() => ({
     [PREVIEW_ENTRY]: DEFAULT_PREVIEW_CODE,
@@ -974,8 +975,52 @@ export default function App() {
   };
 
   return (
-    <AnimatePresence mode="wait" initial={false}>
-      {!studioMode ? (
+    <>
+      {/* Toast Notification */}
+      <AnimatePresence>
+        {toast && (
+          <motion.div 
+            initial={{ opacity: 0, y: -20, x: '-50%' }}
+            animate={{ opacity: 1, y: 20, x: '-50%' }}
+            exit={{ opacity: 0, y: -20, x: '-50%' }}
+            className="fixed top-0 left-1/2 z-[200] px-6 py-3 bg-slate-900 text-white rounded-2xl shadow-2xl flex items-center gap-3 min-w-[300px]"
+          >
+            <div className={`w-2 h-2 rounded-full ${toast.type === 'success' ? 'bg-emerald-400' : 'bg-blue-400'} animate-pulse`} />
+            <span className="text-sm font-bold">{toast.message}</span>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* Auth Modal */}
+      <AnimatePresence>
+        {showAuthModal && (
+          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 z-[500] flex items-center justify-center bg-slate-900/50 backdrop-blur-sm px-4">
+            <div className="bg-white p-6 rounded-2xl shadow-xl w-full max-w-sm relative pointer-events-auto">
+              <button className="absolute top-4 right-4 text-slate-400 hover:text-slate-900" onClick={() => setShowAuthModal(false)}>✕</button>
+              <h2 className="text-xl font-bold mb-4">{authMode === 'login' ? 'Connexion' : 'Inscription'}</h2>
+              <p className="text-sm text-slate-500 mb-4">Connectez-vous pour utiliser l'IA Huggy.</p>
+              <input type="email" placeholder="Email" className="w-full mb-3 p-3 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" value={authEmail} onChange={e => setAuthEmail(e.target.value)} />
+              <input type="password" placeholder="Mot de passe" className="w-full mb-4 p-3 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" value={authPass} onChange={e => setAuthPass(e.target.value)} />
+              <button 
+                className={`w-full mb-3 text-white font-bold py-3 rounded-lg transition-transform active:scale-95 ${ACCENT_COLORS[activeAccentColor].bg}`}
+                onClick={async () => {
+                  const res = authMode === 'login' ? await signIn(authEmail, authPass) : await signUp(authEmail, authPass);
+                  if (res?.error) showToast(res.error, 'info');
+                  else { setShowAuthModal(false); showToast('Succès', 'success'); }
+                }}
+              >
+                {authMode === 'login' ? 'Se connecter' : 'Créer un compte'}
+              </button>
+              <button className="text-sm text-slate-500 hover:text-slate-900 underline w-full text-center" onClick={() => setAuthMode(authMode === 'login' ? 'signup' : 'login')}>
+                {authMode === 'login' ? 'Pas de compte ? Inscrivez-vous' : 'Déjà un compte ? Connectez-vous'}
+              </button>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      <AnimatePresence mode="wait" initial={false}>
+        {!studioMode ? (
           <motion.div
             key="landing"
             className="min-h-screen"
@@ -1035,48 +1080,9 @@ export default function App() {
           exit={{ opacity: 0, y: -10 }}
           transition={{ duration: 0.28, ease: [0.22, 1, 0.36, 1] }}
         >
-      {/* Toast Notification */}
-      <AnimatePresence>
-        {toast && (
-          <motion.div 
-            initial={{ opacity: 0, y: -20, x: '-50%' }}
-            animate={{ opacity: 1, y: 20, x: '-50%' }}
-            exit={{ opacity: 0, y: -20, x: '-50%' }}
-            className="fixed top-0 left-1/2 z-[200] px-6 py-3 bg-slate-900 text-white rounded-2xl shadow-2xl flex items-center gap-3 min-w-[300px]"
-          >
-            <div className={`w-2 h-2 rounded-full ${toast.type === 'success' ? 'bg-emerald-400' : 'bg-blue-400'} animate-pulse`} />
-            <span className="text-sm font-bold">{toast.message}</span>
-          </motion.div>
-        )}
-      </AnimatePresence>
 
-      <AnimatePresence>
-        {showAuthModal && (
-          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 z-[500] flex items-center justify-center bg-slate-900/50 backdrop-blur-sm px-4">
-            <div className="bg-white p-6 rounded-2xl shadow-xl w-full max-w-sm relative pointer-events-auto">
-              <button className="absolute top-4 right-4 text-slate-400 hover:text-slate-900" onClick={() => setShowAuthModal(false)}>✕</button>
-              <h2 className="text-xl font-bold mb-4">{authMode === 'login' ? 'Connexion' : 'Inscription'}</h2>
-              <p className="text-sm text-slate-500 mb-4">Connectez-vous pour utiliser l'IA Huggy.</p>
-              <input type="email" placeholder="Email" className="w-full mb-3 p-3 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" value={authEmail} onChange={e => setAuthEmail(e.target.value)} />
-              <input type="password" placeholder="Mot de passe" className="w-full mb-4 p-3 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" value={authPass} onChange={e => setAuthPass(e.target.value)} />
-              <button 
-                className={`w-full mb-3 text-white font-bold py-3 rounded-lg transition-transform active:scale-95 ${ACCENT_COLORS[activeAccentColor].bg}`}
-                onClick={async () => {
-                  const res = authMode === 'login' ? await signIn(authEmail, authPass) : await signUp(authEmail, authPass);
-                  if (res?.error) showToast(res.error, 'info');
-                  else { setShowAuthModal(false); showToast('Succès', 'success'); }
-                }}
-              >
-                {authMode === 'login' ? 'Se connecter' : 'Créer un compte'}
-              </button>
-              <button className="text-sm text-slate-500 hover:text-slate-900 underline w-full text-center" onClick={() => setAuthMode(authMode === 'login' ? 'signup' : 'login')}>
-                {authMode === 'login' ? 'Pas de compte ? Inscrivez-vous' : 'Déjà un compte ? Connectez-vous'}
-              </button>
-            </div>
-          </motion.div>
-        )}
-      </AnimatePresence>
-
+      {/* Top Navigation Bar — Premium SaaS */}
+      <header className="h-14 border-b border-slate-200/80 bg-white/90 backdrop-blur-xl flex items-center justify-between px-3 sm:px-5 z-10 shrink-0 shadow-[0_1px_3px_rgba(15,23,42,0.04)]">
         {/* Left: Brand & Back button */}
         <div className="flex items-center gap-4 min-w-0">
           <button 
@@ -1098,8 +1104,6 @@ export default function App() {
             <span className="px-1.5 py-0.5 bg-gradient-to-r from-blue-50 to-blue-100 text-[9px] font-black text-blue-600 rounded-full uppercase tracking-widest shrink-0 border border-blue-100/50">Studio</span>
           </div>
         </div>
-Line 1081 in original was after the Brand closing tag.
-Actually, let's target lines 1071-1081.
 
         {/* Right: Actions */}
         <div className="flex items-center gap-1.5 sm:gap-2">
@@ -2144,6 +2148,6 @@ Actually, let's target lines 1071-1081.
       <GithubExportModal isOpen={showExportModal} onClose={() => setShowExportModal(false)} projectId={projectId || ''} userId={user?.id} onStandardZipExport={handleExportZip} />
         </motion.div>
       )}
-    </AnimatePresence>
+    </>
   );
 }
