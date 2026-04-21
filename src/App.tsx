@@ -64,6 +64,7 @@ import { StreamController } from './services/streamingService';
 import { SettingsModal } from './components/SettingsModal';
 import { GithubExportModal } from './components/GithubExportModal';
 import HuggyChatInput from './components/HuggyChatInput';
+import AuthModal from './components/AuthModal';
 
 type Message = {
   id: string;
@@ -203,8 +204,6 @@ export default function App() {
   const [showBillingModal, setShowBillingModal] = useState(false);
   const [showSettingsModal, setShowSettingsModal] = useState(false);
   const [showExportModal, setShowExportModal] = useState(false);
-  const [authEmail, setAuthEmail] = useState('');
-  const [authPass, setAuthPass] = useState('');
   const [authMode, setAuthMode] = useState<'login' | 'signup'>('login');
 
   const isAutoCorrectingRef = useRef(false);
@@ -991,33 +990,15 @@ export default function App() {
         )}
       </AnimatePresence>
 
-      {/* Auth Modal */}
-      <AnimatePresence>
-        {showAuthModal && (
-          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 z-[500] flex items-center justify-center bg-slate-900/50 backdrop-blur-sm px-4">
-            <div className="bg-white p-6 rounded-2xl shadow-xl w-full max-w-sm relative pointer-events-auto">
-              <button className="absolute top-4 right-4 text-slate-400 hover:text-slate-900" onClick={() => setShowAuthModal(false)}>✕</button>
-              <h2 className="text-xl font-bold mb-4">{authMode === 'login' ? 'Connexion' : 'Inscription'}</h2>
-              <p className="text-sm text-slate-500 mb-4">Connectez-vous pour utiliser l'IA Huggy.</p>
-              <input type="email" placeholder="Email" className="w-full mb-3 p-3 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" value={authEmail} onChange={e => setAuthEmail(e.target.value)} />
-              <input type="password" placeholder="Mot de passe" className="w-full mb-4 p-3 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" value={authPass} onChange={e => setAuthPass(e.target.value)} />
-              <button 
-                className={`w-full mb-3 text-white font-bold py-3 rounded-lg transition-transform active:scale-95 ${ACCENT_COLORS[activeAccentColor].bg}`}
-                onClick={async () => {
-                  const res = authMode === 'login' ? await signIn(authEmail, authPass) : await signUp(authEmail, authPass);
-                  if (res?.error) showToast(res.error, 'info');
-                  else { setShowAuthModal(false); showToast('Succès', 'success'); }
-                }}
-              >
-                {authMode === 'login' ? 'Se connecter' : 'Créer un compte'}
-              </button>
-              <button className="text-sm text-slate-500 hover:text-slate-900 underline w-full text-center" onClick={() => setAuthMode(authMode === 'login' ? 'signup' : 'login')}>
-                {authMode === 'login' ? 'Pas de compte ? Inscrivez-vous' : 'Déjà un compte ? Connectez-vous'}
-              </button>
-            </div>
-          </motion.div>
-        )}
-      </AnimatePresence>
+      <AuthModal 
+        isOpen={showAuthModal} 
+        onClose={() => setShowAuthModal(false)}
+        defaultMode={authMode}
+        onSuccess={() => {
+          showToast('Connexion réussie', 'success');
+          // No need to set user here as onAuthStateChange will handle it
+        }}
+      />
 
       <AnimatePresence mode="wait" initial={false}>
         {!studioMode ? (
