@@ -1,6 +1,13 @@
 # Build front (Vite)
 FROM node:22-alpine AS build
 WORKDIR /app
+
+# Build-time env vars for Vite (must be available during npm run build)
+ARG VITE_SUPABASE_URL
+ARG VITE_SUPABASE_ANON_KEY
+ENV VITE_SUPABASE_URL=$VITE_SUPABASE_URL
+ENV VITE_SUPABASE_ANON_KEY=$VITE_SUPABASE_ANON_KEY
+
 COPY package.json package-lock.json ./
 RUN npm ci
 COPY . .
