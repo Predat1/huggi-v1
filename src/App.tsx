@@ -452,7 +452,10 @@ export default function App() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ path, content }),
       })
-        .then(() => setLastSaved(new Date()))
+        .then(() => {
+          setLastSaved(new Date());
+          broadcastFileUpdate(path, content);
+        })
         .catch(() => showToast('Sauvegarde échouée', 'info'));
     }, 900);
     return () => clearTimeout(t);
@@ -473,6 +476,10 @@ export default function App() {
     }, 2000);
     return () => clearTimeout(t);
   }, [messages, projectId, databaseEnabled]);
+
+  useEffect(() => {
+    if (activeSidebarTab === 'history') loadVersions();
+  }, [activeSidebarTab, projectId]);
 
   const openProjectFile = (path: string) => {
     if (path === activeFilePath) return;
@@ -631,6 +638,84 @@ export default function App() {
   const [streamingMessage, setStreamingMessage] = useState<string>('');
   const [agentTasks, setAgentTasks] = useState<AgentTask[]>([]);
   const streamCancelRef = useRef<(() => void) | null>(null);
+
+  // ── Real-time collaboration ──────────────────────────────────────────
+  const [onlineUsers, setOnlineUsers] = useState(1);
+  const wsRef = useRef<WebSocket | null>(null);
+
+  useEffect(() => {
+    if (!projectId || !studioMode) return;
+    const proto = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+    const host = window.location.host;
+    const wsUrl = `${proto}//${host}?projectId=${projectId}&userId=${user?.id || 'anonymous'}`;
+    const ws = new WebSocket(wsUrl);
+    wsRef.current = ws;
+
+    ws.onmessage = (e) => {
+      let msg: any;
+      try { msg = JSON.parse(e.data); } catch { return; }
+      if (msg.type === 'connected' || msg.type === 'peer_joined' || msg.type === 'peer_left') {
+        setOnlineUsers(msg.online ?? 1);
+      } else if (msg.type === 'file_update' && msg.path && msg.content) {
+        setFilesMap(prev => ({ ...prev, [msg.path]: msg.content }));
+      }
+    };
+
+    ws.onerror = () => {};
+    ws.onclose = () => { wsRef.current = null; };
+
+    return () => { ws.close(); wsRef.current = null; };
+  }, [projectId, studioMode, user?.id]);
+
+  // Broadcast local file edits to collaborators
+  const broadcastFileUpdate = (path: string, content: string) => {
+    if (wsRef.current?.readyState === WebSocket.OPEN) {
+      wsRef.current.send(JSON.stringify({ type: 'file_update', path, content }));
+    }
+  };
+
+  // ── Version History ──────────────────────────────────────────────────
+  type Version = { id: string; label: string; created_at: string; file_count: number };
+  const [versions, setVersions] = useState<Version[]>([]);
+  const [isLoadingVersions, setIsLoadingVersions] = useState(false);
+  const [isRestoringVersion, setIsRestoringVersion] = useState(false);
+
+  const loadVersions = async () => {
+    if (!projectId || !databaseEnabled) return;
+    setIsLoadingVersions(true);
+    try {
+      const res = await fetch(`/api/projects/${projectId}/versions`);
+      const data = await res.json();
+      if (data.versions) setVersions(data.versions);
+    } catch {} finally {
+      setIsLoadingVersions(false);
+    }
+  };
+
+  const handleRestoreVersion = async (versionId: string) => {
+    if (!projectId || !user || isRestoringVersion) return;
+    if (!window.confirm('Restaurer cette version ? Les fichiers actuels seront remplacés.')) return;
+    setIsRestoringVersion(true);
+    try {
+      const res = await fetch(`/api/projects/${projectId}/versions/${versionId}/restore`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ userId: user.id }),
+      });
+      const data = await res.json();
+      if (data.ok && Array.isArray(data.files)) {
+        const map: Record<string, string> = {};
+        for (const f of data.files) map[f.path] = f.content;
+        setFilesMap(map);
+        showToast('Version restaurée ✓', 'success');
+        loadVersions();
+      } else {
+        showToast(data.error || 'Restauration échouée', 'info');
+      }
+    } catch { showToast('Erreur serveur', 'info'); } finally {
+      setIsRestoringVersion(false);
+    }
+  };
 
   // ── Keyboard Shortcuts ──────────────────────────────────────────────
   useEffect(() => {
@@ -1139,6 +1224,13 @@ export default function App() {
           >
             <Shield size={15} className="text-violet-600 group-hover:scale-110 transition-transform" />
           </button>
+          {onlineUsers > 1 && (
+            <div className="hidden sm:flex items-center gap-1.5 px-2.5 py-1.5 bg-emerald-50 dark:bg-emerald-500/10 rounded-lg border border-emerald-200/60 dark:border-emerald-500/20" title={`${onlineUsers} utilisateurs en ligne`}>
+              <span className="relative flex h-2 w-2"><span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75" /><span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500" /></span>
+              <Users size={12} className="text-emerald-600 dark:text-emerald-400" />
+              <span className="text-[10px] font-black text-emerald-700 dark:text-emerald-400">{onlineUsers}</span>
+            </div>
+          )}
           <button
             onClick={handleExportZip}
             title="Exporter en ZIP (Ctrl+E)"
@@ -1424,55 +1516,76 @@ export default function App() {
                 </div>
               </>
             ) : activeSidebarTab === 'history' ? (
-              <div className="flex-1 overflow-y-auto p-4 space-y-6 scrollbar-hide">
+              <div className="flex-1 overflow-y-auto p-4 space-y-4 scrollbar-hide">
+                {/* Version History */}
                 <div className="flex items-center justify-between">
-                  <h2 className="text-xs font-bold text-slate-400 uppercase tracking-widest">Timeline</h2>
-                  <div className="flex items-center gap-1">
-                    <button className="p-1.5 rounded hover:bg-slate-100 text-slate-400 transition-colors">
-                      <RotateCcw size={14} />
-                    </button>
-                  </div>
+                  <h2 className="text-xs font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest">Versions</h2>
+                  <button
+                    onClick={loadVersions}
+                    disabled={isLoadingVersions}
+                    className="p-1.5 rounded hover:bg-slate-100 dark:hover:bg-white/5 text-slate-400 transition-colors"
+                    title="Actualiser"
+                  >
+                    <RefreshCw size={13} className={isLoadingVersions ? 'animate-spin' : ''} />
+                  </button>
                 </div>
 
-                <div className="space-y-4 relative before:absolute before:left-[11px] before:top-2 before:bottom-2 before:w-[2px] before:bg-slate-100">
-                  {messages.filter((m: any) => m.sender === 'VOUS' || m.changedFiles).map((m: any, i: number) => (
-                    <div key={m.id} className="relative pl-8 group">
-                      <div className={`absolute left-0 top-1.5 w-[24px] h-[24px] rounded-full border-4 border-white shadow-sm flex items-center justify-center z-10 ${
-                        m.sender === 'VOUS' ? 'bg-slate-200 text-slate-500' : 'bg-blue-500 text-white'
-                      }`}>
-                        {m.sender === 'VOUS' ? <Search size={10} /> : <Zap size={10} fill="currentColor" />}
-                      </div>
-                      <div className="space-y-1">
-                        <div className="flex items-center justify-between">
-                          <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">
-                            {m.sender === 'VOUS' ? 'User Request' : 'Agent Action'}
-                          </span>
-                          <span className="text-[9px] text-slate-300 font-medium">
-                            {m.timestamp.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                          </span>
+                {versions.length === 0 && !isLoadingVersions && (
+                  <p className="text-xs text-slate-400 dark:text-slate-500 italic text-center py-4">
+                    Aucune version sauvegardée.<br />Les snapshots sont créés automatiquement avant chaque génération IA et chaque déploiement.
+                  </p>
+                )}
+
+                <div className="space-y-2">
+                  {versions.map((v) => (
+                    <div key={v.id} className="p-3 rounded-xl bg-slate-50 dark:bg-white/5 border border-slate-100 dark:border-white/10 group">
+                      <div className="flex items-start justify-between gap-2">
+                        <div className="min-w-0">
+                          <p className="text-xs font-semibold text-slate-700 dark:text-slate-200 truncate">{v.label}</p>
+                          <p className="text-[10px] text-slate-400 dark:text-slate-500 mt-0.5">
+                            {new Date(v.created_at).toLocaleString('fr-FR', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' })} · {v.file_count} fichier{v.file_count > 1 ? 's' : ''}
+                          </p>
                         </div>
-                        <p className="text-xs text-slate-600 font-medium line-clamp-2 group-hover:line-clamp-none transition-all break-words">
-                          {m.text}
-                        </p>
-                        {m.changedFiles && (
-                          <div className="flex items-center gap-2 mt-2">
-                            <div className="flex items-center gap-1 px-2 py-0.5 bg-emerald-50 text-emerald-600 rounded-full text-[9px] font-bold border border-emerald-100">
-                              <FileCode size={10} />
-                              {m.changedFiles.length} file modified
-                            </div>
-                            <button 
-                              onClick={() => handleRestore(m)}
-                              disabled={isRestoring}
-                              className="flex items-center gap-1 px-2 py-0.5 bg-blue-50 text-blue-600 rounded-full text-[9px] font-bold border border-blue-100 hover:bg-blue-100 transition-colors disabled:opacity-50"
-                            >
-                              <RotateCcw size={10} className={isRestoring ? 'animate-spin' : ''} />
-                              Restore
-                            </button>
-                          </div>
-                        )}
+                        <button
+                          onClick={() => handleRestoreVersion(v.id)}
+                          disabled={isRestoringVersion}
+                          className="shrink-0 flex items-center gap-1 px-2 py-1 bg-blue-50 dark:bg-blue-500/10 text-blue-600 dark:text-blue-400 rounded-lg text-[10px] font-bold border border-blue-100 dark:border-blue-500/20 hover:bg-blue-100 dark:hover:bg-blue-500/20 transition-colors disabled:opacity-50"
+                        >
+                          <RotateCcw size={10} className={isRestoringVersion ? 'animate-spin' : ''} />
+                          Restore
+                        </button>
                       </div>
                     </div>
                   ))}
+                </div>
+
+                {/* Chat Timeline */}
+                <div className="pt-2 border-t border-slate-100 dark:border-white/10">
+                  <h2 className="text-xs font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest mb-3">Timeline Chat</h2>
+                  <div className="space-y-3 relative before:absolute before:left-[11px] before:top-2 before:bottom-2 before:w-[2px] before:bg-slate-100 dark:before:bg-white/10">
+                    {messages.filter((m: any) => m.sender === 'VOUS' || m.changedFiles).map((m: any) => (
+                      <div key={m.id} className="relative pl-8 group">
+                        <div className={`absolute left-0 top-1.5 w-[24px] h-[24px] rounded-full border-4 border-white dark:border-[#1a1a2e] shadow-sm flex items-center justify-center z-10 ${
+                          m.sender === 'VOUS' ? 'bg-slate-200 dark:bg-slate-700 text-slate-500 dark:text-slate-300' : 'bg-blue-500 text-white'
+                        }`}>
+                          {m.sender === 'VOUS' ? <Search size={10} /> : <Zap size={10} fill="currentColor" />}
+                        </div>
+                        <div className="space-y-1">
+                          <div className="flex items-center justify-between">
+                            <span className="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider">
+                              {m.sender === 'VOUS' ? 'Requête' : 'Agent'}
+                            </span>
+                            <span className="text-[9px] text-slate-300 dark:text-slate-600 font-medium">
+                              {m.timestamp.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                            </span>
+                          </div>
+                          <p className="text-xs text-slate-600 dark:text-slate-300 font-medium line-clamp-2 group-hover:line-clamp-none transition-all break-words">
+                            {m.text}
+                          </p>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
                 </div>
               </div>
             ) : (

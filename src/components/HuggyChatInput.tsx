@@ -114,12 +114,12 @@ export default function HuggyChatInput({
       <div className="relative w-full p-[2px] rounded-[17px] overflow-hidden shadow-xl group/input">
         <div className="absolute inset-[-1000%] animate-[spin_4s_linear_infinite] bg-[conic-gradient(from_90deg_at_50%_50%,transparent_0%,#3b82f6_50%,transparent_100%)] opacity-80 group-focus-within/input:opacity-100 transition-opacity duration-300" />
         <div
-          className="w-full h-full rounded-2xl overflow-hidden relative bg-white border border-white/50"
+          className="w-full h-full rounded-2xl overflow-hidden relative bg-white dark:bg-[#1E1E1E] border border-slate-200 dark:border-white/10 transition-colors duration-300"
         >
         {/* Branding (Subtle) */}
         {!disclaimer && (
-          <div className="absolute top-3 right-5 select-none pointer-events-none opacity-5">
-            <span className="text-[9px] font-black tracking-[0.2em] text-slate-900 uppercase italic">HUGGY</span>
+          <div className="absolute top-3 right-5 select-none pointer-events-none opacity-5 dark:opacity-20">
+            <span className="text-[9px] font-black tracking-[0.2em] text-slate-900 dark:text-white uppercase italic">HUGGY</span>
           </div>
         )}
 
@@ -129,7 +129,7 @@ export default function HuggyChatInput({
             {tags.map((tag) => (
               <div
                 key={tag.id}
-                className="flex items-center gap-1.5 py-1 pl-1 pr-2 rounded-full border border-slate-200 border-dashed bg-slate-50 text-[13px] font-medium text-slate-700 group/tag transition-all hover:bg-slate-100"
+                className="flex items-center gap-1.5 py-1 pl-1 pr-2 rounded-full border border-slate-200 dark:border-white/10 border-dashed bg-slate-50 dark:bg-white/5 text-[13px] font-medium text-slate-700 dark:text-slate-300 group/tag transition-all hover:bg-slate-100 dark:hover:bg-white/10"
               >
                 <div 
                   className="w-6 h-6 rounded-full flex items-center justify-center overflow-hidden shrink-0 border border-slate-200 shadow-sm"
@@ -144,7 +144,7 @@ export default function HuggyChatInput({
                 <span>{tag.label}</span>
                 <button 
                   onClick={() => removeTag(tag.id)}
-                  className="text-slate-400 hover:text-slate-900 transition-colors"
+                  className="text-slate-400 dark:text-slate-500 hover:text-slate-900 dark:hover:text-white transition-colors"
                 >
                   <X size={12} />
                 </button>
@@ -163,7 +163,7 @@ export default function HuggyChatInput({
             disabled={isLoading}
             placeholder={placeholder}
             rows={1}
-            className="w-full bg-transparent text-slate-900 text-[16px] font-medium placeholder-slate-300 resize-none focus:outline-none leading-relaxed disabled:opacity-50"
+            className="w-full bg-transparent text-slate-900 dark:text-white text-[16px] font-medium placeholder-slate-400 dark:placeholder-slate-500 resize-none focus:outline-none leading-relaxed disabled:opacity-50"
             style={{ caretColor: '#6366F1', minHeight: '32px' }}
           />
         </div>
@@ -173,7 +173,7 @@ export default function HuggyChatInput({
           {/* Left Toolbar */}
           <div className="flex items-center">
             {/* Plus */}
-            <button className="w-10 h-10 rounded-full flex items-center justify-center text-slate-400 hover:text-slate-900 hover:bg-slate-50 transition-all">
+            <button className="w-10 h-10 rounded-full flex items-center justify-center text-slate-400 dark:text-slate-500 hover:text-slate-900 dark:hover:text-white hover:bg-slate-50 dark:hover:bg-white/5 transition-all">
               <Plus size={20} strokeWidth={2} />
             </button>
           </div>
@@ -185,8 +185,8 @@ export default function HuggyChatInput({
               onClick={() => setIsListening(!isListening)}
               className={`w-10 h-10 rounded-xl flex items-center justify-center border transition-all ${
                 isListening 
-                ? 'bg-rose-50 border-rose-200 text-rose-500 shadow-inner' 
-                : 'bg-slate-50 border-slate-200 text-slate-400 hover:text-slate-900 hover:border-slate-300'
+                ? 'bg-rose-50 dark:bg-rose-500/10 border-rose-200 dark:border-rose-500/30 text-rose-500 shadow-inner' 
+                : 'bg-slate-50 dark:bg-white/5 border-slate-200 dark:border-white/10 text-slate-400 dark:text-slate-500 hover:text-slate-900 dark:hover:text-white hover:border-slate-300 dark:hover:border-white/20'
               }`}
             >
               <div className="flex items-center gap-[1.5px]">
@@ -207,7 +207,7 @@ export default function HuggyChatInput({
               className={`w-11 h-11 min-w-[44px] min-h-[44px] rounded-full flex items-center justify-center transition-all ${
                 canSend 
                 ? 'bg-[#4F46E5] hover:bg-[#3730A3] text-white shadow-lg shadow-indigo-500/20 active:scale-95' 
-                : 'bg-slate-100 text-slate-300 cursor-not-allowed'
+                : 'bg-slate-100 dark:bg-white/5 text-slate-300 dark:text-slate-600 cursor-not-allowed'
               }`}
             >
               {isLoading ? (

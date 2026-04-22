@@ -20,9 +20,12 @@ import {
   Keyboard,
   ChevronRight,
   Search,
-  Sparkles
+  Sparkles,
+  Sun,
+  Moon
 } from 'lucide-react';
 import HuggyChatInput from './HuggyChatInput';
+import { useTheme } from '../contexts/ThemeContext';
 
 interface UserDashboardProps {
   user: any;
@@ -67,6 +70,7 @@ export default function UserDashboard({ user, credits, onOpenStudio, onLogout }:
   const [showOnboarding, setShowOnboarding] = useState(() => {
     return !localStorage.getItem('huggy_onboarded');
   });
+  const { theme, toggleTheme } = useTheme();
 
   // Load user's projects
   useEffect(() => {
@@ -131,7 +135,7 @@ export default function UserDashboard({ user, credits, onOpenStudio, onLogout }:
   };
 
   return (
-    <div className="flex h-screen bg-[#0A0A0A] text-slate-300 font-sans overflow-hidden">
+    <div className="flex h-screen bg-slate-50 dark:bg-[#0A0A0A] text-slate-900 dark:text-slate-300 font-sans overflow-hidden transition-colors duration-300">
       
       {/* ── Onboarding Overlay ── */}
       <AnimatePresence>
@@ -180,14 +184,14 @@ export default function UserDashboard({ user, credits, onOpenStudio, onLogout }:
       </AnimatePresence>
 
       {/* ── Sidebar ── */}
-      <aside className="w-[240px] flex flex-col shrink-0 border-r border-white/5 bg-[#0F0F0F]">
+      <aside className="w-[240px] flex flex-col shrink-0 border-r border-slate-200 dark:border-white/5 bg-white dark:bg-[#0F0F0F] transition-colors duration-300">
         {/* Logo */}
-        <div className="h-16 flex items-center px-5 border-b border-white/5">
+        <div className="h-16 flex items-center px-5 border-b border-slate-200 dark:border-white/5">
           <div className="flex items-center gap-2.5">
             <div className="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center text-white shadow-[0_0_15px_rgba(37,99,235,0.4)]">
               <Zap size={16} fill="currentColor" />
             </div>
-            <span className="text-white text-base font-bold tracking-tight">Huggy Studio</span>
+            <span className="text-slate-900 dark:text-white text-base font-bold tracking-tight">Huggy Studio</span>
           </div>
         </div>
 
@@ -214,7 +218,7 @@ export default function UserDashboard({ user, credits, onOpenStudio, onLogout }:
             <button
               key={id}
               onClick={() => setActiveTab(id as any)}
-              className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium transition-all ${activeTab === id ? 'bg-white/10 text-white' : 'text-slate-400 hover:text-white hover:bg-white/5'}`}
+              className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium transition-all ${activeTab === id ? 'bg-blue-50 dark:bg-white/10 text-blue-700 dark:text-white' : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-white/5'}`}
             >
               <Icon size={16} />
               {label}
@@ -222,9 +226,17 @@ export default function UserDashboard({ user, credits, onOpenStudio, onLogout }:
           ))}
         </nav>
 
-        {/* Credits */}
-        <div className="px-4 mb-3">
-          <div className="bg-white/5 border border-white/8 rounded-2xl p-3.5">
+        {/* Theme Toggle & Credits */}
+        <div className="px-4 mb-3 space-y-2">
+          <button
+            onClick={toggleTheme}
+            className="w-full flex items-center justify-between px-4 py-2.5 bg-slate-100 dark:bg-white/5 hover:bg-slate-200 dark:hover:bg-white/10 rounded-xl transition-colors border border-slate-200 dark:border-white/5"
+          >
+            <span className="text-xs font-bold text-slate-700 dark:text-slate-300">Thème {theme === 'dark' ? 'Sombre' : 'Clair'}</span>
+            {theme === 'dark' ? <Moon size={14} className="text-blue-400" /> : <Sun size={14} className="text-amber-500" />}
+          </button>
+          
+          <div className="bg-slate-100 dark:bg-white/5 border border-slate-200 dark:border-white/8 rounded-2xl p-3.5">
             <div className="flex justify-between items-center mb-2">
               <div className="flex items-center gap-1.5">
                 <Sparkles size={12} className="text-blue-400" />
@@ -264,16 +276,16 @@ export default function UserDashboard({ user, credits, onOpenStudio, onLogout }:
 
         {/* Home Tab */}
         {activeTab === 'home' && (
-          <div className="flex-1 flex flex-col items-center justify-center px-8 bg-gradient-to-b from-[#0A0A0A] via-[#0A0A0A] to-[#071020]">
+          <div className="flex-1 flex flex-col items-center justify-center px-8 bg-gradient-to-b from-slate-50 via-slate-100 to-slate-200 dark:from-[#0A0A0A] dark:via-[#0A0A0A] dark:to-[#071020]">
             <motion.div
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               className="text-center mb-16"
             >
-              <h1 className="text-4xl md:text-5xl font-bold text-white mb-4 tracking-tight">
+              <h1 className="text-4xl md:text-5xl font-bold text-slate-900 dark:text-white mb-4 tracking-tight">
                 Que souhaitez-vous<br className="hidden md:block" /> construire ?
               </h1>
-              <p className="text-slate-400 text-base max-w-md mx-auto">
+              <p className="text-slate-600 dark:text-slate-400 text-base max-w-md mx-auto">
                 Décrivez votre idée. Huggy génère une application complète en quelques secondes.
               </p>
             </motion.div>
@@ -284,7 +296,7 @@ export default function UserDashboard({ user, credits, onOpenStudio, onLogout }:
               transition={{ delay: 0.1 }}
               className="w-full max-w-2xl"
             >
-              <div className="bg-white rounded-[20px] shadow-2xl shadow-blue-900/20 overflow-hidden">
+              <div className="bg-white dark:bg-[#111] rounded-[20px] shadow-2xl shadow-blue-900/20 dark:shadow-[0_0_40px_rgba(37,99,235,0.1)] overflow-hidden border border-transparent dark:border-white/5">
                 <HuggyChatInput
                   onSend={(prompt) => onOpenStudio(prompt)}
                   placeholder="Ex: Un dashboard SaaS avec graphiques de revenus..."
@@ -309,26 +321,26 @@ export default function UserDashboard({ user, credits, onOpenStudio, onLogout }:
                 className="w-full max-w-4xl mt-16"
               >
                 <div className="flex items-center justify-between mb-6">
-                  <h2 className="text-lg font-bold text-white flex items-center gap-2">
-                    <Clock size={18} className="text-blue-400" />
+                  <h2 className="text-lg font-bold text-slate-900 dark:text-white flex items-center gap-2">
+                    <Clock size={18} className="text-blue-500 dark:text-blue-400" />
                     Reprendre mes travaux
                   </h2>
-                  <button onClick={() => setActiveTab('projects')} className="text-xs text-slate-500 hover:text-white transition-colors">Voir tout</button>
+                  <button onClick={() => setActiveTab('projects')} className="text-xs text-slate-500 hover:text-slate-900 dark:hover:text-white transition-colors">Voir tout</button>
                 </div>
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                   {projects.slice(0, 3).map((proj) => (
                     <div
                       key={proj.id}
                       onClick={() => onOpenStudio(undefined, proj.id)}
-                      className="group p-5 bg-white/[0.03] border border-white/5 hover:border-white/10 rounded-2xl transition-all cursor-pointer"
+                      className="group p-5 bg-white dark:bg-white/[0.03] border border-slate-200 dark:border-white/5 hover:border-blue-200 dark:hover:border-white/10 rounded-2xl transition-all cursor-pointer shadow-sm hover:shadow-md"
                     >
                       <div className="flex items-center justify-between mb-3">
-                        <div className="w-8 h-8 bg-blue-600/10 rounded-lg flex items-center justify-center">
-                          <Folder size={14} className="text-blue-400" />
+                        <div className="w-8 h-8 bg-blue-50 dark:bg-blue-600/10 rounded-lg flex items-center justify-center">
+                          <Folder size={14} className="text-blue-600 dark:text-blue-400" />
                         </div>
-                        <ChevronRight size={14} className="text-slate-600 group-hover:text-white transition-colors" />
+                        <ChevronRight size={14} className="text-slate-400 group-hover:text-slate-900 dark:text-slate-600 dark:group-hover:text-white transition-colors" />
                       </div>
-                      <h3 className="text-white font-bold text-sm mb-1 truncate">{proj.name || 'Projet sans nom'}</h3>
+                      <h3 className="text-slate-900 dark:text-white font-bold text-sm mb-1 truncate">{proj.name || 'Projet sans nom'}</h3>
                       <p className="text-[10px] text-slate-500">{timeAgo(proj.updated_at || proj.created_at)}</p>
                     </div>
                   ))}
@@ -342,7 +354,7 @@ export default function UserDashboard({ user, credits, onOpenStudio, onLogout }:
                 <button
                   key={t.id}
                   onClick={() => onOpenStudio(t.prompt)}
-                  className="px-3 py-1.5 bg-white/5 hover:bg-white/10 border border-white/10 rounded-full text-xs text-slate-400 hover:text-white transition-all"
+                  className="px-3 py-1.5 bg-white dark:bg-white/5 hover:bg-slate-100 dark:hover:bg-white/10 border border-slate-200 dark:border-white/10 rounded-full text-xs text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white transition-all shadow-sm"
                 >
                   {t.title}
                 </button>
@@ -353,9 +365,9 @@ export default function UserDashboard({ user, credits, onOpenStudio, onLogout }:
 
         {/* Templates Tab */}
         {activeTab === 'template' && (
-          <div className="flex-1 overflow-y-auto p-12 custom-scrollbar">
+          <div className="flex-1 overflow-y-auto p-12 custom-scrollbar bg-slate-50 dark:bg-transparent">
             <div className="flex items-center justify-between mb-10">
-              <h1 className="text-2xl font-bold text-white">Templates</h1>
+              <h1 className="text-2xl font-bold text-slate-900 dark:text-white">Templates</h1>
               <span className="text-xs text-slate-500">{TEMPLATES.length} templates disponibles</span>
             </div>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8">
@@ -380,7 +392,7 @@ export default function UserDashboard({ user, credits, onOpenStudio, onLogout }:
                       </div>
                     </div>
                   </div>
-                  <h3 className="text-white font-bold text-sm mb-1">{tpl.title}</h3>
+                  <h3 className="text-slate-900 dark:text-white font-bold text-sm mb-1 mt-3">{tpl.title}</h3>
                   <p className="text-slate-500 text-xs line-clamp-1">{tpl.desc}</p>
                 </motion.div>
               ))}
@@ -390,9 +402,9 @@ export default function UserDashboard({ user, credits, onOpenStudio, onLogout }:
 
         {/* Projects Tab */}
         {activeTab === 'projects' && (
-          <div className="flex-1 overflow-y-auto p-12 custom-scrollbar">
+          <div className="flex-1 overflow-y-auto p-12 custom-scrollbar bg-slate-50 dark:bg-transparent">
             <div className="flex items-center justify-between mb-10">
-              <h1 className="text-2xl font-bold text-white">Mes Projets</h1>
+              <h1 className="text-2xl font-bold text-slate-900 dark:text-white">Mes Projets</h1>
               <button
                 onClick={() => onOpenStudio()}
                 className="flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-500 text-white text-sm font-bold rounded-xl transition-colors"
@@ -408,7 +420,7 @@ export default function UserDashboard({ user, credits, onOpenStudio, onLogout }:
                 value={searchQuery}
                 onChange={e => setSearchQuery(e.target.value)}
                 placeholder="Rechercher un projet..."
-                className="w-full pl-9 pr-4 py-2.5 bg-white/5 border border-white/10 rounded-xl text-sm text-white placeholder-slate-600 focus:outline-none focus:border-blue-500/50 transition-colors"
+                className="w-full pl-9 pr-4 py-2.5 bg-white dark:bg-white/5 border border-slate-200 dark:border-white/10 rounded-xl text-sm text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-slate-600 focus:outline-none focus:border-blue-500/50 transition-colors shadow-sm"
               />
             </div>
 
@@ -445,12 +457,12 @@ export default function UserDashboard({ user, credits, onOpenStudio, onLogout }:
                     initial={{ opacity: 0, y: 10 }}
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ delay: i * 0.05 }}
-                    className="group p-4 bg-white/[0.03] hover:bg-white/[0.06] border border-white/5 hover:border-white/10 rounded-2xl transition-all cursor-pointer"
+                    className="group p-4 bg-white dark:bg-white/[0.03] hover:bg-slate-50 dark:hover:bg-white/[0.06] border border-slate-200 dark:border-white/5 hover:border-blue-200 dark:hover:border-white/10 rounded-2xl transition-all cursor-pointer shadow-sm hover:shadow-md"
                     onClick={() => onOpenStudio(undefined, proj.id)}
                   >
                     <div className="flex items-start justify-between mb-4">
-                      <div className="w-10 h-10 bg-gradient-to-br from-blue-600/20 to-blue-800/20 border border-blue-500/20 rounded-xl flex items-center justify-center">
-                        <Zap size={16} className="text-blue-400" />
+                      <div className="w-10 h-10 bg-blue-50 dark:bg-gradient-to-br dark:from-blue-600/20 dark:to-blue-800/20 border border-blue-100 dark:border-blue-500/20 rounded-xl flex items-center justify-center">
+                        <Zap size={16} className="text-blue-600 dark:text-blue-400" />
                       </div>
                       <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
                         {(proj.slug || proj.custom_domain) && (
@@ -471,10 +483,10 @@ export default function UserDashboard({ user, credits, onOpenStudio, onLogout }:
                         </button>
                       </div>
                     </div>
-                    <h3 className="text-white font-bold text-sm mb-1 truncate">
+                    <h3 className="text-slate-900 dark:text-white font-bold text-sm mb-1 truncate">
                       {proj.name || `Projet ${proj.id.slice(0, 8)}`}
                     </h3>
-                    <div className="flex items-center gap-1 text-[10px] text-slate-600">
+                    <div className="flex items-center gap-1 text-[10px] text-slate-500">
                       <Clock size={10} />
                       <span>Modifié {timeAgo(proj.updated_at || proj.created_at)}</span>
                     </div>
@@ -487,9 +499,9 @@ export default function UserDashboard({ user, credits, onOpenStudio, onLogout }:
 
         {/* Gallery Tab */}
         {activeTab === 'gallery' && (
-          <div className="flex-1 overflow-y-auto p-12 custom-scrollbar">
+          <div className="flex-1 overflow-y-auto p-12 custom-scrollbar bg-slate-50 dark:bg-transparent">
             <div className="flex items-center justify-between mb-10">
-              <h1 className="text-2xl font-bold text-white">Galerie Publique</h1>
+              <h1 className="text-2xl font-bold text-slate-900 dark:text-white">Galerie Publique</h1>
               <span className="text-xs text-slate-500">Projets publiés par la communauté</span>
             </div>
 
@@ -514,15 +526,15 @@ export default function UserDashboard({ user, credits, onOpenStudio, onLogout }:
                     initial={{ opacity: 0, y: 10 }}
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ delay: i * 0.05 }}
-                    className="group p-4 bg-white/[0.03] hover:bg-white/[0.06] border border-white/5 hover:border-white/10 rounded-2xl transition-all cursor-pointer flex flex-col"
+                    className="group p-4 bg-white dark:bg-white/[0.03] hover:bg-slate-50 dark:hover:bg-white/[0.06] border border-slate-200 dark:border-white/5 hover:border-blue-200 dark:hover:border-white/10 rounded-2xl transition-all cursor-pointer flex flex-col shadow-sm hover:shadow-md"
                     onClick={() => window.open(proj.custom_domain ? `https://${proj.custom_domain}` : `/live/${proj.slug}`, '_blank')}
                   >
-                    <div className="aspect-[4/3] w-full bg-[#111] rounded-xl mb-4 flex items-center justify-center overflow-hidden relative border border-white/5">
-                      <div className="absolute inset-0 bg-gradient-to-br from-blue-500/10 to-purple-500/10" />
-                      <Globe size={32} className="text-slate-700 relative z-10" />
+                    <div className="aspect-[4/3] w-full bg-slate-100 dark:bg-[#111] rounded-xl mb-4 flex items-center justify-center overflow-hidden relative border border-slate-200 dark:border-white/5">
+                      <div className="absolute inset-0 bg-gradient-to-br from-blue-500/5 dark:from-blue-500/10 to-purple-500/5 dark:to-purple-500/10" />
+                      <Globe size={32} className="text-slate-300 dark:text-slate-700 relative z-10" />
                     </div>
                     <div className="flex items-center justify-between mb-1">
-                      <h3 className="text-white font-bold text-sm truncate pr-2">
+                      <h3 className="text-slate-900 dark:text-white font-bold text-sm truncate pr-2">
                         {proj.name || `Projet ${proj.id.slice(0, 8)}`}
                       </h3>
                       <ExternalLink size={13} className="text-slate-500 shrink-0" />
@@ -539,16 +551,16 @@ export default function UserDashboard({ user, credits, onOpenStudio, onLogout }:
 
         {/* Shortcuts Tab */}
         {activeTab === 'shortcuts' && (
-          <div className="flex-1 overflow-y-auto p-8 custom-scrollbar">
-            <h1 className="text-2xl font-bold text-white mb-2">Raccourcis clavier</h1>
+          <div className="flex-1 overflow-y-auto p-8 custom-scrollbar bg-slate-50 dark:bg-transparent">
+            <h1 className="text-2xl font-bold text-slate-900 dark:text-white mb-2">Raccourcis clavier</h1>
             <p className="text-slate-500 text-sm mb-8">Accélérez votre workflow dans Huggy Studio.</p>
             <div className="max-w-lg space-y-3">
               {SHORTCUTS.map((s, i) => (
-                <div key={i} className="flex items-center justify-between p-4 bg-white/[0.03] border border-white/5 rounded-2xl">
-                  <span className="text-sm text-slate-300 font-medium">{s.action}</span>
+                <div key={i} className="flex items-center justify-between p-4 bg-white dark:bg-white/[0.03] border border-slate-200 dark:border-white/5 rounded-2xl shadow-sm">
+                  <span className="text-sm text-slate-700 dark:text-slate-300 font-medium">{s.action}</span>
                   <div className="flex items-center gap-1">
                     {s.keys.map((k, j) => (
-                      <kbd key={j} className="px-2 py-1 bg-white/10 border border-white/10 rounded-lg text-xs text-slate-300 font-mono">
+                      <kbd key={j} className="px-2 py-1 bg-slate-100 dark:bg-white/10 border border-slate-200 dark:border-white/10 rounded-lg text-xs text-slate-600 dark:text-slate-300 font-mono">
                         {k}
                       </kbd>
                     ))}

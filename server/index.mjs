@@ -3,11 +3,14 @@
  */
 import dotenv from 'dotenv';
 import express from 'express';
+import { createServer } from 'http';
+import { WebSocketServer } from 'ws';
 import path from 'path';
 import { fileURLToPath } from 'url';
 import fs from 'fs';
 import { mkdir } from 'fs/promises';
 import { createPool, initSchema } from './lib/db.mjs';
+import { createRateLimiter } from './lib/rateLimiter.mjs';
 import { runChat, runGenerate, runChatStream, runGenerateStream } from './lib/aiGenerate.mjs';
 import { runAgenticPipeline, runPostGenerationReview } from './lib/agents.mjs';
 import {
@@ -32,6 +35,9 @@ import {
   upsertProjectSecret,
   deleteProjectSecret,
   updateProjectDomain,
+  createProjectVersion,
+  listProjectVersions,
+  restoreProjectVersion,
 } from './lib/projectsRepo.mjs';
 import { DEFAULT_PREVIEW_CODE } from './lib/defaultAppCode.mjs';
 import { buildUserSiteToDir } from './lib/deploy.mjs';
@@ -49,32 +55,17 @@ const PORT = Number(process.env.PORT || (isProd ? 8080 : 3001));
 const sitesDir = process.env.SITES_DIR || path.join(root, 'data', 'sites');
 const previewRootDomain = process.env.PREVIEW_ROOT_DOMAIN || '';
 
-/* ——— Rate Limiter (in-memory, per IP) ——— */
-const _rlMap = new Map();
-const RL_WINDOW_MS = 60_000; // 1 minute
-const RL_MAX_HITS  = 30;     // 30 requests per window
+/* ——— Rate Limiter (Redis-backed with in-memory fallback) ——— */
+const rateLimiter = createRateLimiter(60_000, 30);
 
-function rateLimiter(req, res, next) {
-  const ip = req.ip || req.socket?.remoteAddress || 'unknown';
-  const now = Date.now();
-  let entry = _rlMap.get(ip);
-  if (!entry || now - entry.start > RL_WINDOW_MS) {
-    entry = { start: now, count: 0 };
-    _rlMap.set(ip, entry);
-  }
-  entry.count++;
-  if (entry.count > RL_MAX_HITS) {
-    return res.status(429).json({ error: 'Too many requests. Please wait.' });
-  }
-  next();
-}
-// Periodic cleanup to avoid memory leaks
+// Local map for subdomain proxy traffic limiting (separate from API rate limiting)
+const _rlMap = new Map();
 setInterval(() => {
-  const cutoff = Date.now() - RL_WINDOW_MS * 2;
-  for (const [ip, entry] of _rlMap) {
-    if (entry.start < cutoff) _rlMap.delete(ip);
+  const cutoff = Date.now() - 120_000;
+  for (const [key, entry] of _rlMap) {
+    if (entry.start < cutoff) _rlMap.delete(key);
   }
-}, RL_WINDOW_MS * 2);
+}, 120_000);
 
 /** Mask error details in production */
 function safeError(e) {
@@ -123,6 +114,62 @@ const stripe = process.env.STRIPE_SECRET_KEY ? new Stripe(process.env.STRIPE_SEC
 const app = express();
 app.disable('x-powered-by');
 app.set('trust proxy', 1); // Railway / reverse proxy
+
+const httpServer = createServer(app);
+const wss = new WebSocketServer({ server: httpServer });
+
+// Real-time collaboration rooms: projectId → Set<WebSocket>
+const rooms = new Map();
+
+wss.on('connection', (ws, req) => {
+  const url = new URL(req.url, 'http://localhost');
+  const projectId = url.searchParams.get('projectId');
+  const userId = url.searchParams.get('userId') || 'anonymous';
+
+  if (!projectId || !isUuid(projectId)) { ws.close(1008, 'projectId invalide'); return; }
+
+  if (!rooms.has(projectId)) rooms.set(projectId, new Set());
+  rooms.get(projectId).add(ws);
+  const roomSize = rooms.get(projectId).size;
+  console.log(`[WS] ${userId} joined project ${projectId} (${roomSize} online)`);
+
+  // Notify room of new peer
+  const room = rooms.get(projectId);
+  for (const peer of room) {
+    if (peer !== ws && peer.readyState === 1) {
+      peer.send(JSON.stringify({ type: 'peer_joined', userId, online: roomSize }));
+    }
+  }
+  ws.send(JSON.stringify({ type: 'connected', online: roomSize }));
+
+  ws.on('message', (data) => {
+    let msg;
+    try { msg = JSON.parse(data.toString()); } catch { return; }
+    const currentRoom = rooms.get(projectId);
+    if (!currentRoom) return;
+    for (const peer of currentRoom) {
+      if (peer !== ws && peer.readyState === 1) {
+        peer.send(JSON.stringify({ ...msg, _from: userId }));
+      }
+    }
+  });
+
+  ws.on('close', () => {
+    const currentRoom = rooms.get(projectId);
+    if (currentRoom) {
+      currentRoom.delete(ws);
+      if (currentRoom.size === 0) {
+        rooms.delete(projectId);
+      } else {
+        for (const peer of currentRoom) {
+          if (peer.readyState === 1) {
+            peer.send(JSON.stringify({ type: 'peer_left', userId, online: currentRoom.size }));
+          }
+        }
+      }
+    }
+  });
+});
 
 app.post('/api/webhook/stripe', express.raw({ type: 'application/json' }), async (req, res) => {
   const sig = req.headers['stripe-signature'];
@@ -493,6 +540,51 @@ app.post('/api/projects/:id/domain', async (req, res) => {
   }
 });
 
+/* ——— Version History ——— */
+
+app.get('/api/projects/:id/versions', async (req, res) => {
+  if (!pool) return res.status(503).json({ error: 'Service unavailable' });
+  try {
+    if (!isUuid(req.params.id)) return res.status(400).json({ error: 'ID projet invalide.' });
+    const project = await getProject(pool, req.params.id);
+    if (!project) return res.status(404).json({ error: 'Projet introuvable.' });
+    const versions = await listProjectVersions(pool, project.id);
+    res.json({ versions });
+  } catch (e) {
+    res.status(500).json({ error: safeError(e) });
+  }
+});
+
+app.post('/api/projects/:id/versions', async (req, res) => {
+  if (!pool) return res.status(503).json({ error: 'Service unavailable' });
+  try {
+    if (!isUuid(req.params.id)) return res.status(400).json({ error: 'ID projet invalide.' });
+    const project = await getProject(pool, req.params.id);
+    if (!project) return res.status(404).json({ error: 'Projet introuvable.' });
+    const label = typeof req.body?.label === 'string' ? req.body.label : 'Snapshot manuel';
+    const version = await createProjectVersion(pool, project.id, label);
+    res.json({ version });
+  } catch (e) {
+    res.status(500).json({ error: safeError(e) });
+  }
+});
+
+app.post('/api/projects/:id/versions/:vId/restore', async (req, res) => {
+  if (!pool) return res.status(503).json({ error: 'Service unavailable' });
+  try {
+    const { userId } = req.body || {};
+    if (!isUuid(req.params.id)) return res.status(400).json({ error: 'ID projet invalide.' });
+    if (!isUuid(req.params.vId)) return res.status(400).json({ error: 'versionId invalide.' });
+    const project = await getProject(pool, req.params.id);
+    if (!project) return res.status(404).json({ error: 'Projet introuvable.' });
+    if (project.owner_id && project.owner_id !== userId) return res.status(403).json({ error: 'Action non autorisée.' });
+    const files = await restoreProjectVersion(pool, project.id, req.params.vId);
+    res.json({ ok: true, files });
+  } catch (e) {
+    res.status(500).json({ error: safeError(e) });
+  }
+});
+
 app.get('/api/projects/:id/files', async (req, res) => {
   if (!pool) return res.status(503).json({ error: 'Service unavailable' });
   try {
@@ -556,6 +648,9 @@ app.post('/api/projects/:id/deploy', async (req, res) => {
     if (!project) return res.status(404).json({ error: 'Projet introuvable.' });
     const rows = await listFiles(pool, project.id);
     if (!rows.length) return res.status(400).json({ error: 'Aucun fichier.' });
+
+    // Snapshot before deploy
+    try { await createProjectVersion(pool, project.id, `Avant déploiement — ${new Date().toLocaleString('fr-FR')}`); } catch {}
 
     const dep = await createDeployment(pool, project.id);
     const outDir = path.join(sitesDir, dep.slug);
@@ -738,6 +833,11 @@ app.post('/api/generate-app/agentic-stream', rateLimiter, async (req, res) => {
     }
     if (bodyFiles && typeof bodyFiles === 'object') allFiles = { ...allFiles, ...bodyFiles };
     const currentEntryCode = typeof currentCode === 'string' ? currentCode : allFiles[PREVIEW_ENTRY] || DEFAULT_PREVIEW_CODE;
+
+    // ── Auto-snapshot before AI generation ──
+    if (pool && projectId) {
+      try { await createProjectVersion(pool, projectId, `Avant IA — ${new Date().toLocaleString('fr-FR')}`); } catch {}
+    }
 
     // ── Agent 1: Product Manager ──
     emit('agent_start', { agent: 'pm', label: 'Product Manager — analyse de votre requête...' });
@@ -1137,11 +1237,12 @@ async function main() {
       );
     }
   }
-  app.listen(PORT, () => {
+  httpServer.listen(PORT, () => {
     console.log(
       `[Huggy] ${isProd ? 'production' : 'dev'} → http://127.0.0.1:${PORT}`,
     );
     console.log(`[Huggy] previews → ${sitesDir}`);
+    console.log(`[Huggy] WebSocket collaboration → ws://127.0.0.1:${PORT}`);
     if (!pool) {
       console.warn(
         '[Huggy] DATABASE_URL absent — projets / déploiements désactivés.',

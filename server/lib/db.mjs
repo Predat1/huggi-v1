@@ -79,9 +79,18 @@ export async function initSchema(pool) {
       built_at TIMESTAMPTZ
     );
 
+    CREATE TABLE IF NOT EXISTS project_versions (
+      id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+      project_id UUID NOT NULL REFERENCES projects(id) ON DELETE CASCADE,
+      label TEXT NOT NULL DEFAULT 'Snapshot',
+      files JSONB NOT NULL DEFAULT '[]',
+      created_at TIMESTAMPTZ NOT NULL DEFAULT now()
+    );
+
     CREATE INDEX IF NOT EXISTS idx_project_files_project ON project_files(project_id);
     CREATE INDEX IF NOT EXISTS idx_projects_owner ON projects(owner_id);
     CREATE INDEX IF NOT EXISTS idx_deployments_project ON deployments(project_id);
     CREATE INDEX IF NOT EXISTS idx_profiles_id ON profiles(id);
+    CREATE INDEX IF NOT EXISTS idx_versions_project ON project_versions(project_id, created_at DESC);
   `);
 }

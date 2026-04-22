@@ -196,3 +196,65 @@ export async function deductCredits(pool, userId, amount = 1) {
   );
   return r.rows[0] ? r.rows[0].credits : null;
 }
+
+// ─── Version History ─────────────────────────────────────────────────────────
+
+/**
+ * Snapshot all current files for a project.
+ * @param {import('pg').Pool} pool
+ * @param {string} projectId
+ * @param {string} label - human-readable label (e.g. "Before AI generation")
+ */
+export async function createProjectVersion(pool, projectId, label = 'Snapshot') {
+  const files = await listFiles(pool, projectId);
+  const snapshot = files.map(f => ({ path: f.path, content: f.content }));
+  const r = await pool.query(
+    `INSERT INTO project_versions (project_id, label, files)
+     VALUES ($1, $2, $3::jsonb)
+     RETURNING id, label, created_at`,
+    [projectId, label, JSON.stringify(snapshot)],
+  );
+  // Keep only the last 20 versions per project
+  await pool.query(
+    `DELETE FROM project_versions WHERE project_id = $1 AND id NOT IN (
+       SELECT id FROM project_versions WHERE project_id = $1 ORDER BY created_at DESC LIMIT 20
+     )`,
+    [projectId],
+  );
+  return r.rows[0];
+}
+
+/**
+ * List versions for a project (metadata only, no file content).
+ */
+export async function listProjectVersions(pool, projectId, limit = 20) {
+  const r = await pool.query(
+    `SELECT id, label, created_at,
+            jsonb_array_length(files) AS file_count
+     FROM project_versions
+     WHERE project_id = $1
+     ORDER BY created_at DESC
+     LIMIT $2`,
+    [projectId, limit],
+  );
+  return r.rows;
+}
+
+/**
+ * Restore a project to a specific version (overwrites all current files).
+ */
+export async function restoreProjectVersion(pool, projectId, versionId) {
+  const r = await pool.query(
+    `SELECT files FROM project_versions WHERE id = $1 AND project_id = $2`,
+    [versionId, projectId],
+  );
+  if (!r.rows[0]) throw new Error('Version introuvable.');
+  const files = r.rows[0].files;
+
+  // Delete all existing files then restore snapshot
+  await pool.query(`DELETE FROM project_files WHERE project_id = $1`, [projectId]);
+  for (const f of files) {
+    await upsertFile(pool, projectId, f.path, f.content);
+  }
+  return files;
+}
