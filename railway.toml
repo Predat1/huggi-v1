@@ -7,3 +7,7 @@ restartPolicyType = "ON_FAILURE"
 restartPolicyMaxRetries = 3
 healthcheckPath = "/api/health"
 healthcheckTimeout = 300
+
+[[volumes]]
+name = "huggy-sites"
+mountPath = "/data/sites"

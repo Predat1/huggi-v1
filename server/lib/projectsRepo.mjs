@@ -154,6 +154,23 @@ export async function createDeployment(pool, projectId) {
   return r.rows[0];
 }
 
+/** Store built HTML + bundle in the deployment row (survives Railway redeploys). */
+export async function updateDeploymentContent(pool, id, htmlContent, bundleContent) {
+  await pool.query(
+    `UPDATE deployments SET html_content = $2, bundle_content = $3 WHERE id = $1`,
+    [id, htmlContent, bundleContent],
+  );
+}
+
+/** Fetch a live deployment by slug (used to serve from DB when filesystem is unavailable). */
+export async function getDeploymentBySlug(pool, slug) {
+  const r = await pool.query(
+    `SELECT id, slug, status, html_content, bundle_content FROM deployments WHERE slug = $1 AND status = 'live' LIMIT 1`,
+    [slug],
+  );
+  return r.rows[0] || null;
+}
+
 /** @param {import('pg').Pool} pool */
 export async function updateDeploymentStatus(pool, id, status, error = null) {
   const builtAt = status === 'live' ? new Date() : null;

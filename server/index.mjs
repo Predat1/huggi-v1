@@ -38,6 +38,8 @@ import {
   createProjectVersion,
   listProjectVersions,
   restoreProjectVersion,
+  updateDeploymentContent,
+  getDeploymentBySlug,
 } from './lib/projectsRepo.mjs';
 import { DEFAULT_PREVIEW_CODE } from './lib/defaultAppCode.mjs';
 import { buildUserSiteToDir } from './lib/deploy.mjs';
@@ -414,28 +416,55 @@ app.use((req, res, next) => {
   next();
 });
 
-/** Chemins /live/:slug/* (Fallback sans wildcard DNS) avec limite de bande passante/requêtes externes */
-app.use('/live/:slug', (req, res, next) => {
+/** Chemins /live/:slug/* — filesystem cache first, DB fallback (survives Railway redeploys) */
+app.use('/live/:slug', async (req, res, next) => {
   const { slug } = req.params;
   if (!/^[\w-]+$/.test(slug)) return res.status(400).send('Slug invalide.');
 
-  // Rate Limiting auto-hébergement: DDoS & requêtes externes proxy protection
   const ip = req.ip || req.socket?.remoteAddress || 'unknown';
   let entry = _rlMap.get(`proxy-${slug}-${ip}`);
   if (!entry || Date.now() - entry.start > 60000) entry = { start: Date.now(), count: 0 };
   entry.count++;
   _rlMap.set(`proxy-${slug}-${ip}`, entry);
   if (entry.count > 200) {
-    return res.status(429).send("Alerte: Hébergement auto saturé (limite de 200 rps activée sur ce projet Huggy). Veuillez passer au plan Scale.");
+    return res.status(429).send('Hébergement saturé. Passez au plan Scale.');
   }
 
+  const reqPath = req.path === '/' || req.path === '' ? '/index.html' : req.path;
   const dir = path.join(sitesDir, slug);
-  if (!fs.existsSync(dir)) {
-    return res.status(404).send('Preview introuvable ou build en cours.');
+
+  // 1. Filesystem cache hit
+  if (fs.existsSync(dir)) {
+    return express.static(dir, { index: 'index.html' })(req, res, () => {
+      if (!res.writableEnded) res.status(404).send('Fichier introuvable.');
+    });
   }
-  express.static(dir, { index: 'index.html' })(req, res, () => {
-    if (!res.writableEnded) res.status(404).send('Fichier introuvable.');
-  });
+
+  // 2. DB fallback — serves directly from stored content
+  if (pool) {
+    try {
+      const dep = await getDeploymentBySlug(pool, slug);
+      if (dep && dep.html_content && dep.bundle_content) {
+        // Warm the filesystem cache for next requests
+        try {
+          await mkdir(dir, { recursive: true });
+          await fs.promises.writeFile(path.join(dir, 'index.html'), dep.html_content, 'utf8');
+          await fs.promises.writeFile(path.join(dir, 'bundle.js'), dep.bundle_content, 'utf8');
+        } catch {}
+
+        if (reqPath === '/bundle.js') {
+          res.setHeader('Content-Type', 'application/javascript');
+          return res.send(dep.bundle_content);
+        }
+        res.setHeader('Content-Type', 'text/html; charset=utf-8');
+        return res.send(dep.html_content);
+      }
+    } catch (e) {
+      console.error('[live-db-fallback]', e);
+    }
+  }
+
+  res.status(404).send('Preview introuvable ou build en cours.');
 });
 
 app.get('/api/health', async (_req, res) => {
@@ -706,15 +735,16 @@ app.post('/api/projects/:id/deploy', async (req, res) => {
 
     const dep = await createDeployment(pool, project.id);
     const outDir = path.join(sitesDir, dep.slug);
-    await mkdir(sitesDir, { recursive: true });
 
     try {
       const secrets = project.owner_id ? await getProjectSecrets(pool, project.id) : [];
-      await buildUserSiteToDir(
+      const { html, bundle } = await buildUserSiteToDir(
         rows.map((r) => ({ path: r.path, content: r.content })),
         outDir,
         secrets
       );
+      // Store built content in DB so sites survive Railway redeploys (filesystem is just a cache)
+      await updateDeploymentContent(pool, dep.id, html, bundle);
       await updateDeploymentStatus(pool, dep.id, 'live', null);
     } catch (err) {
       console.error('[deploy]', err);

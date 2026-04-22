@@ -86,8 +86,14 @@ export async function initSchema(pool) {
       error TEXT,
       active BOOLEAN NOT NULL DEFAULT true,
       created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
-      built_at TIMESTAMPTZ
+      built_at TIMESTAMPTZ,
+      html_content TEXT,
+      bundle_content TEXT
     );
+
+    -- Idempotent additions for existing deployments table
+    ALTER TABLE deployments ADD COLUMN IF NOT EXISTS html_content TEXT;
+    ALTER TABLE deployments ADD COLUMN IF NOT EXISTS bundle_content TEXT;
 
     CREATE TABLE IF NOT EXISTS project_versions (
       id UUID PRIMARY KEY DEFAULT gen_random_uuid(),

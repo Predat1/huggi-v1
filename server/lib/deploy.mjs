@@ -1,5 +1,6 @@
 import esbuild from 'esbuild';
 import fs from 'fs/promises';
+import { existsSync } from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
 import { PREVIEW_ENTRY } from './projectsRepo.mjs';
@@ -8,11 +9,12 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const repoRoot = path.join(__dirname, '..', '..');
 
 /**
+ * Build user files into {html, bundle} strings.
  * @param {Array<{ path: string, content: string }>} files
- * @param {string} outDir absolute path to publish (e.g. sites/abc123)
- * @param {Array<{key: string, value: string}>} secrets environment variables map
+ * @param {Array<{key: string, value: string}>} secrets
+ * @returns {Promise<{html: string, bundle: string}>}
  */
-export async function buildUserSiteToDir(files, outDir, secrets = []) {
+export async function buildUserSite(files, secrets = []) {
   const map = Object.fromEntries(files.map((f) => [f.path.replace(/\\/g, '/'), f.content]));
 
   const entryPath = PREVIEW_ENTRY.replace(/\\/g, '/');
@@ -24,19 +26,18 @@ export async function buildUserSiteToDir(files, outDir, secrets = []) {
 
   const workId = `d-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
   const workDir = path.join(repoRoot, '.tmp-deploy', workId);
+  const tempOut = path.join(workDir, '_out');
   await fs.mkdir(workDir, { recursive: true });
+  await fs.mkdir(tempOut, { recursive: true });
 
   try {
-    // Write ALL project files so relative imports work across multiple files
     for (const [filePath, content] of Object.entries(map)) {
-      // Skip internal huggy files
       if (filePath.startsWith('.huggy/')) continue;
       const dest = path.join(workDir, filePath);
       await fs.mkdir(path.dirname(dest), { recursive: true });
       await fs.writeFile(dest, content, 'utf8');
     }
 
-    // Main entry that mounts the React app
     const mainTsx = [
       `import React from 'react';`,
       `import { createRoot } from 'react-dom/client';`,
@@ -48,13 +49,11 @@ export async function buildUserSiteToDir(files, outDir, secrets = []) {
     ].join('\n');
     await fs.writeFile(path.join(workDir, 'main.tsx'), mainTsx, 'utf8');
 
-    await fs.mkdir(outDir, { recursive: true });
-
     await esbuild.build({
       absWorkingDir: workDir,
       entryPoints: [path.join(workDir, 'main.tsx')],
       bundle: true,
-      outfile: path.join(outDir, 'bundle.js'),
+      outfile: path.join(tempOut, 'bundle.js'),
       format: 'esm',
       jsx: 'automatic',
       minify: true,
@@ -69,6 +68,7 @@ export async function buildUserSiteToDir(files, outDir, secrets = []) {
       nodePaths: [path.join(repoRoot, 'node_modules')],
     });
 
+    const bundle = await fs.readFile(path.join(tempOut, 'bundle.js'), 'utf8');
     const html = `<!DOCTYPE html>
 <html lang="fr">
 <head>
@@ -82,8 +82,24 @@ export async function buildUserSiteToDir(files, outDir, secrets = []) {
   <script type="module" src="./bundle.js"></script>
 </body>
 </html>`;
-    await fs.writeFile(path.join(outDir, 'index.html'), html, 'utf8');
+
+    return { html, bundle };
   } finally {
     await fs.rm(workDir, { recursive: true, force: true });
   }
+}
+
+/**
+ * Build and write to a directory (filesystem cache).
+ * @param {Array<{ path: string, content: string }>} files
+ * @param {string} outDir
+ * @param {Array<{key: string, value: string}>} secrets
+ * @returns {Promise<{html: string, bundle: string}>}
+ */
+export async function buildUserSiteToDir(files, outDir, secrets = []) {
+  const { html, bundle } = await buildUserSite(files, secrets);
+  await fs.mkdir(outDir, { recursive: true });
+  await fs.writeFile(path.join(outDir, 'index.html'), html, 'utf8');
+  await fs.writeFile(path.join(outDir, 'bundle.js'), bundle, 'utf8');
+  return { html, bundle };
 }
