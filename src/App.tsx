@@ -63,6 +63,7 @@ import { FullAppStream, StreamEvent } from './components/streaming';
 import { StreamController } from './services/streamingService';
 import { SettingsModal } from './components/SettingsModal';
 import { GithubExportModal } from './components/GithubExportModal';
+import { SecretsModal } from './components/SecretsModal';
 import HuggyChatInput from './components/HuggyChatInput';
 import AuthModal from './components/AuthModal';
 
@@ -204,6 +205,7 @@ export default function App() {
   const [showBillingModal, setShowBillingModal] = useState(false);
   const [showSettingsModal, setShowSettingsModal] = useState(false);
   const [showExportModal, setShowExportModal] = useState(false);
+  const [showSecretsModal, setShowSecretsModal] = useState(false);
   const [authMode, setAuthMode] = useState<'login' | 'signup'>('login');
 
   const isAutoCorrectingRef = useRef(false);
@@ -260,7 +262,6 @@ export default function App() {
         if (pendingPrompt) {
           setStudioMode(true);
           setInputValue(pendingPrompt);
-          setTimeout(() => handleSendMessage(pendingPrompt), 100);
           setPendingPrompt(null);
         }
       } else {
@@ -431,13 +432,13 @@ export default function App() {
 
   // Auto-send prompt from landing page
   useEffect(() => {
-    if (studioMode && inputValue && messages.length === 1 && !isGenerating) {
+    if (studioMode && inputValue && messages.length === 0 && !isGenerating && user) {
       const t = setTimeout(() => {
-        handleSendMessage();
+        handleSendMessage(inputValue);
       }, 500);
       return () => clearTimeout(t);
     }
-  }, [studioMode, user]); // Trigger when studio opens or user loads
+  }, [studioMode, inputValue, messages.length, isGenerating, user]); // Trigger when studio opens or user loads
 
 
   useEffect(() => {
@@ -542,30 +543,33 @@ export default function App() {
     setIsPublishing(true);
     setPublishProgress(5);
     setPublishedUrl(null);
+
+    // Smooth progress animation — fills to 88% during the build, then jumps to 100%
+    let currentProgress = 5;
+    const progressInterval = setInterval(() => {
+      currentProgress += (88 - currentProgress) * 0.12;
+      setPublishProgress(Math.round(currentProgress));
+    }, 250);
+
     (async () => {
       try {
-        setPublishProgress(40);
         const res = await fetch(`/api/projects/${projectId}/deploy`, {
           method: 'POST',
         });
         const data = await res.json();
+        clearInterval(progressInterval);
         if (!res.ok) throw new Error(data.error || res.statusText);
         setPublishProgress(100);
         setPublishedUrl(data.url);
         setDeployments((prev) => [
-          {
-            id: data.deploymentId,
-            url: data.url,
-            date: new Date(),
-          },
+          { id: data.deploymentId, url: data.url, date: new Date() },
           ...prev,
         ]);
-        showToast('Déploiement terminé', 'success');
+        showToast('Déploiement terminé ✓', 'success');
       } catch (e) {
-        showToast(
-          e instanceof Error ? e.message : 'Publication échouée',
-          'info',
-        );
+        clearInterval(progressInterval);
+        showToast(e instanceof Error ? e.message : 'Publication échouée', 'info');
+      } finally {
         setIsPublishing(false);
       }
     })();
@@ -595,25 +599,32 @@ export default function App() {
     }
   };
 
-  // Auto-save logic
+  // Auto-save logic — real API calls, not simulated
   useEffect(() => {
-    let intervalId: NodeJS.Timeout;
+    if (!autoSaveEnabled || activeBottomTab !== 'code' || !projectId || !databaseEnabled) return;
 
-    if (autoSaveEnabled && activeBottomTab === 'code') {
-      intervalId = setInterval(() => {
-        setIsSaving(true);
-        // Simulate saving
-        setTimeout(() => {
-          setIsSaving(false);
-          setLastSaved(new Date());
-        }, 800);
-      }, autoSaveInterval);
-    }
+    const intervalId = setInterval(async () => {
+      const path = activeFilePath;
+      const content = filesMap[path];
+      if (content === undefined) return;
 
-    return () => {
-      if (intervalId) clearInterval(intervalId);
-    };
-  }, [autoSaveEnabled, autoSaveInterval, activeBottomTab]);
+      setIsSaving(true);
+      try {
+        const res = await fetch(`/api/projects/${projectId}/files`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ path, content }),
+        });
+        if (res.ok) setLastSaved(new Date());
+      } catch {
+        showToast('Sauvegarde automatique échouée', 'info');
+      } finally {
+        setIsSaving(false);
+      }
+    }, autoSaveInterval);
+
+    return () => clearInterval(intervalId);
+  }, [autoSaveEnabled, autoSaveInterval, activeBottomTab, projectId, databaseEnabled, activeFilePath, filesMap]);
   const [isTerminalOpen, setIsTerminalOpen] = useState(false);
   const [isGenerating, setIsGenerating] = useState(false);
   const [isRestoring, setIsRestoring] = useState(false);
@@ -717,8 +728,8 @@ export default function App() {
     setIsRestoring(true);
     const file = msg.changedFiles[0];
     
-    // Simulate restore process
-    await new Promise(r => setTimeout(r, 1000));
+    // Simulate restore process (removed artificial delay)
+    // await new Promise(r => setTimeout(r, 1000));
     
     setFilesMap((prev) => ({
       ...prev,
@@ -763,60 +774,56 @@ export default function App() {
       ];
       setAgentTasks(tasks);
 
-      // PM step shown immediately (runs in parallel on server)
-      await new Promise(r => setTimeout(r, 600));
-      setAgentTasks(prev => prev.map(t => t.id === 'pm' ? { ...t, label: '🧠 Product Manager — architecture plan ready', status: 'success' } : t));
-
-      // Coder step
-      const codeTask: AgentTask = { id: 'coder', label: '⚡ Coder — generating premium code...', status: 'running', type: 'edit' };
-      setAgentTasks(prev => [...prev, codeTask]);
-      
       const originalCode = filesMap[PREVIEW_ENTRY] || DEFAULT_PREVIEW_CODE;
       let updatedMap = { ...filesMap };
       let fullResponse = '';
 
-      const inputLower = newUserMsg.text.toLowerCase().trim();
-      const isGreeting = /^(hello|hi|hey|bonjour|salut|yo|coucou|hola|test|ca va|ça va|how are you|qsdqsd|qsd|abc)/i.test(inputLower) && inputLower.length < 30;
+      // Start API immediately so we don't waste time waiting for UI animations
+      const historyForAI = messages.map(m => ({ role: m.sender === 'VOUS' ? 'user' : 'assistant', content: m.text }));
+      const apiPromise = generateAppUpdate(newUserMsg.text, {
+        currentCode: originalCode,
+        projectId,
+        chatHistory: historyForAI,
+        userId: user.id,
+        userEmail: user.email
+      });
 
-      if (isGreeting) {
-        fullResponse = `Bonjour ! Je suis Huggy, votre architecte IA. Je suis prêt à transformer vos idées en applications concrètes. Que puis-je construire pour vous aujourd'hui ? (Ex: "Crée-moi un dashboard de gestion de ventes")`;
-      } else {
-        try {
-          const historyForAI = messages.map(m => ({ role: m.sender === 'VOUS' ? 'user' : 'assistant', content: m.text }));
-          const gen = await generateAppUpdate(newUserMsg.text, {
-            currentCode: originalCode,
-            projectId,
-            chatHistory: historyForAI,
-            userId: user.id,
-            userEmail: user.email
-          });
-          if (gen.export) {
-            setLastExport(gen.export);
-          }
-          if (gen.files.length) {
-            for (const f of gen.files) {
-              updatedMap[f.path] = f.content;
-            }
-            fullResponse =
-              gen.reply ||
-              `Mise à jour appliquée (${gen.files.length} fichier(s)) — ${gen.provider || 'IA'}.`;
-          } else if (gen.code) {
-            updatedMap[PREVIEW_ENTRY] = gen.code;
-            fullResponse =
-              gen.reply ||
-              `J'ai conçu une interface pour : « ${newUserMsg.text} ».`;
-          } else {
-            throw new Error('Réponse vide');
-          }
-        } catch (error) {
-          console.error('IA:', error);
-          const fallback = originalCode.replace(
-            'Bienvenue',
-            newUserMsg.text.substring(0, 24),
-          );
-          updatedMap[PREVIEW_ENTRY] = fallback;
-          fullResponse = `J'ai initialisé votre espace de création pour : « ${newUserMsg.text} ». Je suis prêt à construire votre interface complète. Connectez vos services externes ou ajustez les paramètres pour une personnalisation sur mesure.`;
+      // While API is starting, show PM animation
+      await new Promise(r => setTimeout(r, 400));
+      setAgentTasks(prev => prev.map(t => t.id === 'pm' ? { ...t, label: '🧠 Product Manager — architecture plan ready', status: 'success' } : t));
+
+      // Show Coder animation while waiting for API to finish
+      const codeTask: AgentTask = { id: 'coder', label: '⚡ Coder — generating premium code...', status: 'running', type: 'edit' };
+      setAgentTasks(prev => [...prev, codeTask]);
+
+      try {
+        const gen = await apiPromise;
+        if (gen.export) {
+          setLastExport(gen.export);
         }
+        if (gen.files.length) {
+          for (const f of gen.files) {
+            updatedMap[f.path] = f.content;
+          }
+          fullResponse =
+            gen.reply ||
+            `Mise à jour appliquée (${gen.files.length} fichier(s)) — ${gen.provider || 'IA'}.`;
+        } else if (gen.code) {
+          updatedMap[PREVIEW_ENTRY] = gen.code;
+          fullResponse =
+            gen.reply ||
+            `J'ai conçu une interface pour : « ${newUserMsg.text} ».`;
+        } else {
+          throw new Error('Réponse vide');
+        }
+      } catch (error) {
+        console.error('IA:', error);
+        const fallback = originalCode.replace(
+          'Bienvenue',
+          newUserMsg.text.substring(0, 24),
+        );
+        updatedMap[PREVIEW_ENTRY] = fallback;
+        fullResponse = `J'ai initialisé votre espace de création pour : « ${newUserMsg.text} ». Je suis prêt à construire votre interface complète. Connectez vos services externes ou ajustez les paramètres pour une personnalisation sur mesure.`;
       }
 
       setFilesMap(updatedMap);
@@ -824,16 +831,16 @@ export default function App() {
 
       setAgentTasks(prev => prev.map(t => t.id === 'coder' ? { ...t, status: 'success' } : t));
 
-      // VR step
+      // VR step (brief visual pause so React renders it)
       const vrTask: AgentTask = { id: 'vr', label: '🎨 Visual Reviewer — checking UI quality...', status: 'running', type: 'lint' };
       setAgentTasks(prev => [...prev, vrTask]);
-      await new Promise(r => setTimeout(r, 400));
+      await new Promise(r => setTimeout(r, 200));
       setAgentTasks(prev => prev.map(t => t.id === 'vr' ? { ...t, label: '🎨 Visual Reviewer — design approved ✓', status: 'success' } : t));
 
-      // Compile step
+      // Compile step (brief visual pause)
       const compileTask: AgentTask = { id: 'compile', label: '🔨 Compile — optimizing bundle...', status: 'running', type: 'compile' };
       setAgentTasks(prev => [...prev, compileTask]);
-      await new Promise(r => setTimeout(r, 500));
+      await new Promise(r => setTimeout(r, 200));
       setAgentTasks(prev => prev.map(t => t.id === 'compile' ? { ...t, status: 'success' } : t));
 
       streamCancelRef.current?.();
@@ -990,14 +997,21 @@ export default function App() {
         )}
       </AnimatePresence>
 
-      <AuthModal 
-        isOpen={showAuthModal} 
+      <AuthModal
+        isOpen={showAuthModal}
         onClose={() => setShowAuthModal(false)}
         defaultMode={authMode}
         onSuccess={() => {
           showToast('Connexion réussie', 'success');
           // No need to set user here as onAuthStateChange will handle it
         }}
+      />
+
+      <SecretsModal
+        isOpen={showSecretsModal}
+        onClose={() => setShowSecretsModal(false)}
+        projectId={projectId}
+        userId={user?.id}
       />
 
       <AnimatePresence mode="wait" initial={false}>
@@ -1024,9 +1038,6 @@ export default function App() {
                   } else if (!new URLSearchParams(window.location.search).get('project')) {
                     window.history.replaceState({}, '', `${window.location.pathname}?studio=1`);
                   }
-                  if (initialPrompt) {
-                    setTimeout(() => handleSendMessage(initialPrompt), 100);
-                  }
                 }}
               />
             ) : (
@@ -1045,9 +1056,6 @@ export default function App() {
                   if (!new URLSearchParams(window.location.search).get('project')) {
                     window.history.replaceState({}, '', `${window.location.pathname}?studio=1`);
                   }
-                  if (initialPrompt) {
-                    setTimeout(() => handleSendMessage(initialPrompt), 100);
-                  }
                 }}
               />
             )}
@@ -1055,7 +1063,7 @@ export default function App() {
       ) : (
         <motion.div
           key="studio"
-          className={`flex flex-col h-screen bg-[#F8F9FB] text-slate-900 font-sans overflow-hidden ${activeAccentColor}`}
+          className={`flex flex-col h-screen bg-slate-50 dark:bg-[#0A0A0A] text-slate-900 dark:text-slate-300 font-sans overflow-hidden ${activeAccentColor} transition-colors duration-300`}
           initial={{ opacity: 0, y: 14 }}
           animate={{ opacity: 1, y: 0 }}
           exit={{ opacity: 0, y: -10 }}
@@ -1063,7 +1071,7 @@ export default function App() {
         >
 
       {/* Top Navigation Bar — Premium SaaS */}
-      <header className="h-14 border-b border-slate-200/80 bg-white/90 backdrop-blur-xl flex items-center justify-between px-3 sm:px-5 z-10 shrink-0 shadow-[0_1px_3px_rgba(15,23,42,0.04)]">
+      <header className="h-14 border-b border-slate-200/80 dark:border-white/5 bg-white/90 dark:bg-[#0F0F0F]/90 backdrop-blur-xl flex items-center justify-between px-3 sm:px-5 z-10 shrink-0 shadow-sm transition-colors duration-300">
         {/* Left: Brand & Back button */}
         <div className="flex items-center gap-4 min-w-0">
           <button 
@@ -1071,18 +1079,18 @@ export default function App() {
               setStudioMode(false);
               window.history.replaceState({}, '', window.location.pathname);
             }}
-            className="flex items-center gap-2 p-1.5 hover:bg-slate-100 rounded-lg transition-colors text-slate-500 hover:text-slate-900 group"
+            className="flex items-center gap-2 p-1.5 hover:bg-slate-100 dark:hover:bg-white/5 rounded-lg transition-colors text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white group"
             title="Retour au Dashboard"
           >
             <Home size={18} className="group-hover:scale-110 transition-transform" />
           </button>
-          <div className="h-4 w-px bg-slate-200" />
+          <div className="h-4 w-px bg-slate-200 dark:bg-white/10" />
           <div className="flex items-center gap-2 min-w-0">
             <div className={`w-7 h-7 bg-gradient-to-br from-blue-600 to-blue-700 rounded-lg flex items-center justify-center text-white shadow-lg shadow-blue-600/25 shrink-0`}>
               <Zap size={16} fill="currentColor" />
             </div>
-            <span className="text-sm font-black tracking-tight text-slate-900 truncate uppercase">Huggy</span>
-            <span className="px-1.5 py-0.5 bg-gradient-to-r from-blue-50 to-blue-100 text-[9px] font-black text-blue-600 rounded-full uppercase tracking-widest shrink-0 border border-blue-100/50">Studio</span>
+            <span className="text-sm font-black tracking-tight text-slate-900 dark:text-white truncate uppercase">Huggy</span>
+            <span className="px-1.5 py-0.5 bg-gradient-to-r from-blue-50 to-blue-100 dark:from-blue-600/20 dark:to-blue-800/20 text-[9px] font-black text-blue-600 dark:text-blue-400 rounded-full uppercase tracking-widest shrink-0 border border-blue-100/50 dark:border-blue-500/20">Studio</span>
           </div>
         </div>
 
@@ -1098,9 +1106,17 @@ export default function App() {
             type="button"
             onClick={() => setShowExportModal(true)}
             title="Synchroniser avec GitHub"
-            className="hidden sm:flex items-center justify-center p-1.5 text-slate-600 bg-slate-50 border border-slate-200 hover:border-slate-300 hover:bg-white rounded-lg transition-all shadow-sm group"
+            className="hidden sm:flex items-center justify-center p-1.5 text-slate-600 dark:text-slate-400 bg-slate-50 dark:bg-white/5 border border-slate-200 dark:border-white/10 hover:border-slate-300 dark:hover:border-white/20 hover:bg-white dark:hover:bg-white/10 rounded-lg transition-all shadow-sm group"
           >
-            <Github size={15} className="text-slate-900 group-hover:scale-110 transition-transform" />
+            <Github size={15} className="text-slate-900 dark:text-white group-hover:scale-110 transition-transform" />
+          </button>
+          <button
+            type="button"
+            onClick={() => setShowSecretsModal(true)}
+            title="Variables d'environnement"
+            className="hidden sm:flex items-center justify-center p-1.5 text-slate-600 dark:text-slate-400 bg-slate-50 dark:bg-white/5 border border-slate-200 dark:border-white/10 hover:border-slate-300 dark:hover:border-white/20 hover:bg-white dark:hover:bg-white/10 rounded-lg transition-all shadow-sm group"
+          >
+            <Shield size={15} className="text-violet-600 group-hover:scale-110 transition-transform" />
           </button>
           <button
             onClick={handleExportZip}
@@ -1196,17 +1212,17 @@ export default function App() {
             </AnimatePresence>
 
             {!isSidebarCollapsed && (
-              <div className="flex items-center gap-3 text-slate-400">
+              <div className="flex items-center gap-3 text-slate-400 dark:text-slate-500">
               <button 
                 onClick={() => setActiveSidebarTab('chat')}
-                className={`p-1.5 rounded transition-colors ${activeSidebarTab === 'chat' ? 'text-blue-600 bg-blue-50' : 'hover:text-slate-600'}`}
+                className={`p-1.5 rounded transition-colors ${activeSidebarTab === 'chat' ? 'text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-500/10' : 'hover:text-slate-600 dark:hover:text-slate-300'}`}
                 title="Chat"
               >
                 <MessageSquare size={18} />
               </button>
               <button 
                 onClick={() => setActiveSidebarTab('history')}
-                className={`p-1.5 rounded transition-colors ${activeSidebarTab === 'history' ? 'text-blue-600 bg-blue-50' : 'hover:text-slate-600'}`}
+                className={`p-1.5 rounded transition-colors ${activeSidebarTab === 'history' ? 'text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-500/10' : 'hover:text-slate-600 dark:hover:text-slate-300'}`}
                 title="History"
               >
                 <History size={18} />
@@ -1231,8 +1247,8 @@ export default function App() {
                         </div>
                       </div>
                       <div>
-                        <p className="text-base font-black text-slate-800">Huggy Studio</p>
-                        <p className="text-xs text-slate-400 mt-1.5 max-w-[260px] leading-relaxed">Décrivez l'application que vous souhaitez créer. L'IA construira tout pour vous.</p>
+                        <p className="text-base font-black text-slate-800 dark:text-white">Huggy Studio</p>
+                        <p className="text-xs text-slate-500 dark:text-slate-400 mt-1.5 max-w-[260px] leading-relaxed">Décrivez l'application que vous souhaitez créer. L'IA construira tout pour vous.</p>
                       </div>
                       {/* Suggested prompts */}
                       <div className="flex flex-col gap-2 w-full max-w-[280px] mt-2">
@@ -1244,11 +1260,11 @@ export default function App() {
                           <button
                             key={i}
                             onClick={() => { setInputValue(suggestion.text); setTimeout(() => handleSendMessage(suggestion.text), 50); }}
-                            className="flex items-center gap-2.5 px-4 py-2.5 bg-slate-50 hover:bg-blue-50 border border-slate-200 hover:border-blue-200 rounded-xl text-xs font-medium text-slate-600 hover:text-blue-700 transition-all text-left group"
+                            className="flex items-center gap-2.5 px-4 py-2.5 bg-slate-50 dark:bg-white/5 hover:bg-blue-50 dark:hover:bg-blue-500/10 border border-slate-200 dark:border-white/10 hover:border-blue-200 dark:hover:border-blue-500/30 rounded-xl text-xs font-medium text-slate-600 dark:text-slate-300 hover:text-blue-700 dark:hover:text-blue-400 transition-all text-left group shadow-sm"
                           >
                             <span className="text-sm">{suggestion.icon}</span>
                             <span className="flex-1">{suggestion.text}</span>
-                            <ArrowUp size={12} className="text-slate-300 group-hover:text-blue-500 transition-colors" />
+                            <ArrowUp size={12} className="text-slate-400 dark:text-slate-500 group-hover:text-blue-500 transition-colors" />
                           </button>
                         ))}
                       </div>
@@ -1278,7 +1294,7 @@ export default function App() {
                         <div className={`rounded-2xl px-4 py-3 text-[14px] leading-relaxed group/msg relative ${
                           msg.sender === 'VOUS'
                             ? 'bg-gradient-to-br from-blue-600 to-blue-700 text-white rounded-tr-md shadow-lg shadow-blue-600/15'
-                            : 'bg-white text-slate-700 border border-slate-100 rounded-tl-md shadow-sm'
+                            : 'bg-white dark:bg-[#1E1E1E] text-slate-700 dark:text-slate-300 border border-slate-100 dark:border-white/5 rounded-tl-md shadow-sm'
                         }`}>
                           {msg.text}
                           {/* Copy button */}
@@ -2129,6 +2145,7 @@ export default function App() {
       <GithubExportModal isOpen={showExportModal} onClose={() => setShowExportModal(false)} projectId={projectId || ''} userId={user?.id} onStandardZipExport={handleExportZip} />
         </motion.div>
       )}
+      </AnimatePresence>
     </>
   );
 }
