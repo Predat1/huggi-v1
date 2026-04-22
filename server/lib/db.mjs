@@ -33,14 +33,22 @@ export async function initSchema(pool) {
     CREATE EXTENSION IF NOT EXISTS "pgcrypto";
 
     CREATE TABLE IF NOT EXISTS profiles (
-      id UUID PRIMARY KEY, -- references auth.users(id)
+      id UUID PRIMARY KEY,
       email TEXT,
       stripe_customer_id TEXT UNIQUE NULL,
+      subscription_id TEXT UNIQUE NULL,
+      subscription_status TEXT NOT NULL DEFAULT 'inactive',
+      current_period_end TIMESTAMPTZ NULL,
       credits NUMERIC NOT NULL DEFAULT 50,
       tier TEXT NOT NULL DEFAULT 'free',
       is_pro BOOLEAN NOT NULL DEFAULT false,
       updated_at TIMESTAMPTZ NOT NULL DEFAULT now()
     );
+
+    -- Subscription columns (idempotent additions for existing deployments)
+    ALTER TABLE profiles ADD COLUMN IF NOT EXISTS subscription_id TEXT UNIQUE NULL;
+    ALTER TABLE profiles ADD COLUMN IF NOT EXISTS subscription_status TEXT NOT NULL DEFAULT 'inactive';
+    ALTER TABLE profiles ADD COLUMN IF NOT EXISTS current_period_end TIMESTAMPTZ NULL;
 
     CREATE TABLE IF NOT EXISTS projects (
       id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -48,10 +56,12 @@ export async function initSchema(pool) {
       slug TEXT NOT NULL UNIQUE,
       custom_domain TEXT UNIQUE NULL,
       owner_id UUID REFERENCES profiles(id) ON DELETE SET NULL,
-      created_at TIMESTAMPTZ NOT NULL DEFAULT now()
+      created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+      updated_at TIMESTAMPTZ NOT NULL DEFAULT now()
     );
 
     ALTER TABLE projects ADD COLUMN IF NOT EXISTS owner_id UUID REFERENCES profiles(id) ON DELETE SET NULL;
+    ALTER TABLE projects ADD COLUMN IF NOT EXISTS updated_at TIMESTAMPTZ NOT NULL DEFAULT now();
 
     CREATE TABLE IF NOT EXISTS project_secrets (
       project_id UUID NOT NULL REFERENCES projects(id) ON DELETE CASCADE,

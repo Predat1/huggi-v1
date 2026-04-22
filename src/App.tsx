@@ -62,6 +62,8 @@ import { getAuthUser, onAuthStateChange, signIn, signUp, signOut } from './lib/s
 import { FullAppStream, StreamEvent } from './components/streaming';
 import { StreamController } from './services/streamingService';
 import { SettingsModal } from './components/SettingsModal';
+import { useCollaboration } from './hooks/useCollaboration';
+import { useVersions } from './hooks/useVersions';
 import { GithubExportModal } from './components/GithubExportModal';
 import { SecretsModal } from './components/SecretsModal';
 import HuggyChatInput from './components/HuggyChatInput';
@@ -639,83 +641,27 @@ export default function App() {
   const [agentTasks, setAgentTasks] = useState<AgentTask[]>([]);
   const streamCancelRef = useRef<(() => void) | null>(null);
 
-  // ── Real-time collaboration ──────────────────────────────────────────
-  const [onlineUsers, setOnlineUsers] = useState(1);
-  const wsRef = useRef<WebSocket | null>(null);
+  // ── Real-time collaboration (hook) ──────────────────────────────────
+  const { onlineUsers, broadcastFileUpdate } = useCollaboration(
+    projectId,
+    user?.id,
+    studioMode,
+    (path, content) => setFilesMap(prev => ({ ...prev, [path]: content })),
+  );
 
-  useEffect(() => {
-    if (!projectId || !studioMode) return;
-    const proto = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
-    const host = window.location.host;
-    const wsUrl = `${proto}//${host}?projectId=${projectId}&userId=${user?.id || 'anonymous'}`;
-    const ws = new WebSocket(wsUrl);
-    wsRef.current = ws;
-
-    ws.onmessage = (e) => {
-      let msg: any;
-      try { msg = JSON.parse(e.data); } catch { return; }
-      if (msg.type === 'connected' || msg.type === 'peer_joined' || msg.type === 'peer_left') {
-        setOnlineUsers(msg.online ?? 1);
-      } else if (msg.type === 'file_update' && msg.path && msg.content) {
-        setFilesMap(prev => ({ ...prev, [msg.path]: msg.content }));
-      }
-    };
-
-    ws.onerror = () => {};
-    ws.onclose = () => { wsRef.current = null; };
-
-    return () => { ws.close(); wsRef.current = null; };
-  }, [projectId, studioMode, user?.id]);
-
-  // Broadcast local file edits to collaborators
-  const broadcastFileUpdate = (path: string, content: string) => {
-    if (wsRef.current?.readyState === WebSocket.OPEN) {
-      wsRef.current.send(JSON.stringify({ type: 'file_update', path, content }));
-    }
-  };
-
-  // ── Version History ──────────────────────────────────────────────────
-  type Version = { id: string; label: string; created_at: string; file_count: number };
-  const [versions, setVersions] = useState<Version[]>([]);
-  const [isLoadingVersions, setIsLoadingVersions] = useState(false);
-  const [isRestoringVersion, setIsRestoringVersion] = useState(false);
-
-  const loadVersions = async () => {
-    if (!projectId || !databaseEnabled) return;
-    setIsLoadingVersions(true);
-    try {
-      const res = await fetch(`/api/projects/${projectId}/versions`);
-      const data = await res.json();
-      if (data.versions) setVersions(data.versions);
-    } catch {} finally {
-      setIsLoadingVersions(false);
-    }
-  };
-
-  const handleRestoreVersion = async (versionId: string) => {
-    if (!projectId || !user || isRestoringVersion) return;
-    if (!window.confirm('Restaurer cette version ? Les fichiers actuels seront remplacés.')) return;
-    setIsRestoringVersion(true);
-    try {
-      const res = await fetch(`/api/projects/${projectId}/versions/${versionId}/restore`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ userId: user.id }),
-      });
-      const data = await res.json();
-      if (data.ok && Array.isArray(data.files)) {
+  // ── Version History (hook) ────────────────────────────────────────────
+  const { versions, isLoadingVersions, isRestoringVersion, loadVersions, restoreVersion: handleRestoreVersion } =
+    useVersions(
+      projectId,
+      databaseEnabled,
+      user?.id,
+      (files) => {
         const map: Record<string, string> = {};
-        for (const f of data.files) map[f.path] = f.content;
+        for (const f of files) map[f.path] = f.content;
         setFilesMap(map);
-        showToast('Version restaurée ✓', 'success');
-        loadVersions();
-      } else {
-        showToast(data.error || 'Restauration échouée', 'info');
-      }
-    } catch { showToast('Erreur serveur', 'info'); } finally {
-      setIsRestoringVersion(false);
-    }
-  };
+      },
+      showToast,
+    );
 
   // ── Keyboard Shortcuts ──────────────────────────────────────────────
   useEffect(() => {

@@ -112,6 +112,9 @@ export const generateChatResponse = async (prompt: string): Promise<string> => {
   return data.text ?? '';
 };
 
-export const getMe = async (params: { userId: string; email?: string }): Promise<{ credits: number, is_pro: boolean }> => {
-  return await postJson<{ credits: number, is_pro: boolean }>(`/api/me?userId=${params.userId}&email=${params.email || ''}`, {});
+export const getMe = async (params: { userId: string; email?: string }): Promise<{ credits: number; is_pro: boolean; tier: string }> => {
+  const qs = new URLSearchParams({ userId: params.userId, email: params.email || '' });
+  const res = await fetch(`/api/me?${qs}`);
+  if (!res.ok) throw new Error(`HTTP ${res.status}`);
+  return res.json();
 };

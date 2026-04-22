@@ -1,30 +1,7 @@
 /**
- * Scalable rate limiter — Redis-backed with automatic in-memory fallback.
- * Set REDIS_URL to enable distributed rate limiting across multiple instances.
+ * Scalable rate limiter — Redis-backed (shared client) with automatic in-memory fallback.
  */
-import Redis from 'ioredis';
-
-let redis = null;
-
-if (process.env.REDIS_URL) {
-  try {
-    redis = new Redis(process.env.REDIS_URL, {
-      lazyConnect: true,
-      enableOfflineQueue: false,
-      connectTimeout: 3000,
-      maxRetriesPerRequest: 1,
-    });
-    redis.on('error', (err) => {
-      console.warn('[RateLimit] Redis error — falling back to in-memory:', err.message);
-      redis = null;
-    });
-    console.log('[RateLimit] Redis rate limiter active');
-  } catch {
-    redis = null;
-  }
-} else {
-  console.log('[RateLimit] No REDIS_URL — using in-memory rate limiter (single-instance only)');
-}
+import { redis } from './redis.mjs';
 
 // In-memory fallback store
 const _store = new Map();
@@ -49,11 +26,10 @@ export async function checkRateLimit(key, windowMs = 60_000, maxHits = 30) {
       if (count === 1) await redis.pexpire(redisKey, windowMs);
       return count <= maxHits;
     } catch {
-      // Redis failed mid-request — fall through to in-memory
+      // Redis failed — fall through to in-memory
     }
   }
 
-  // In-memory fallback
   const now = Date.now();
   let entry = _store.get(key);
   if (!entry || now - entry.start > windowMs) {

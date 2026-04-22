@@ -121,12 +121,20 @@ const wss = new WebSocketServer({ server: httpServer });
 // Real-time collaboration rooms: projectId → Set<WebSocket>
 const rooms = new Map();
 
-wss.on('connection', (ws, req) => {
+wss.on('connection', async (ws, req) => {
   const url = new URL(req.url, 'http://localhost');
   const projectId = url.searchParams.get('projectId');
-  const userId = url.searchParams.get('userId') || 'anonymous';
+  const userId    = url.searchParams.get('userId') || 'anonymous';
 
   if (!projectId || !isUuid(projectId)) { ws.close(1008, 'projectId invalide'); return; }
+
+  // Auth: verify userId exists in profiles (no Supabase admin key needed)
+  if (pool && isUuid(userId)) {
+    try {
+      const { rows } = await pool.query('SELECT id FROM profiles WHERE id = $1', [userId]);
+      if (!rows.length) { ws.close(1008, 'Utilisateur non authentifié'); return; }
+    } catch { /* DB unreachable — allow in dev mode */ }
+  }
 
   if (!rooms.has(projectId)) rooms.set(projectId, new Set());
   rooms.get(projectId).add(ws);
@@ -180,53 +188,97 @@ app.post('/api/webhook/stripe', express.raw({ type: 'application/json' }), async
   } catch (err) {
     return res.status(400).send(`Webhook Error: ${err.message}`);
   }
+  // ── Subscription created / activated ──
   if (event.type === 'checkout.session.completed') {
     const session = event.data.object;
-    console.log('[Stripe] Checkout success:', session.id);
     const userId = session.metadata?.userId;
-    const plan = session.metadata?.plan || 'pro';
-    let creditsToAdd = 0;
-    if (plan === 'hobby') creditsToAdd = 1000;
-    else if (plan === 'pro') creditsToAdd = 3000;
-    else if (plan === 'scale') creditsToAdd = 10000;
-
+    const plan   = session.metadata?.plan || 'pro';
     if (userId && pool) {
-      let customerId = session.customer;
+      const creditsMap = { hobby: 1000, pro: 3000, scale: 10000 };
+      const creditsToAdd = creditsMap[plan] || 3000;
       try {
         await pool.query(
-          `UPDATE profiles SET tier = $2, is_pro = true, credits = credits + $3, stripe_customer_id = COALESCE(stripe_customer_id, $4) WHERE id = $1`,
-          [userId, plan, creditsToAdd, customerId]
+          `UPDATE profiles SET tier = $2, is_pro = true, credits = credits + $3,
+           stripe_customer_id = COALESCE(stripe_customer_id, $4)
+           WHERE id = $1`,
+          [userId, plan, creditsToAdd, session.customer],
         );
-        console.log(`[Stripe] Successfully upgraded user ${userId} to ${plan}`);
-      } catch (e) {
-        console.error(`[Stripe] SQL Error updating user ${userId}`, e);
-      }
+        console.log(`[Stripe] Checkout completed: user=${userId} plan=${plan}`);
+      } catch (e) { console.error('[Stripe] checkout.session.completed', e); }
     }
   }
+
+  // ── Subscription renewed ──
+  if (event.type === 'invoice.payment_succeeded') {
+    const invoice = event.data.object;
+    const subId = invoice.subscription;
+    if (subId && pool) {
+      try {
+        // Refresh credits every billing cycle
+        const sub = await stripe.subscriptions.retrieve(subId);
+        const plan = sub.metadata?.plan || 'pro';
+        const creditsMap = { hobby: 1000, pro: 3000, scale: 10000 };
+        await pool.query(
+          `UPDATE profiles SET credits = credits + $2, subscription_status = 'active',
+           current_period_end = to_timestamp($3)
+           WHERE subscription_id = $1`,
+          [subId, creditsMap[plan] || 3000, sub.current_period_end],
+        );
+        console.log(`[Stripe] Invoice paid: sub=${subId}`);
+      } catch (e) { console.error('[Stripe] invoice.payment_succeeded', e); }
+    }
+  }
+
+  // ── Subscription cancelled / expired ──
+  if (event.type === 'customer.subscription.deleted') {
+    const sub = event.data.object;
+    if (pool) {
+      try {
+        await pool.query(
+          `UPDATE profiles SET tier = 'free', is_pro = false, subscription_status = 'cancelled',
+           current_period_end = NULL WHERE subscription_id = $1`,
+          [sub.id],
+        );
+        console.log(`[Stripe] Subscription cancelled: sub=${sub.id}`);
+      } catch (e) { console.error('[Stripe] customer.subscription.deleted', e); }
+    }
+  }
+
   res.send();
 });
 
 app.post('/api/checkout', express.json(), async (req, res) => {
   if (!stripe) return res.status(500).json({ error: 'Stripe API non configurée.' });
   try {
-    const plan = req.body?.plan || 'pro';
-    const prices = {
-      hobby: { unit_amount: 1900, name: 'Huggy Hobby' },
-      pro: { unit_amount: 3900, name: 'Huggy Pro' },
-      scale: { unit_amount: 9900, name: 'Huggy Scale' }
+    const { plan = 'pro', userId } = req.body || {};
+
+    // Subscription price IDs — set these in env after creating plans in Stripe Dashboard.
+    // Falls back to inline price_data for development / first-time setup.
+    const priceIds = {
+      hobby: process.env.STRIPE_PRICE_HOBBY,
+      pro:   process.env.STRIPE_PRICE_PRO,
+      scale: process.env.STRIPE_PRICE_SCALE,
     };
-    const selected = prices[plan] || prices.pro;
+    const planMeta = {
+      hobby: { unit_amount: 1900, name: 'Huggy Hobby' },
+      pro:   { unit_amount: 4900, name: 'Huggy Pro' },
+      scale: { unit_amount: 14900, name: 'Huggy Scale' },
+    };
+    const selected = planMeta[plan] || planMeta.pro;
+    const priceId  = priceIds[plan];
+
+    const lineItem = priceId
+      ? { price: priceId, quantity: 1 }
+      : { price_data: { currency: 'eur', product_data: { name: selected.name }, unit_amount: selected.unit_amount, recurring: { interval: 'month' } }, quantity: 1 };
 
     const session = await stripe.checkout.sessions.create({
       payment_method_types: ['card'],
-      line_items: [{
-        price_data: { currency: 'eur', product_data: { name: selected.name }, unit_amount: selected.unit_amount },
-        quantity: 1,
-      }],
-      mode: 'payment',
-      metadata: { plan: plan, userId: req.body?.userId },
+      line_items: [lineItem],
+      mode: 'subscription',
+      metadata: { plan, userId: userId || '' },
+      subscription_data: { metadata: { plan, userId: userId || '' } },
       success_url: `${publicBaseUrl(req)}/?plan=${plan}&status=success`,
-      cancel_url: `${publicBaseUrl(req)}/?status=cancel`,
+      cancel_url:  `${publicBaseUrl(req)}/?status=cancel`,
     });
     res.json({ url: session.url });
   } catch (e) {
@@ -854,12 +906,12 @@ app.post('/api/generate-app/agentic-stream', rateLimiter, async (req, res) => {
       emit('agent_done', { agent: 'pm', label: 'Product Manager — fallback au prompt direct', warning: true });
     }
 
-    // ── Agent 2: Coder (streaming) ──
+    // ── Agent 2: Coder (streaming, Sonnet) ──
     emit('agent_start', { agent: 'coder', label: 'Coder — génération du code premium...' });
     let fullCodeText = '';
     await new Promise((resolve, reject) => {
       runGenerateStream(
-        { prompt: refinedPrompt, chatHistory, currentEntryCode, allFiles },
+        { prompt: refinedPrompt, chatHistory, currentEntryCode, allFiles, complexity: agentPlan?.complexity },
         (chunk) => { fullCodeText += chunk; emit('chunk', { content: chunk }); },
         () => resolve(),
         (err) => reject(err),
@@ -882,32 +934,12 @@ app.post('/api/generate-app/agentic-stream', rateLimiter, async (req, res) => {
         }
       }
     } catch {
-      // If parsing fails, treat entire output as App.tsx code
       if (fullCodeText.trim()) {
         parsedFiles = [{ path: PREVIEW_ENTRY, content: fullCodeText.trim() }];
       }
     }
 
-    // ── Agent 3: Visual Reviewer ──
-    emit('agent_start', { agent: 'vr', label: 'Visual Reviewer — contrôle qualité UI...' });
-    let agentReview = null;
-    if (parsedFiles.length > 0) {
-      try {
-        agentReview = await runPostGenerationReview(parsedFiles, prompt);
-        if (!agentReview.approved && agentReview.corrections?.length > 0) {
-          for (const correction of agentReview.corrections) {
-            const idx = parsedFiles.findIndex(f => f.path === correction.path);
-            if (idx >= 0) parsedFiles[idx].content = correction.content;
-            else parsedFiles.push(correction);
-          }
-        }
-        emit('agent_done', { agent: 'vr', label: `Visual Reviewer — score ${agentReview.score}/100 ${agentReview.approved ? '✓' : '→ corrigé'}` });
-      } catch {
-        emit('agent_done', { agent: 'vr', label: 'Visual Reviewer — validé ✓' });
-      }
-    } else {
-      emit('agent_done', { agent: 'vr', label: 'Visual Reviewer — validé ✓' });
-    }
+    // ── Visual review removed — replaced by client-side ESLint (zero latency, zero cost) ──
 
     // ── Persist to DB ──
     if (pool && projectId && parsedFiles.length > 0) {
