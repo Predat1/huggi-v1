@@ -67,6 +67,9 @@ import { useVersions } from './hooks/useVersions';
 import { GithubExportModal } from './components/GithubExportModal';
 import { SecretsModal } from './components/SecretsModal';
 import HuggyChatInput from './components/HuggyChatInput';
+import OnboardingModal from './components/OnboardingModal';
+import TemplatesModal from './components/TemplatesModal';
+import PricingSection from './components/PricingSection';
 import AuthModal from './components/AuthModal';
 
 type Message = {
@@ -205,6 +208,9 @@ export default function App() {
   const [pendingCreditCost, setPendingCreditCost] = useState<number | null>(null);
   const [lastExport, setLastExport] = useState<any>(null);
   const [schemaSuggestion, setSchemaSuggestion] = useState<{ sql: string; tables: string[]; applying: boolean } | null>(null);
+  const [showOnboarding, setShowOnboarding] = useState(false);
+  const [showTemplates, setShowTemplates] = useState(false);
+  const [showPricingModal, setShowPricingModal] = useState(false);
   const [showAuthModal, setShowAuthModal] = useState(false);
   const [showBillingModal, setShowBillingModal] = useState(false);
   const [showSettingsModal, setShowSettingsModal] = useState(false);
@@ -262,6 +268,11 @@ export default function App() {
       setUser(u);
       if (u) {
         getMe({ userId: u.id, email: u.email }).then(data => setCredits(data.credits));
+        // Show onboarding on first login ever
+        if (!localStorage.getItem('huggy_onboarded')) {
+          setShowOnboarding(true);
+          localStorage.setItem('huggy_onboarded', '1');
+        }
         // If there was a pending prompt, trigger studio
         if (pendingPrompt) {
           setStudioMode(true);
@@ -933,6 +944,9 @@ export default function App() {
             showToast(event.message || 'Erreur IA', 'info');
             setIsGenerating(false);
             setAgentTasks([]);
+            setPendingCreditCost(null);
+            // Show pricing modal if it's a plan limit error
+            if (event.upgrade) setTimeout(() => setShowPricingModal(true), 500);
             break;
         }
       };
@@ -1511,7 +1525,25 @@ export default function App() {
                 )}
 
                 {/* ── Chat Input ── */}
-                <div className="shrink-0 p-3 bg-gradient-to-t from-white via-white to-white/80 border-t border-slate-100/50">
+                <div className="shrink-0 p-3 bg-gradient-to-t from-white via-white to-white/80 dark:from-[#0d0d0d] dark:via-[#0d0d0d] dark:to-transparent border-t border-slate-100/50 dark:border-white/5">
+                  <div className="flex items-center gap-1.5 mb-2">
+                    <button
+                      type="button"
+                      onClick={() => setShowTemplates(true)}
+                      className="flex items-center gap-1.5 px-2.5 py-1 text-[10px] font-bold text-slate-500 dark:text-slate-400 hover:text-blue-600 dark:hover:text-blue-400 bg-slate-50 dark:bg-white/5 border border-slate-200 dark:border-white/10 rounded-lg transition-colors"
+                    >
+                      <Layout size={10} />
+                      Templates
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setShowPricingModal(true)}
+                      className="flex items-center gap-1.5 px-2.5 py-1 text-[10px] font-bold text-slate-500 dark:text-slate-400 hover:text-amber-600 dark:hover:text-amber-400 bg-slate-50 dark:bg-white/5 border border-slate-200 dark:border-white/10 rounded-lg transition-colors"
+                    >
+                      <Sparkles size={10} />
+                      Upgrade
+                    </button>
+                  </div>
                   <HuggyChatInput
                     onSend={(prompt) => {
                       if (prompt) {
@@ -2289,6 +2321,58 @@ export default function App() {
       <GithubExportModal isOpen={showExportModal} onClose={() => setShowExportModal(false)} projectId={projectId || ''} userId={user?.id} onStandardZipExport={handleExportZip} />
         </motion.div>
       )}
+      </AnimatePresence>
+
+      {/* Onboarding */}
+      <AnimatePresence>
+        {showOnboarding && (
+          <OnboardingModal
+            onClose={() => setShowOnboarding(false)}
+            onOpenTemplates={() => setShowTemplates(true)}
+          />
+        )}
+      </AnimatePresence>
+
+      {/* Templates */}
+      <AnimatePresence>
+        {showTemplates && (
+          <TemplatesModal
+            onClose={() => setShowTemplates(false)}
+            onSelectTemplate={(prompt) => {
+              setInputValue(prompt);
+              setShowTemplates(false);
+              setTimeout(() => handleSendMessage(prompt), 100);
+            }}
+          />
+        )}
+      </AnimatePresence>
+
+      {/* Pricing Modal */}
+      <AnimatePresence>
+        {showPricingModal && (
+          <div className="fixed inset-0 z-[200] flex items-start justify-center p-4 pt-16 bg-black/70 backdrop-blur-sm overflow-y-auto">
+            <div className="bg-white dark:bg-[#0a0a0a] border border-slate-200 dark:border-white/10 rounded-3xl w-full max-w-6xl shadow-2xl relative">
+              <button
+                onClick={() => setShowPricingModal(false)}
+                className="absolute top-5 right-5 z-10 text-slate-400 hover:text-slate-600 dark:hover:text-white p-2 rounded-xl hover:bg-slate-100 dark:hover:bg-white/5 transition-colors"
+              >
+                <X size={18} />
+              </button>
+              <PricingSection
+                onCheckout={async (plan) => {
+                  if (!user) { setShowAuthModal(true); setShowPricingModal(false); return; }
+                  try {
+                    const res = await fetch('/api/checkout', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ plan, userId: user.id }) });
+                    const d = await res.json();
+                    if (d.url) window.location.href = d.url;
+                  } catch {}
+                }}
+                onOpenStudio={() => { setShowPricingModal(false); if (!studioMode) setStudioMode(true); }}
+                userId={user?.id}
+              />
+            </div>
+          </div>
+        )}
       </AnimatePresence>
     </>
   );

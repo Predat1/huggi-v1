@@ -23,6 +23,7 @@ import {
   Sun,
 } from 'lucide-react';
 import HuggyChatInput from './HuggyChatInput';
+import PricingSection from './PricingSection';
 import { useTheme } from '../contexts/ThemeContext';
 
 export type AccentStyle = {
@@ -424,77 +425,14 @@ export default function LandingPage({ accent, onOpenStudio, onLogin, userId }: L
         </section>
 
         <div className="max-w-6xl mx-auto px-6">
-          {/* --- PRICING (Redesigned: High-End Cards) --- */}
-          <section id="pricing" className="scroll-mt-28 py-32 border-t border-slate-100 dark:border-white/5">
-            <div className="text-center mb-20">
-              <h2 className="text-4xl font-black text-slate-900 dark:text-white mb-4 italic">Abonnements Mensuels</h2>
-              <p className="text-slate-500 dark:text-slate-400 font-medium text-lg">Investissez dans votre vitesse de livraison. Résiliez à tout moment.</p>
-            </div>
-            
-            <div className="grid md:grid-cols-3 gap-8 lg:gap-14">
-              {[
-                {
-                  id: 'hobby', name: 'Hobby', price: '19', oldPrice: null,
-                  desc: 'Pour explorer et valider vos premières idées produit.',
-                  feats: ['1 000 crédits IA / mois', '2 projets actifs', 'Déploiement sur huggy.sbs', 'Historique versions (20)', 'Support email'],
-                },
-                {
-                  id: 'pro', name: 'Pro', price: '49', oldPrice: null, hi: true,
-                  desc: 'Pour les créateurs sérieux et les startups en croissance.',
-                  feats: ['3 000 crédits IA / mois', '10 projets actifs', 'Domaine personnalisé', 'Collaboration temps réel', 'Export source complet', 'Support prioritaire'],
-                },
-                {
-                  id: 'scale', name: 'Scale', price: '149', oldPrice: null,
-                  desc: 'Pour les équipes et agences qui produisent à grande échelle.',
-                  feats: ['10 000 crédits IA / mois', 'Projets illimités', 'Accès API Huggy', 'White-label', 'SLA 99,9 %', 'Support dédié'],
-                },
-              ].map((p) => (
-                <div
-                  key={p.name}
-                  className={`rounded-[40px] p-8 lg:p-10 border transition-all duration-700 relative flex flex-col ${
-                    p.hi
-                    ? 'border-blue-500 bg-slate-900 text-white shadow-2xl md:scale-105 z-10'
-                    : 'border-slate-100 dark:border-white/5 bg-white dark:bg-[#111] hover:border-blue-200 dark:hover:border-blue-500/20 shadow-sm hover:shadow-2xl'
-                  }`}
-                >
-                  {p.hi && (
-                    <div className="absolute -top-4 left-1/2 -translate-x-1/2 px-5 py-1.5 bg-blue-600 text-white text-[10px] uppercase tracking-[0.2em] font-black rounded-full shadow-lg whitespace-nowrap">
-                      ✦ Meilleur rapport qualité/prix
-                    </div>
-                  )}
-                  <p className={`text-xs font-black uppercase tracking-widest ${p.hi ? 'text-blue-400' : 'text-slate-400 dark:text-slate-500'}`}>{p.name}</p>
-                  <div className="mt-5 flex items-baseline gap-1">
-                    <span className={`text-5xl font-black tracking-tighter ${p.hi ? 'text-white' : 'text-slate-900 dark:text-white'}`}>{p.price}€</span>
-                    <span className={`text-sm font-bold ml-1 ${p.hi ? 'text-slate-400' : 'text-slate-400'}`}>/mois</span>
-                  </div>
-                  <p className={`mt-3 text-sm leading-relaxed ${p.hi ? 'text-slate-400' : 'text-slate-500 dark:text-slate-400'}`}>{p.desc}</p>
-
-                  <div className={`mt-8 pt-8 border-t ${p.hi ? 'border-white/10' : 'border-slate-100 dark:border-white/5'} space-y-3 flex-1`}>
-                    {p.feats.map(feat => (
-                      <div key={feat} className="flex items-center gap-3">
-                        <div className={`w-5 h-5 rounded-full flex items-center justify-center shrink-0 ${p.hi ? 'bg-blue-500' : 'bg-emerald-50 dark:bg-emerald-500/20'}`}>
-                          <Check size={11} strokeWidth={3} className={p.hi ? 'text-white' : 'text-emerald-600 dark:text-emerald-400'} />
-                        </div>
-                        <span className={`text-[13px] font-medium ${p.hi ? 'text-slate-200' : 'text-slate-700 dark:text-slate-300'}`}>{feat}</span>
-                      </div>
-                    ))}
-                  </div>
-
-                  <button
-                    type="button"
-                    disabled={isCheckingOut}
-                    onClick={() => handleCheckout(p.id)}
-                    className={`mt-10 w-full py-4 rounded-2xl text-sm font-black transition-all active:scale-[0.98] disabled:opacity-60 ${
-                      p.hi
-                      ? 'bg-blue-600 text-white shadow-xl shadow-blue-900/50 hover:bg-blue-500'
-                      : 'bg-slate-50 dark:bg-white/5 text-slate-900 dark:text-white hover:bg-slate-100 dark:hover:bg-white/10 border border-slate-200 dark:border-white/10'
-                    }`}
-                  >
-                    {isCheckingOut ? 'Chargement...' : `Commencer avec ${p.name}`}
-                  </button>
-                </div>
-              ))}
-            </div>
+          {/* --- PRICING --- */}
+          <section id="pricing" className="scroll-mt-28 border-t border-slate-100 dark:border-white/5">
+            <PricingSection
+              onCheckout={handleCheckout}
+              onOpenStudio={() => onOpenStudio?.()}
+              userId={userId}
+              isCheckingOut={isCheckingOut}
+            />
           </section>
 
           <section id="faq" className="scroll-mt-28 py-16 border-t border-slate-100 dark:border-white/5">

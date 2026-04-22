@@ -104,10 +104,26 @@ export async function initSchema(pool) {
       created_at TIMESTAMPTZ NOT NULL DEFAULT now()
     );
 
+    -- Monthly generation tracking on profiles
+    ALTER TABLE profiles ADD COLUMN IF NOT EXISTS monthly_generations INTEGER NOT NULL DEFAULT 0;
+    ALTER TABLE profiles ADD COLUMN IF NOT EXISTS monthly_reset_at TIMESTAMPTZ NOT NULL DEFAULT date_trunc('month', now());
+
+    -- Generation analytics log
+    CREATE TABLE IF NOT EXISTS generation_logs (
+      id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+      user_id UUID REFERENCES profiles(id) ON DELETE SET NULL,
+      project_id UUID REFERENCES projects(id) ON DELETE SET NULL,
+      complexity TEXT NOT NULL DEFAULT 'medium',
+      credits_used NUMERIC NOT NULL DEFAULT 1,
+      provider TEXT,
+      created_at TIMESTAMPTZ NOT NULL DEFAULT now()
+    );
+
     CREATE INDEX IF NOT EXISTS idx_project_files_project ON project_files(project_id);
     CREATE INDEX IF NOT EXISTS idx_projects_owner ON projects(owner_id);
     CREATE INDEX IF NOT EXISTS idx_deployments_project ON deployments(project_id);
     CREATE INDEX IF NOT EXISTS idx_profiles_id ON profiles(id);
     CREATE INDEX IF NOT EXISTS idx_versions_project ON project_versions(project_id, created_at DESC);
+    CREATE INDEX IF NOT EXISTS idx_gen_logs_user ON generation_logs(user_id, created_at DESC);
   `);
 }

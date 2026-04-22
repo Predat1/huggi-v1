@@ -45,6 +45,7 @@ import { DEFAULT_PREVIEW_CODE } from './lib/defaultAppCode.mjs';
 import { buildUserSiteToDir } from './lib/deploy.mjs';
 import { getCreditCost, formatCost } from './lib/creditCost.mjs';
 import { storeSite, fetchSite } from './lib/siteStorage.mjs';
+import { canGenerate, canCreateProject, showViralBadge, resolvePlan } from './lib/planLimits.mjs';
 import { generateSchema } from './lib/schemaGen.mjs';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
@@ -502,12 +503,8 @@ app.post('/api/projects', async (req, res) => {
     if (userId) {
       const profile = await getOrCreateProfile(pool, userId, req.body?.userEmail);
       const activeCount = await getUserActiveProjectsCount(pool, userId);
-      const limits = { free: 1, hobby: 2, pro: 5, scale: 9999 };
-      const tierLimits = limits[profile.tier] ?? 1;
-
-      if (activeCount >= tierLimits) {
-        return res.status(402).json({ error: `Votre plan Saas [${profile.tier.toUpperCase()}] ne permet pas de créer un nouveau projet hébergé (${tierLimits} max). Mettez à niveau votre abonnement pour débloquer de nouveaux serveurs.` });
-      }
+      const check = canCreateProject(profile, activeCount);
+      if (!check.allowed) return res.status(402).json({ error: check.reason, upgrade: true });
       ownerId = profile.id;
     }
 
@@ -742,10 +739,18 @@ app.post('/api/projects/:id/deploy', async (req, res) => {
 
     try {
       const secrets = project.owner_id ? await getProjectSecrets(pool, project.id) : [];
+      let badge = true;
+      if (pool && project.owner_id) {
+        try {
+          const ownerProfile = await getOrCreateProfile(pool, project.owner_id);
+          badge = showViralBadge(ownerProfile);
+        } catch {}
+      }
       const { html, bundle } = await buildUserSiteToDir(
         rows.map((r) => ({ path: r.path, content: r.content })),
         outDir,
-        secrets
+        secrets,
+        badge
       );
       // Store in Supabase Storage (if configured) or compressed DB — survives Railway redeploys
       const stored = await storeSite(dep.slug, html, bundle);
@@ -926,10 +931,24 @@ app.post('/api/generate-app/agentic-stream', rateLimiter, async (req, res) => {
     const { prompt, chatHistory, currentCode, projectId, files: bodyFiles, userId, userEmail } = req.body || {};
     if (typeof prompt !== 'string') { emit('error', { message: 'prompt requis.' }); return res.end(); }
 
-    // ── Load profile early (credit check after PM agent computes complexity) ──
+    // ── Load profile + enforce plan limits ──
     let profile = null;
     if (pool && userId) {
       profile = await getOrCreateProfile(pool, userId, userEmail);
+
+      // Reset monthly counter if new month
+      const resetAt = profile.monthly_reset_at ? new Date(profile.monthly_reset_at) : new Date(0);
+      const nowMonth = new Date(); nowMonth.setDate(1); nowMonth.setHours(0,0,0,0);
+      if (resetAt < nowMonth) {
+        await pool.query(`UPDATE profiles SET monthly_generations = 0, monthly_reset_at = date_trunc('month', now()) WHERE id = $1`, [userId]);
+        profile.monthly_generations = 0;
+      }
+
+      const genCheck = canGenerate(profile, profile.monthly_generations || 0);
+      if (!genCheck.allowed) {
+        emit('error', { message: genCheck.reason, upgrade: true });
+        return res.end();
+      }
     }
 
     // ── Load project files ──
@@ -1020,10 +1039,20 @@ app.post('/api/generate-app/agentic-stream', rateLimiter, async (req, res) => {
       } catch (e) { console.warn('[agentic-stream] DB persist failed:', e.message); }
     }
 
-    // ── Deduct fractional credits only on success ──
+    // ── Deduct credits + increment monthly counter + log analytics ──
     let creditsRemaining = null;
     if (pool && userId && profile) {
-      try { creditsRemaining = await deductCredits(pool, userId, creditCost); } catch {}
+      try {
+        creditsRemaining = await deductCredits(pool, userId, creditCost);
+        await pool.query(
+          `UPDATE profiles SET monthly_generations = COALESCE(monthly_generations,0) + 1 WHERE id = $1`,
+          [userId]
+        );
+        await pool.query(
+          `INSERT INTO generation_logs (user_id, project_id, complexity, credits_used) VALUES ($1,$2,$3,$4)`,
+          [userId, projectId || null, agentPlan?.complexity || 'medium', creditCost]
+        );
+      } catch {}
     }
 
     const entry = parsedFiles.find(f => f.path === PREVIEW_ENTRY)?.content || parsedFiles[0]?.content || '';
