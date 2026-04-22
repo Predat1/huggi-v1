@@ -154,18 +154,18 @@ export async function createDeployment(pool, projectId) {
   return r.rows[0];
 }
 
-/** Store built HTML + bundle in the deployment row (survives Railway redeploys). */
-export async function updateDeploymentContent(pool, id, htmlContent, bundleContent) {
+/** Store built site content — supports Storage URL or compressed DB content. */
+export async function updateDeploymentContent(pool, id, { storageUrl, html, bundle }) {
   await pool.query(
-    `UPDATE deployments SET html_content = $2, bundle_content = $3 WHERE id = $1`,
-    [id, htmlContent, bundleContent],
+    `UPDATE deployments SET storage_url = $2, html_content = $3, bundle_content = $4 WHERE id = $1`,
+    [id, storageUrl || null, html || null, bundle || null],
   );
 }
 
-/** Fetch a live deployment by slug (used to serve from DB when filesystem is unavailable). */
+/** Fetch a live deployment by slug (includes storage_url + compressed DB columns). */
 export async function getDeploymentBySlug(pool, slug) {
   const r = await pool.query(
-    `SELECT id, slug, status, html_content, bundle_content FROM deployments WHERE slug = $1 AND status = 'live' LIMIT 1`,
+    `SELECT id, slug, status, storage_url, html_content, bundle_content FROM deployments WHERE slug = $1 AND status = 'live' LIMIT 1`,
     [slug],
   );
   return r.rows[0] || null;

@@ -94,6 +94,7 @@ export async function initSchema(pool) {
     -- Idempotent additions for existing deployments table
     ALTER TABLE deployments ADD COLUMN IF NOT EXISTS html_content TEXT;
     ALTER TABLE deployments ADD COLUMN IF NOT EXISTS bundle_content TEXT;
+    ALTER TABLE deployments ADD COLUMN IF NOT EXISTS storage_url TEXT;
 
     CREATE TABLE IF NOT EXISTS project_versions (
       id UUID PRIMARY KEY DEFAULT gen_random_uuid(),

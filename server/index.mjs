@@ -44,6 +44,7 @@ import {
 import { DEFAULT_PREVIEW_CODE } from './lib/defaultAppCode.mjs';
 import { buildUserSiteToDir } from './lib/deploy.mjs';
 import { getCreditCost, formatCost } from './lib/creditCost.mjs';
+import { storeSite, fetchSite } from './lib/siteStorage.mjs';
 import { generateSchema } from './lib/schemaGen.mjs';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
@@ -442,27 +443,28 @@ app.use('/live/:slug', async (req, res, next) => {
     });
   }
 
-  // 2. DB fallback — serves directly from stored content
+  // 2. Storage/DB fallback — fetch from Supabase Storage or compressed DB
   if (pool) {
     try {
       const dep = await getDeploymentBySlug(pool, slug);
-      if (dep && dep.html_content && dep.bundle_content) {
-        // Warm the filesystem cache for next requests
+      const site = await fetchSite(slug, dep);
+      if (site) {
+        // Warm filesystem cache for next requests
         try {
           await mkdir(dir, { recursive: true });
-          await fs.promises.writeFile(path.join(dir, 'index.html'), dep.html_content, 'utf8');
-          await fs.promises.writeFile(path.join(dir, 'bundle.js'), dep.bundle_content, 'utf8');
+          await fs.promises.writeFile(path.join(dir, 'index.html'), site.html, 'utf8');
+          await fs.promises.writeFile(path.join(dir, 'bundle.js'), site.bundle, 'utf8');
         } catch {}
 
         if (reqPath === '/bundle.js') {
           res.setHeader('Content-Type', 'application/javascript');
-          return res.send(dep.bundle_content);
+          return res.send(site.bundle);
         }
         res.setHeader('Content-Type', 'text/html; charset=utf-8');
-        return res.send(dep.html_content);
+        return res.send(site.html);
       }
     } catch (e) {
-      console.error('[live-db-fallback]', e);
+      console.error('[live-storage-fallback]', e);
     }
   }
 
@@ -745,8 +747,9 @@ app.post('/api/projects/:id/deploy', async (req, res) => {
         outDir,
         secrets
       );
-      // Store built content in DB so sites survive Railway redeploys (filesystem is just a cache)
-      await updateDeploymentContent(pool, dep.id, html, bundle);
+      // Store in Supabase Storage (if configured) or compressed DB — survives Railway redeploys
+      const stored = await storeSite(dep.slug, html, bundle);
+      await updateDeploymentContent(pool, dep.id, stored);
       await updateDeploymentStatus(pool, dep.id, 'live', null);
     } catch (err) {
       console.error('[deploy]', err);
