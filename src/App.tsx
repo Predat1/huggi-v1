@@ -202,6 +202,7 @@ export default function App() {
 
   const [user, setUser] = useState<any>(null);
   const [credits, setCredits] = useState<number | null>(null);
+  const [pendingCreditCost, setPendingCreditCost] = useState<number | null>(null);
   const [lastExport, setLastExport] = useState<any>(null);
   const [showAuthModal, setShowAuthModal] = useState(false);
   const [showBillingModal, setShowBillingModal] = useState(false);
@@ -859,8 +860,11 @@ export default function App() {
             ));
             break;
 
+          case 'credit_info':
+            if (event.cost != null) setPendingCreditCost(event.cost);
+            break;
+
           case 'chunk':
-            // Show raw streaming tokens in terminal for pro feel
             if (event.content) {
               setTerminalTabs(prev => prev.map(t => t.id === activeTabId
                 ? { ...t, lines: t.lines.length > 200 ? t.lines.slice(-150) : t.lines }
@@ -884,8 +888,13 @@ export default function App() {
             const updatedCode = updatedMap[PREVIEW_ENTRY] || '';
             setFilesMap(updatedMap);
 
-            // Refresh credits
-            if (user) getMe({ userId: user.id, email: user.email }).then(d => setCredits(d.credits));
+            // Update credits from response (no extra API call needed)
+            if (event.creditsRemaining != null) {
+              setCredits(event.creditsRemaining);
+            } else if (user) {
+              getMe({ userId: user.id, email: user.email }).then(d => setCredits(d.credits));
+            }
+            setPendingCreditCost(null);
 
             streamCancelRef.current = streamChatText(
               fullResponse,
@@ -1151,7 +1160,14 @@ export default function App() {
           {credits !== null && (
             <div className="hidden lg:flex items-center gap-1.5 px-2.5 py-1.5 bg-gradient-to-r from-amber-50 to-orange-50 rounded-lg border border-amber-200/60">
               <Sparkles size={12} className="text-amber-500" />
-              <span className="text-[10px] font-black text-amber-700">{credits}</span>
+              <span className="text-[10px] font-black text-amber-700">
+                {Number.isInteger(credits) ? credits : credits.toFixed(1)} cr
+              </span>
+              {pendingCreditCost != null && (
+                <span className="text-[9px] font-bold text-amber-500 opacity-80">
+                  −{pendingCreditCost % 1 === 0 ? pendingCreditCost : pendingCreditCost.toFixed(1)}
+                </span>
+              )}
             </div>
           )}
           <button

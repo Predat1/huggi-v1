@@ -43,6 +43,7 @@ import {
 } from './lib/projectsRepo.mjs';
 import { DEFAULT_PREVIEW_CODE } from './lib/defaultAppCode.mjs';
 import { buildUserSiteToDir } from './lib/deploy.mjs';
+import { getCreditCost, formatCost } from './lib/creditCost.mjs';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const root = path.join(__dirname, '..');
@@ -894,14 +895,10 @@ app.post('/api/generate-app/agentic-stream', rateLimiter, async (req, res) => {
     const { prompt, chatHistory, currentCode, projectId, files: bodyFiles, userId, userEmail } = req.body || {};
     if (typeof prompt !== 'string') { emit('error', { message: 'prompt requis.' }); return res.end(); }
 
-    // ── Credits check (deduct only on success) ──
+    // ── Load profile early (credit check after PM agent computes complexity) ──
     let profile = null;
     if (pool && userId) {
       profile = await getOrCreateProfile(pool, userId, userEmail);
-      if (profile.credits < 1 && !profile.is_pro) {
-        emit('error', { message: 'Crédits insuffisants. Veuillez recharger votre compte.' });
-        return res.end();
-      }
     }
 
     // ── Load project files ──
@@ -934,6 +931,14 @@ app.post('/api/generate-app/agentic-stream', rateLimiter, async (req, res) => {
       emit('agent_done', { agent: 'pm', label: 'Product Manager — plan d\'architecture prêt ✓', data: { complexity: agentPlan?.complexity, pages: agentPlan?.pages?.length || 0 } });
     } catch (e) {
       emit('agent_done', { agent: 'pm', label: 'Product Manager — fallback au prompt direct', warning: true });
+    }
+
+    // ── Credit cost (computed after PM agent knows complexity) ──
+    const creditCost = getCreditCost(agentPlan?.complexity);
+    emit('credit_info', { cost: creditCost, label: formatCost(creditCost) });
+    if (pool && userId && profile && !profile.is_pro && profile.credits < creditCost) {
+      emit('error', { message: `Crédits insuffisants — ${formatCost(creditCost)} requis, ${Number(profile.credits).toFixed(1)} disponibles.` });
+      return res.end();
     }
 
     // ── Agent 2: Coder (streaming, Sonnet) ──
@@ -978,9 +983,10 @@ app.post('/api/generate-app/agentic-stream', rateLimiter, async (req, res) => {
       } catch (e) { console.warn('[agentic-stream] DB persist failed:', e.message); }
     }
 
-    // ── Deduct credits only on success ──
+    // ── Deduct fractional credits only on success ──
+    let creditsRemaining = null;
     if (pool && userId && profile) {
-      try { await deductCredits(pool, userId, 1); } catch {}
+      try { creditsRemaining = await deductCredits(pool, userId, creditCost); } catch {}
     }
 
     const entry = parsedFiles.find(f => f.path === PREVIEW_ENTRY)?.content || parsedFiles[0]?.content || '';
@@ -988,9 +994,10 @@ app.post('/api/generate-app/agentic-stream', rateLimiter, async (req, res) => {
       files: parsedFiles,
       code: entry,
       reply: replyText,
+      creditsUsed: creditCost,
+      creditsRemaining,
       agents: {
         plan: agentPlan ? { summary: agentPlan.summary, complexity: agentPlan.complexity } : null,
-        review: agentReview ? { score: agentReview.score, approved: agentReview.approved } : null,
         database: agentDatabase?.needsDatabase ? { explanation: agentDatabase.explanation } : null,
       },
     });
@@ -1014,12 +1021,13 @@ app.post('/api/generate-app/stream', rateLimiter, async (req, res) => {
       return res.end();
     }
 
-    // Check credits — deduct only on success
+    // Load profile — credit check uses prompt-length estimate (no PM agent in this simpler endpoint)
     let streamProfile = null;
+    const streamCreditCost = getCreditCost(prompt.length < 80 ? 'simple' : prompt.length < 300 ? 'medium' : 'complex');
     if (pool && userId) {
       streamProfile = await getOrCreateProfile(pool, userId, userEmail);
-      if (streamProfile.credits < 1 && !streamProfile.is_pro) {
-        res.write(`data: ${JSON.stringify({ error: 'Crédits insuffisants. Veuillez recharger votre compte.', type: 'error' })}\n\n`);
+      if (!streamProfile.is_pro && streamProfile.credits < streamCreditCost) {
+        res.write(`data: ${JSON.stringify({ error: `Crédits insuffisants — ${formatCost(streamCreditCost)} requis, ${Number(streamProfile.credits).toFixed(1)} disponibles.`, type: 'error' })}\n\n`);
         return res.end();
       }
     }
@@ -1053,11 +1061,11 @@ app.post('/api/generate-app/stream', rateLimiter, async (req, res) => {
       { prompt, chatHistory, currentEntryCode, allFiles },
       (chunk) => res.write(`data: ${JSON.stringify({ chunk, type: 'text' })}\n\n`),
       async () => {
-        // Deduct credit only on successful completion
+        let streamRemaining = null;
         if (pool && userId && streamProfile) {
-          try { await deductCredits(pool, userId, 1); } catch {}
+          try { streamRemaining = await deductCredits(pool, userId, streamCreditCost); } catch {}
         }
-        res.write(`data: ${JSON.stringify({ type: 'done' })}\n\n`);
+        res.write(`data: ${JSON.stringify({ type: 'done', creditsUsed: streamCreditCost, creditsRemaining: streamRemaining })}\n\n`);
         res.end();
       },
       (e) => {
