@@ -92,7 +92,7 @@ export async function runGenerate(opts) {
 
   const anthropicKey = process.env.ANTHROPIC_API_KEY;
   const model =
-    process.env.ANTHROPIC_MODEL || 'claude-4-5-haiku-latest';
+    process.env.ANTHROPIC_MODEL || 'claude-3-5-haiku-latest';
 
   if (anthropicKey) {
     const client = new Anthropic({ apiKey: anthropicKey });
@@ -175,7 +175,7 @@ export async function runGenerate(opts) {
 export async function runChat(prompt) {
   const anthropicKey = process.env.ANTHROPIC_API_KEY;
   const model =
-    process.env.ANTHROPIC_MODEL || 'claude-4-6-sonnet-latest';
+    process.env.ANTHROPIC_MODEL || 'claude-3-5-sonnet-latest';
 
   if (anthropicKey) {
     const client = new Anthropic({ apiKey: anthropicKey });
@@ -227,7 +227,7 @@ export async function runGenerateStream(opts, onChunk, onEnd, onError) {
     try {
       const client = new Anthropic({ apiKey: anthropicKey });
       const stream = await client.messages.stream({
-        model: process.env.ANTHROPIC_MODEL || 'claude-4-5-haiku-latest',
+        model: process.env.ANTHROPIC_MODEL || 'claude-3-5-haiku-latest',
         max_tokens: 16384,
         system: SYSTEM_MULTI,
         messages: [{ role: 'user', content: userBlock }],
@@ -271,7 +271,7 @@ export async function runChatStream(prompt, onChunk, onEnd, onError) {
     try {
       const client = new Anthropic({ apiKey: anthropicKey });
       const stream = await client.messages.stream({
-        model: process.env.ANTHROPIC_MODEL || 'claude-4-6-sonnet-latest',
+        model: process.env.ANTHROPIC_MODEL || 'claude-3-5-sonnet-latest',
         max_tokens: 4096,
         system: 'You are Huggy, the elite expert AI architect for Huggy Studio (a premium full-stack application builder). You speak the user\'s language natively. Be concise, highly professional, and action-oriented.',
         messages: [{ role: 'user', content: prompt }],

@@ -767,128 +767,149 @@ export default function App() {
 
     const startTime = Date.now();
 
-    // Real Agentic Pipeline — mirrors the 3 agents on the server
+    // Real Agentic Streaming Pipeline — consumes /api/generate-app/agentic-stream SSE
     const runAgentWorkflow = async () => {
-      const tasks: AgentTask[] = [
-        { id: 'pm',  label: '🧠 Product Manager — analysing your request...', status: 'running', type: 'search' },
-      ];
-      setAgentTasks(tasks);
-
       const originalCode = filesMap[PREVIEW_ENTRY] || DEFAULT_PREVIEW_CODE;
       let updatedMap = { ...filesMap };
       let fullResponse = '';
+      let aborted = false;
 
-      // Start API immediately so we don't waste time waiting for UI animations
       const historyForAI = messages.map(m => ({ role: m.sender === 'VOUS' ? 'user' : 'assistant', content: m.text }));
-      const apiPromise = generateAppUpdate(newUserMsg.text, {
-        currentCode: originalCode,
-        projectId,
-        chatHistory: historyForAI,
-        userId: user.id,
-        userEmail: user.email
-      });
 
-      // While API is starting, show PM animation
-      await new Promise(r => setTimeout(r, 400));
-      setAgentTasks(prev => prev.map(t => t.id === 'pm' ? { ...t, label: '🧠 Product Manager — architecture plan ready', status: 'success' } : t));
-
-      // Show Coder animation while waiting for API to finish
-      const codeTask: AgentTask = { id: 'coder', label: '⚡ Coder — generating premium code...', status: 'running', type: 'edit' };
-      setAgentTasks(prev => [...prev, codeTask]);
-
+      // Kick off SSE stream
+      let response: Response;
       try {
-        const gen = await apiPromise;
-        if (gen.export) {
-          setLastExport(gen.export);
-        }
-        if (gen.files.length) {
-          for (const f of gen.files) {
-            updatedMap[f.path] = f.content;
-          }
-          fullResponse =
-            gen.reply ||
-            `Mise à jour appliquée (${gen.files.length} fichier(s)) — ${gen.provider || 'IA'}.`;
-        } else if (gen.code) {
-          updatedMap[PREVIEW_ENTRY] = gen.code;
-          fullResponse =
-            gen.reply ||
-            `J'ai conçu une interface pour : « ${newUserMsg.text} ».`;
-        } else {
-          throw new Error('Réponse vide');
-        }
-      } catch (error) {
-        console.error('IA:', error);
-        const fallback = originalCode.replace(
-          'Bienvenue',
-          newUserMsg.text.substring(0, 24),
-        );
-        updatedMap[PREVIEW_ENTRY] = fallback;
-        fullResponse = `J'ai initialisé votre espace de création pour : « ${newUserMsg.text} ». Je suis prêt à construire votre interface complète. Connectez vos services externes ou ajustez les paramètres pour une personnalisation sur mesure.`;
+        response = await fetch('/api/generate-app/agentic-stream', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            prompt: newUserMsg.text,
+            currentCode: originalCode,
+            projectId,
+            chatHistory: historyForAI,
+            userId: user.id,
+            userEmail: user.email,
+          }),
+        });
+      } catch {
+        setIsGenerating(false);
+        setAgentTasks([]);
+        showToast('Connexion au serveur impossible', 'info');
+        return;
       }
 
-      setFilesMap(updatedMap);
-      const updatedCode = updatedMap[PREVIEW_ENTRY] || '';
+      const reader = response.body?.getReader();
+      if (!reader) { setIsGenerating(false); return; }
+      const decoder = new TextDecoder();
+      let buffer = '';
 
-      setAgentTasks(prev => prev.map(t => t.id === 'coder' ? { ...t, status: 'success' } : t));
+      // Allow external cancel
+      streamCancelRef.current = () => { aborted = true; reader.cancel(); };
 
-      // VR step (brief visual pause so React renders it)
-      const vrTask: AgentTask = { id: 'vr', label: '🎨 Visual Reviewer — checking UI quality...', status: 'running', type: 'lint' };
-      setAgentTasks(prev => [...prev, vrTask]);
-      await new Promise(r => setTimeout(r, 200));
-      setAgentTasks(prev => prev.map(t => t.id === 'vr' ? { ...t, label: '🎨 Visual Reviewer — design approved ✓', status: 'success' } : t));
+      const processEvent = (raw: string) => {
+        if (!raw.startsWith('data: ')) return;
+        let event: any;
+        try { event = JSON.parse(raw.slice(6)); } catch { return; }
 
-      // Compile step (brief visual pause)
-      const compileTask: AgentTask = { id: 'compile', label: '🔨 Compile — optimizing bundle...', status: 'running', type: 'compile' };
-      setAgentTasks(prev => [...prev, compileTask]);
-      await new Promise(r => setTimeout(r, 200));
-      setAgentTasks(prev => prev.map(t => t.id === 'compile' ? { ...t, status: 'success' } : t));
+        switch (event.type) {
+          case 'agent_start':
+            setAgentTasks(prev => {
+              const agentTypeMap: Record<string, AgentTask['type']> = { pm: 'search', coder: 'edit', vr: 'lint' };
+              const exists = prev.find(t => t.id === event.agent);
+              if (exists) return prev.map(t => t.id === event.agent ? { ...t, label: event.label, status: 'running' } : t);
+              return [...prev, { id: event.agent, label: event.label, status: 'running', type: agentTypeMap[event.agent] || 'edit' }];
+            });
+            break;
 
-      streamCancelRef.current?.();
-      streamCancelRef.current = streamChatText(
-        fullResponse,
-        (partial) => setStreamingMessage(partial),
-        () => {
-          streamCancelRef.current = null;
-          const huggyMsg: Message = {
-            id: (Date.now() + 1).toString(),
-            sender: 'HUGGY',
-            text: fullResponse,
-            timestamp: new Date(),
-            changedFiles: [
-              {
-                path: PREVIEW_ENTRY,
-                original: originalCode,
-                current: updatedCode,
+          case 'agent_done':
+            setAgentTasks(prev => prev.map(t => t.id === event.agent
+              ? { ...t, label: event.label, status: event.warning ? 'error' : 'success' }
+              : t
+            ));
+            break;
+
+          case 'chunk':
+            // Show raw streaming tokens in terminal for pro feel
+            if (event.content) {
+              setTerminalTabs(prev => prev.map(t => t.id === activeTabId
+                ? { ...t, lines: t.lines.length > 200 ? t.lines.slice(-150) : t.lines }
+                : t
+              ));
+            }
+            break;
+
+          case 'done': {
+            const files: { path: string; content: string }[] = event.files || [];
+            fullResponse = event.reply || (files.length > 0
+              ? `Mise à jour appliquée (${files.length} fichier(s)).`
+              : `Interface générée pour : « ${newUserMsg.text} ».`);
+
+            if (files.length > 0) {
+              for (const f of files) updatedMap[f.path] = f.content;
+            } else if (event.code) {
+              updatedMap[PREVIEW_ENTRY] = event.code;
+            }
+
+            const updatedCode = updatedMap[PREVIEW_ENTRY] || '';
+            setFilesMap(updatedMap);
+
+            // Refresh credits
+            if (user) getMe({ userId: user.id, email: user.email }).then(d => setCredits(d.credits));
+
+            streamCancelRef.current = streamChatText(
+              fullResponse,
+              (partial) => setStreamingMessage(partial),
+              () => {
+                streamCancelRef.current = null;
+                const huggyMsg: Message = {
+                  id: (Date.now() + 1).toString(),
+                  sender: 'HUGGY',
+                  text: fullResponse,
+                  timestamp: new Date(),
+                  changedFiles: [{ path: PREVIEW_ENTRY, original: originalCode, current: updatedCode }],
+                  durationMs: Date.now() - startTime,
+                };
+                setMessages(prev => [...prev, huggyMsg]);
+                setStreamingMessage('');
+                setIsGenerating(false);
+                setAgentTasks([]);
+                setTerminalTabs(prev => prev.map(t => t.id === activeTabId
+                  ? { ...t, lines: [...t.lines, `[HUGGY] Tâche terminée : ${newUserMsg.text.substring(0, 40)}…`, '[HUGGY] Build OK — aperçu mis à jour.'] }
+                  : t
+                ));
               },
-            ],
-            durationMs: Date.now() - startTime,
-          };
-
-          // Refresh credits after generation
-          if (user) {
-            getMe({ userId: user.id, email: user.email }).then(data => setCredits(data.credits));
+            );
+            break;
           }
 
-          setMessages((prev) => [...prev, huggyMsg]);
-          setStreamingMessage('');
+          case 'error':
+            showToast(event.message || 'Erreur IA', 'info');
+            setIsGenerating(false);
+            setAgentTasks([]);
+            break;
+        }
+      };
+
+      // Read stream loop
+      try {
+        while (!aborted) {
+          const { done, value } = await reader.read();
+          if (done) break;
+          buffer += decoder.decode(value, { stream: true });
+          const lines = buffer.split('\n');
+          buffer = lines.pop() ?? '';
+          for (const line of lines) {
+            if (line.trim()) processEvent(line.trim());
+          }
+        }
+      } catch (e) {
+        if (!aborted) {
+          console.error('[stream read]', e);
+          showToast('Flux interrompu', 'info');
           setIsGenerating(false);
           setAgentTasks([]);
-          setTerminalTabs((prev) =>
-            prev.map((t) =>
-              t.id === activeTabId
-                ? {
-                    ...t,
-                    lines: [
-                      ...t.lines,
-                      `[HUGGY] Tâche terminée : ${newUserMsg.text.substring(0, 40)}…`,
-                      '[HUGGY] Build OK — aperçu mis à jour.',
-                    ],
-                  }
-                : t,
-            ),
-          );
-        },
-      );
+        }
+      }
     };
 
     runAgentWorkflow();

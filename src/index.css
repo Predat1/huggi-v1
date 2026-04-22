@@ -1,4 +1,5 @@
 @import "tailwindcss";
+@custom-variant dark (&:is(.dark *));
 
 @layer base {
   @media (prefers-reduced-motion: no-preference) {
@@ -101,4 +102,40 @@
   );
   background-size: 200% 100%;
   animation: huggy-shimmer 1.4s ease-in-out infinite;
+}
+
+/* Dark mode shimmer */
+.dark .huggy-thinking-shimmer {
+  background: linear-gradient(
+    90deg,
+    rgb(30 41 59) 0%,
+    rgb(51 65 85) 45%,
+    rgb(30 41 59) 50%,
+    rgb(51 65 85) 55%,
+    rgb(30 41 59) 100%
+  );
+  background-size: 200% 100%;
+}
+
+/* Dark mode scrollbar */
+.dark ::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+.dark ::-webkit-scrollbar-track {
+  background: transparent;
+}
+.dark ::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 9999px;
+}
+.dark ::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.2);
+}
+
+/* Smooth theme transition on all interactive elements */
+*, *::before, *::after {
+  transition-property: background-color, border-color, color, fill, stroke;
+  transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+  transition-duration: 150ms;
 }

@@ -699,6 +699,147 @@ app.post('/api/projects/:id/export/github', async (req, res) => {
 
 /* ——— IA ——— */
 
+/**
+ * Agentic streaming endpoint — emits SSE events for each agent step.
+ * Events: agent_start, agent_done, chunk, done, error
+ */
+app.post('/api/generate-app/agentic-stream', rateLimiter, async (req, res) => {
+  res.setHeader('Content-Type', 'text/event-stream');
+  res.setHeader('Cache-Control', 'no-cache');
+  res.setHeader('Connection', 'keep-alive');
+  res.flushHeaders();
+
+  const emit = (type, data = {}) => {
+    res.write(`data: ${JSON.stringify({ type, ...data })}\n\n`);
+  };
+
+  try {
+    const { prompt, chatHistory, currentCode, projectId, files: bodyFiles, userId, userEmail } = req.body || {};
+    if (typeof prompt !== 'string') { emit('error', { message: 'prompt requis.' }); return res.end(); }
+
+    // ── Credits check (deduct only on success) ──
+    let profile = null;
+    if (pool && userId) {
+      profile = await getOrCreateProfile(pool, userId, userEmail);
+      if (profile.credits < 1 && !profile.is_pro) {
+        emit('error', { message: 'Crédits insuffisants. Veuillez recharger votre compte.' });
+        return res.end();
+      }
+    }
+
+    // ── Load project files ──
+    let allFiles = {};
+    if (pool && projectId) {
+      if (!isUuid(projectId)) { emit('error', { message: 'projectId invalide.' }); return res.end(); }
+      const project = await getProject(pool, projectId);
+      if (!project) { emit('error', { message: 'Projet introuvable.' }); return res.end(); }
+      const rows = await listFiles(pool, projectId);
+      for (const r of rows) allFiles[r.path] = r.content;
+    }
+    if (bodyFiles && typeof bodyFiles === 'object') allFiles = { ...allFiles, ...bodyFiles };
+    const currentEntryCode = typeof currentCode === 'string' ? currentCode : allFiles[PREVIEW_ENTRY] || DEFAULT_PREVIEW_CODE;
+
+    // ── Agent 1: Product Manager ──
+    emit('agent_start', { agent: 'pm', label: 'Product Manager — analyse de votre requête...' });
+    let refinedPrompt = prompt;
+    let agentPlan = null;
+    let agentDatabase = null;
+    try {
+      const pipeline = await runAgenticPipeline(prompt, { chatHistory, currentEntryCode, allFiles });
+      refinedPrompt = pipeline.refinedPrompt || prompt;
+      agentPlan = pipeline.plan;
+      agentDatabase = pipeline.database;
+      emit('agent_done', { agent: 'pm', label: 'Product Manager — plan d\'architecture prêt ✓', data: { complexity: agentPlan?.complexity, pages: agentPlan?.pages?.length || 0 } });
+    } catch (e) {
+      emit('agent_done', { agent: 'pm', label: 'Product Manager — fallback au prompt direct', warning: true });
+    }
+
+    // ── Agent 2: Coder (streaming) ──
+    emit('agent_start', { agent: 'coder', label: 'Coder — génération du code premium...' });
+    let fullCodeText = '';
+    await new Promise((resolve, reject) => {
+      runGenerateStream(
+        { prompt: refinedPrompt, chatHistory, currentEntryCode, allFiles },
+        (chunk) => { fullCodeText += chunk; emit('chunk', { content: chunk }); },
+        () => resolve(),
+        (err) => reject(err),
+      );
+    });
+    emit('agent_done', { agent: 'coder', label: 'Coder — code généré ✓' });
+
+    // ── Parse files from streamed output ──
+    let parsedFiles = [];
+    let replyText = '';
+    try {
+      const jsonStart = fullCodeText.indexOf('{');
+      const jsonEnd = fullCodeText.lastIndexOf('}');
+      if (jsonStart !== -1 && jsonEnd > jsonStart) {
+        const parsed = JSON.parse(fullCodeText.slice(jsonStart, jsonEnd + 1));
+        parsedFiles = Array.isArray(parsed.files) ? parsed.files : [];
+        replyText = parsed.reply || parsed.message || '';
+        if (!parsedFiles.length && parsed.code) {
+          parsedFiles = [{ path: PREVIEW_ENTRY, content: parsed.code }];
+        }
+      }
+    } catch {
+      // If parsing fails, treat entire output as App.tsx code
+      if (fullCodeText.trim()) {
+        parsedFiles = [{ path: PREVIEW_ENTRY, content: fullCodeText.trim() }];
+      }
+    }
+
+    // ── Agent 3: Visual Reviewer ──
+    emit('agent_start', { agent: 'vr', label: 'Visual Reviewer — contrôle qualité UI...' });
+    let agentReview = null;
+    if (parsedFiles.length > 0) {
+      try {
+        agentReview = await runPostGenerationReview(parsedFiles, prompt);
+        if (!agentReview.approved && agentReview.corrections?.length > 0) {
+          for (const correction of agentReview.corrections) {
+            const idx = parsedFiles.findIndex(f => f.path === correction.path);
+            if (idx >= 0) parsedFiles[idx].content = correction.content;
+            else parsedFiles.push(correction);
+          }
+        }
+        emit('agent_done', { agent: 'vr', label: `Visual Reviewer — score ${agentReview.score}/100 ${agentReview.approved ? '✓' : '→ corrigé'}` });
+      } catch {
+        emit('agent_done', { agent: 'vr', label: 'Visual Reviewer — validé ✓' });
+      }
+    } else {
+      emit('agent_done', { agent: 'vr', label: 'Visual Reviewer — validé ✓' });
+    }
+
+    // ── Persist to DB ──
+    if (pool && projectId && parsedFiles.length > 0) {
+      try {
+        for (const f of parsedFiles) await upsertFile(pool, projectId, f.path, f.content);
+      } catch (e) { console.warn('[agentic-stream] DB persist failed:', e.message); }
+    }
+
+    // ── Deduct credits only on success ──
+    if (pool && userId && profile) {
+      try { await deductCredits(pool, userId, 1); } catch {}
+    }
+
+    const entry = parsedFiles.find(f => f.path === PREVIEW_ENTRY)?.content || parsedFiles[0]?.content || '';
+    emit('done', {
+      files: parsedFiles,
+      code: entry,
+      reply: replyText,
+      agents: {
+        plan: agentPlan ? { summary: agentPlan.summary, complexity: agentPlan.complexity } : null,
+        review: agentReview ? { score: agentReview.score, approved: agentReview.approved } : null,
+        database: agentDatabase?.needsDatabase ? { explanation: agentDatabase.explanation } : null,
+      },
+    });
+    res.end();
+  } catch (e) {
+    console.error('[agentic-stream]', e);
+    emit('error', { message: safeError(e) });
+    res.end();
+  }
+});
+
 app.post('/api/generate-app/stream', rateLimiter, async (req, res) => {
   res.setHeader('Content-Type', 'text/event-stream');
   res.setHeader('Cache-Control', 'no-cache');
@@ -711,13 +852,14 @@ app.post('/api/generate-app/stream', rateLimiter, async (req, res) => {
       return res.end();
     }
 
+    // Check credits — deduct only on success
+    let streamProfile = null;
     if (pool && userId) {
-      const profile = await getOrCreateProfile(pool, userId, userEmail);
-      if (profile.credits < 1 && !profile.is_pro) {
+      streamProfile = await getOrCreateProfile(pool, userId, userEmail);
+      if (streamProfile.credits < 1 && !streamProfile.is_pro) {
         res.write(`data: ${JSON.stringify({ error: 'Crédits insuffisants. Veuillez recharger votre compte.', type: 'error' })}\n\n`);
         return res.end();
       }
-      await deductCredits(pool, userId, 1);
     }
 
     let allFiles = {};
@@ -748,7 +890,11 @@ app.post('/api/generate-app/stream', rateLimiter, async (req, res) => {
     await runGenerateStream(
       { prompt, chatHistory, currentEntryCode, allFiles },
       (chunk) => res.write(`data: ${JSON.stringify({ chunk, type: 'text' })}\n\n`),
-      () => {
+      async () => {
+        // Deduct credit only on successful completion
+        if (pool && userId && streamProfile) {
+          try { await deductCredits(pool, userId, 1); } catch {}
+        }
         res.write(`data: ${JSON.stringify({ type: 'done' })}\n\n`);
         res.end();
       },
@@ -772,13 +918,13 @@ app.post('/api/generate-app', rateLimiter, async (req, res) => {
       return res.status(400).json({ error: 'prompt requis.' });
     }
 
-    // Credits logic
+    // Credits check — deduct only on success (at end of handler)
+    let syncProfile = null;
     if (pool && userId) {
-      const profile = await getOrCreateProfile(pool, userId, userEmail);
-      if (profile.credits < 1 && !profile.is_pro) {
+      syncProfile = await getOrCreateProfile(pool, userId, userEmail);
+      if (syncProfile.credits < 1 && !syncProfile.is_pro) {
         return res.status(402).json({ error: 'Crédits insuffisants. Veuillez recharger votre compte.' });
       }
-      await deductCredits(pool, userId, 1);
     }
 
     let allFiles = {};
@@ -856,6 +1002,11 @@ app.post('/api/generate-app', rateLimiter, async (req, res) => {
       for (const f of result.files) {
         await upsertFile(pool, projectId, f.path, f.content);
       }
+    }
+
+    // Deduct credit only on success
+    if (pool && userId && syncProfile) {
+      try { await deductCredits(pool, userId, 1); } catch {}
     }
 
     const entry =

@@ -19,8 +19,11 @@ import {
   Database,
   Shield,
   Check,
+  Moon,
+  Sun,
 } from 'lucide-react';
 import HuggyChatInput from './HuggyChatInput';
+import { useTheme } from '../contexts/ThemeContext';
 
 export type AccentStyle = {
   bg: string;
@@ -131,6 +134,7 @@ function scrollToId(id: string, onDone?: () => void) {
 }
 
 export default function LandingPage({ accent, onOpenStudio, onLogin, userId }: LandingPageProps) {
+  const { theme, toggleTheme } = useTheme();
   const [buildInput, setBuildInput] = useState('');
   const [openFaq, setOpenFaq] = useState<number | null>(null);
   const [mobileNavOpen, setMobileNavOpen] = useState(false);
@@ -189,8 +193,8 @@ export default function LandingPage({ accent, onOpenStudio, onLogin, userId }: L
   }, [mobileNavOpen]);
 
   return (
-    <div className="min-h-screen bg-white text-slate-900 font-sans antialiased">
-      <div className="sticky top-0 z-[110] border-b border-slate-100/80 bg-white/85 backdrop-blur-md supports-[backdrop-filter]:bg-white/70 transition-[background,box-shadow] duration-300 shadow-[0_1px_0_rgba(15,23,42,0.04)]">
+    <div className="min-h-screen bg-white dark:bg-[#0A0A0A] text-slate-900 dark:text-slate-100 font-sans antialiased transition-colors duration-300">
+      <div className="sticky top-0 z-[110] border-b border-slate-100/80 dark:border-white/5 bg-white/85 dark:bg-black/85 backdrop-blur-md supports-[backdrop-filter]:bg-white/70 transition-[background,box-shadow] duration-300 shadow-[0_1px_0_rgba(15,23,42,0.04)] dark:shadow-none">
         <div className="max-w-6xl mx-auto px-6 h-16 grid grid-cols-2 md:grid-cols-[1fr_auto_1fr] items-center">
           {/* Left Side: Logo */}
           <div className="flex items-center justify-start">
@@ -204,36 +208,35 @@ export default function LandingPage({ accent, onOpenStudio, onLogin, userId }: L
               >
                 <Zap size={18} fill="currentColor" />
               </div>
-              <span className="text-sm font-black tracking-tight text-slate-900">Huggy</span>
+              <span className="text-sm font-black tracking-tight text-slate-900 dark:text-white">Huggy</span>
             </button>
           </div>
 
           {/* Center Side: Navigation */}
-          <nav className="hidden md:flex items-center justify-center gap-10 text-sm font-bold text-slate-500">
-            <a href="#features" onClick={go('features')} className="hover:text-slate-900 transition-colors duration-200">
-              Features
-            </a>
-            <a href="#how-it-works" onClick={go('how-it-works')} className="hover:text-slate-900 transition-colors duration-200">
-              How it works
-            </a>
-            <a href="#testimonials" onClick={go('testimonials')} className="hover:text-slate-900 transition-colors duration-200">
-              Community
-            </a>
-            <a href="#pricing" onClick={go('pricing')} className="hover:text-slate-900 transition-colors duration-200">
-              Pricing
-            </a>
-            <a href="#about" onClick={go('about')} className="hover:text-slate-900 transition-colors duration-200">
-              About
-            </a>
+          <nav className="hidden md:flex items-center justify-center gap-10 text-sm font-bold text-slate-500 dark:text-slate-400">
+            <a href="#features" onClick={go('features')} className="hover:text-slate-900 dark:hover:text-white transition-colors duration-200">Features</a>
+            <a href="#how-it-works" onClick={go('how-it-works')} className="hover:text-slate-900 dark:hover:text-white transition-colors duration-200">How it works</a>
+            <a href="#testimonials" onClick={go('testimonials')} className="hover:text-slate-900 dark:hover:text-white transition-colors duration-200">Community</a>
+            <a href="#pricing" onClick={go('pricing')} className="hover:text-slate-900 dark:hover:text-white transition-colors duration-200">Pricing</a>
+            <a href="#about" onClick={go('about')} className="hover:text-slate-900 dark:hover:text-white transition-colors duration-200">About</a>
           </nav>
 
           {/* Right Side: Actions */}
           <div className="flex items-center justify-end gap-3">
             <button
               onClick={() => onLogin && onLogin()}
-              className="hidden sm:inline-block text-xs font-black uppercase tracking-wider text-slate-400 hover:text-slate-900 transition-colors duration-200"
+              className="hidden sm:inline-block text-xs font-black uppercase tracking-wider text-slate-400 dark:text-slate-500 hover:text-slate-900 dark:hover:text-white transition-colors duration-200"
             >
               Sign in
+            </button>
+            {/* Dark mode toggle */}
+            <button
+              type="button"
+              onClick={toggleTheme}
+              className="hidden sm:flex items-center justify-center w-8 h-8 rounded-xl text-slate-400 dark:text-slate-500 hover:bg-slate-100 dark:hover:bg-white/10 hover:text-slate-900 dark:hover:text-white transition-all"
+              aria-label="Toggle theme"
+            >
+              {theme === 'dark' ? <Sun size={15} /> : <Moon size={15} />}
             </button>
             <button
               type="button"
@@ -245,7 +248,7 @@ export default function LandingPage({ accent, onOpenStudio, onLogin, userId }: L
             </button>
             <button
               type="button"
-              className="md:hidden p-2 rounded-xl text-slate-700 hover:bg-slate-100 transition-colors"
+              className="md:hidden p-2 rounded-xl text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-white/10 transition-colors"
               aria-expanded={mobileNavOpen}
               aria-label="Menu"
               onClick={() => setMobileNavOpen((v) => !v)}
@@ -256,7 +259,7 @@ export default function LandingPage({ accent, onOpenStudio, onLogin, userId }: L
         </div>
 
         {mobileNavOpen && (
-          <div className="md:hidden border-t border-slate-100 bg-white px-6 py-4 flex flex-col gap-1">
+          <div className="md:hidden border-t border-slate-100 dark:border-white/5 bg-white dark:bg-[#0A0A0A] px-6 py-4 flex flex-col gap-1">
             {[
               ['Features', 'features'],
               ['How it works', 'how-it-works'],
@@ -269,7 +272,7 @@ export default function LandingPage({ accent, onOpenStudio, onLogin, userId }: L
               <a
                 key={id}
                 href={`#${id}`}
-                className="py-3 text-sm font-bold text-slate-700 border-b border-slate-50 last:border-0"
+                className="py-3 text-sm font-bold text-slate-700 dark:text-slate-300 border-b border-slate-50 dark:border-white/5 last:border-0"
                 onClick={go(id)}
               >
                 {label}
@@ -299,16 +302,16 @@ export default function LandingPage({ accent, onOpenStudio, onLogin, userId }: L
               </div>
 
               <h1 className="mt-16 text-4xl sm:text-6xl lg:text-[76px] leading-none font-black tracking-tight">
-                <span className="block text-[#0F172A]">Build any SaaS</span>
+                <span className="block text-[#0F172A] dark:text-white">Build any SaaS</span>
                 <span className="block text-blue-600 italic">instantly.</span>
               </h1>
 
-              <p className="mt-8 mx-auto max-w-xl text-slate-500 text-base leading-relaxed">
+              <p className="mt-8 mx-auto max-w-xl text-slate-500 dark:text-slate-400 text-base leading-relaxed">
                 Describe your project, Huggy does the rest. AI-generated code, UI, dashboards, and data tables in seconds.
               </p>
 
               <div className="mt-14 max-w-3xl mx-auto">
-                <div className="rounded-3xl overflow-hidden shadow-2xl shadow-slate-900/10 bg-white border border-slate-100">
+                <div className="rounded-3xl overflow-hidden shadow-2xl shadow-slate-900/10 dark:shadow-black/40 bg-white dark:bg-[#111] border border-slate-100 dark:border-white/5">
                   <div className="p-6">
                     <HuggyChatInput
                       onSend={(prompt) => {
@@ -325,9 +328,9 @@ export default function LandingPage({ accent, onOpenStudio, onLogin, userId }: L
               {/* --- FEATURES SECTION (Redesigned: Glassmorphism) --- */}
               <div id="features" className="mt-40 scroll-mt-28">
                 <div className="flex items-center gap-3 mb-16 overflow-hidden">
-                  <div className="h-px bg-slate-200 flex-1" />
-                  <span className="text-[10px] font-black text-slate-400 uppercase tracking-[0.3em] whitespace-nowrap">Capabilities</span>
-                  <div className="h-px bg-slate-200 flex-1" />
+                  <div className="h-px bg-slate-200 dark:bg-white/10 flex-1" />
+                  <span className="text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-[0.3em] whitespace-nowrap">Capabilities</span>
+                  <div className="h-px bg-slate-200 dark:bg-white/10 flex-1" />
                 </div>
                 
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-10 text-left">
@@ -339,14 +342,14 @@ export default function LandingPage({ accent, onOpenStudio, onLogin, userId }: L
                   ].map((c) => (
                     <div
                       key={c.t}
-                      className="group relative p-10 bg-white border border-slate-100 rounded-[32px] overflow-hidden transition-all duration-500 hover:shadow-2xl hover:shadow-blue-500/10 hover:-translate-y-2"
+                      className="group relative p-10 bg-white dark:bg-[#111] border border-slate-100 dark:border-white/5 rounded-[32px] overflow-hidden transition-all duration-500 hover:shadow-2xl hover:shadow-blue-500/10 dark:hover:shadow-blue-500/5 hover:-translate-y-2"
                     >
                       <div className={`absolute top-0 right-0 w-32 h-32 bg-${c.accent}-500/5 blur-3xl rounded-full -mr-16 -mt-16 group-hover:bg-${c.accent}-500/10 transition-colors`} />
                       <div className={`w-14 h-14 rounded-2xl bg-${c.accent}-50 flex items-center justify-center text-${c.accent}-600 mb-6 group-hover:scale-110 transition-transform duration-500 border border-${c.accent}-100/50`}>
                         <c.icon size={24} />
                       </div>
-                      <h3 className="text-lg font-black text-slate-900 leading-tight mb-3 italic">{c.t}</h3>
-                      <p className="text-sm font-medium text-slate-500 leading-relaxed">{c.d}</p>
+                      <h3 className="text-lg font-black text-slate-900 dark:text-white leading-tight mb-3 italic">{c.t}</h3>
+                      <p className="text-sm font-medium text-slate-500 dark:text-slate-400 leading-relaxed">{c.d}</p>
                     </div>
                   ))}
                 </div>
@@ -358,12 +361,12 @@ export default function LandingPage({ accent, onOpenStudio, onLogin, userId }: L
 
           {/* --- HOW IT WORKS (Redesigned: Visual Timeline) --- */}
           <section id="how-it-works" className="scroll-mt-28 py-32">
-            <div className="relative rounded-[48px] bg-slate-100/50 border border-slate-200/60 p-16 overflow-hidden">
+            <div className="relative rounded-[48px] bg-slate-100/50 dark:bg-white/5 border border-slate-200/60 dark:border-white/5 p-16 overflow-hidden">
                <div className="absolute top-0 left-1/2 -translate-x-1/2 w-px h-full bg-gradient-to-b from-blue-500/20 via-blue-200/10 to-transparent hidden lg:block" />
                
                <div className="relative text-center mb-16">
                  <h2 className="text-xs font-black uppercase tracking-[0.4em] text-blue-600 mb-4 px-4">Le Processus Huggy</h2>
-                 <p className="text-3xl sm:text-4xl font-black text-[#0F172A] tracking-tight">De l'idée au déploiement en 60s.</p>
+                 <p className="text-3xl sm:text-4xl font-black text-[#0F172A] dark:text-white tracking-tight">De l'idée au déploiement en 60s.</p>
                </div>
 
                <div className="grid lg:grid-cols-3 gap-20 relative">
@@ -372,11 +375,11 @@ export default function LandingPage({ accent, onOpenStudio, onLogin, userId }: L
                    { n: '02', t: 'Édition Immersive', d: 'Ajustez votre interface en temps réel dans notre studio de classe mondiale. Code propre et optimisé.' },
                    { n: '03', t: 'Push & Live', d: 'Déployez vers GitHub ou notre cloud sécurisé. Votre SaaS est prêt à accueillir ses utilisateurs.' },
                  ].map((s) => (
-                   <div key={s.n} className="relative group p-8 rounded-3xl bg-white border border-slate-100 shadow-sm hover:shadow-xl transition-all duration-500">
-                     <span className="text-6xl font-black text-slate-100 group-hover:text-blue-50/50 transition-colors absolute -top-4 -left-4 pointer-events-none select-none">{s.n}</span>
+                   <div key={s.n} className="relative group p-8 rounded-3xl bg-white dark:bg-[#111] border border-slate-100 dark:border-white/5 shadow-sm hover:shadow-xl transition-all duration-500">
+                     <span className="text-6xl font-black text-slate-100 dark:text-white/5 group-hover:text-blue-50/50 transition-colors absolute -top-4 -left-4 pointer-events-none select-none">{s.n}</span>
                      <div className="relative">
-                       <h3 className="text-xl font-bold text-slate-900 mb-3">{s.t}</h3>
-                       <p className="text-sm text-slate-500 leading-relaxed font-medium">{s.d}</p>
+                       <h3 className="text-xl font-bold text-slate-900 dark:text-white mb-3">{s.t}</h3>
+                       <p className="text-sm text-slate-500 dark:text-slate-400 leading-relaxed font-medium">{s.d}</p>
                      </div>
                    </div>
                  ))}
@@ -386,7 +389,7 @@ export default function LandingPage({ accent, onOpenStudio, onLogin, userId }: L
         </div>
 
         {/* --- TESTIMONIALS (Redesigned: Premium Grid) --- */}
-        <section id="testimonials" className="scroll-mt-28 py-48 px-6 relative overflow-hidden bg-white">
+        <section id="testimonials" className="scroll-mt-28 py-48 px-6 relative overflow-hidden bg-white dark:bg-[#0A0A0A]">
           <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_right,rgba(37,99,235,0.03),transparent)]" />
           <div className="max-w-6xl mx-auto relative">
             <div className="text-center mb-24">
@@ -394,24 +397,24 @@ export default function LandingPage({ accent, onOpenStudio, onLogin, userId }: L
                 <Star size={14} className="fill-blue-600" />
                 COMMUNITY VOICE
               </div>
-              <h2 className="text-4xl md:text-5xl font-black text-slate-900 tracking-tight leading-tight">Plébiscité par les bâtisseurs.</h2>
-              <p className="mt-6 text-lg text-slate-500 max-w-2xl mx-auto font-medium">Rejoignez des milliers de créateurs qui repoussent les limites du possible.</p>
+              <h2 className="text-4xl md:text-5xl font-black text-slate-900 dark:text-white tracking-tight leading-tight">Plébiscité par les bâtisseurs.</h2>
+              <p className="mt-6 text-lg text-slate-500 dark:text-slate-400 max-w-2xl mx-auto font-medium">Rejoignez des milliers de créateurs qui repoussent les limites du possible.</p>
             </div>
 
             <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-12">
               {TESTIMONIALS.map((t, idx) => (
                 <article
                   key={t.name}
-                  className={`bg-white p-10 rounded-[40px] border border-slate-100 shadow-sm flex flex-col transition-all duration-500 hover:shadow-2xl hover:-translate-y-2 group ${idx === 1 ? 'md:scale-105 z-10 border-blue-100' : ''}`}
+                  className={`bg-white dark:bg-[#111] p-10 rounded-[40px] border border-slate-100 dark:border-white/5 shadow-sm flex flex-col transition-all duration-500 hover:shadow-2xl hover:-translate-y-2 group ${idx === 1 ? 'md:scale-105 z-10 border-blue-100 dark:border-blue-500/20' : ''}`}
                 >
-                  <p className="text-slate-700 font-bold text-lg leading-relaxed mb-8">&ldquo;{t.quote}&rdquo;</p>
-                  <div className="mt-auto pt-8 border-t border-slate-50 flex items-center gap-4">
-                    <div className="w-12 h-12 rounded-2xl bg-slate-900 text-white flex items-center justify-center text-xs font-black shadow-lg group-hover:rotate-6 transition-transform">
+                  <p className="text-slate-700 dark:text-slate-300 font-bold text-lg leading-relaxed mb-8">&ldquo;{t.quote}&rdquo;</p>
+                  <div className="mt-auto pt-8 border-t border-slate-50 dark:border-white/5 flex items-center gap-4">
+                    <div className="w-12 h-12 rounded-2xl bg-slate-900 dark:bg-white/10 text-white flex items-center justify-center text-xs font-black shadow-lg group-hover:rotate-6 transition-transform">
                       {t.initials}
                     </div>
                     <div>
-                      <p className="font-black text-slate-900 tracking-tight">{t.name}</p>
-                      <p className="text-xs font-bold text-blue-600 uppercase tracking-widest mt-0.5">{t.role}</p>
+                      <p className="font-black text-slate-900 dark:text-white tracking-tight">{t.name}</p>
+                      <p className="text-xs font-bold text-blue-600 dark:text-blue-400 uppercase tracking-widest mt-0.5">{t.role}</p>
                     </div>
                   </div>
                 </article>
@@ -422,10 +425,10 @@ export default function LandingPage({ accent, onOpenStudio, onLogin, userId }: L
 
         <div className="max-w-6xl mx-auto px-6">
           {/* --- PRICING (Redesigned: High-End Cards) --- */}
-          <section id="pricing" className="scroll-mt-28 py-32 border-t border-slate-100">
+          <section id="pricing" className="scroll-mt-28 py-32 border-t border-slate-100 dark:border-white/5">
             <div className="text-center mb-20">
-              <h2 className="text-4xl font-black text-slate-900 mb-4 italic">Tarification Scalable</h2>
-              <p className="text-slate-500 font-medium text-lg">Investissez dans votre vitesse de livraison.</p>
+              <h2 className="text-4xl font-black text-slate-900 dark:text-white mb-4 italic">Tarification Scalable</h2>
+              <p className="text-slate-500 dark:text-slate-400 font-medium text-lg">Investissez dans votre vitesse de livraison.</p>
             </div>
             
             <div className="grid md:grid-cols-3 gap-14">
@@ -437,9 +440,9 @@ export default function LandingPage({ accent, onOpenStudio, onLogin, userId }: L
                 <div
                   key={p.name}
                   className={`rounded-[44px] p-10 border transition-all duration-700 relative flex flex-col ${
-                    p.hi 
-                    ? 'border-blue-500 bg-slate-900 text-white shadow-2xl scale-105' 
-                    : 'border-slate-100 bg-white hover:border-blue-200 shadow-sm hover:shadow-2xl'
+                    p.hi
+                    ? 'border-blue-500 bg-slate-900 text-white shadow-2xl scale-105'
+                    : 'border-slate-100 dark:border-white/5 bg-white dark:bg-[#111] hover:border-blue-200 dark:hover:border-blue-500/20 shadow-sm hover:shadow-2xl'
                   }`}
                 >
                   {p.hi && <div className="absolute -top-4 left-1/2 -translate-x-1/2 px-6 py-2 bg-blue-600 text-white text-[10px] uppercase tracking-[0.2em] font-black rounded-full shadow-lg">Meilleur Rapport</div>}
@@ -482,23 +485,23 @@ export default function LandingPage({ accent, onOpenStudio, onLogin, userId }: L
             </div>
           </section>
 
-          <section id="faq" className="scroll-mt-28 py-16 border-t border-slate-100">
+          <section id="faq" className="scroll-mt-28 py-16 border-t border-slate-100 dark:border-white/5">
             <div className="text-center max-w-2xl mx-auto">
-              <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-blue-50 border border-blue-100 text-blue-600 text-xs font-black tracking-wide">
+              <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-blue-50 dark:bg-blue-500/10 border border-blue-100 dark:border-blue-500/20 text-blue-600 dark:text-blue-400 text-xs font-black tracking-wide">
                 <Sparkles size={14} />
                 FAQ
               </div>
-              <h2 className="mt-6 text-3xl font-black text-[#0F172A]">Frequently asked questions</h2>
-              <p className="mt-2 text-slate-500">Everything you need to know about Huggy</p>
+              <h2 className="mt-6 text-3xl font-black text-[#0F172A] dark:text-white">Frequently asked questions</h2>
+              <p className="mt-2 text-slate-500 dark:text-slate-400">Everything you need to know about Huggy</p>
             </div>
-            <div className="mt-10 max-w-3xl mx-auto divide-y divide-[#E2E8F0] border-t border-b border-[#E2E8F0]">
+            <div className="mt-10 max-w-3xl mx-auto divide-y divide-slate-200 dark:divide-white/5 border-t border-b border-slate-200 dark:border-white/5">
               {FAQ_ITEMS.map((item, i) => {
                 const open = openFaq === i;
                 return (
                   <div key={item.q} className="py-0">
                     <button
                       type="button"
-                      className="w-full flex items-center justify-between gap-4 py-5 text-left text-[#0F172A] font-bold hover:text-blue-600 transition-colors duration-200"
+                      className="w-full flex items-center justify-between gap-4 py-5 text-left text-[#0F172A] dark:text-slate-200 font-bold hover:text-blue-600 dark:hover:text-blue-400 transition-colors duration-200"
                       onClick={() => setOpenFaq(open ? null : i)}
                       aria-expanded={open}
                     >
@@ -512,7 +515,7 @@ export default function LandingPage({ accent, onOpenStudio, onLogin, userId }: L
                       className={`grid transition-[grid-template-rows] duration-300 ease-out ${open ? 'grid-rows-[1fr]' : 'grid-rows-[0fr]'}`}
                     >
                       <div className="overflow-hidden min-h-0">
-                        <p className="pb-5 text-sm text-slate-600 leading-relaxed pr-8">{item.a}</p>
+                        <p className="pb-5 text-sm text-slate-600 dark:text-slate-400 leading-relaxed pr-8">{item.a}</p>
                       </div>
                     </div>
                   </div>
@@ -522,9 +525,9 @@ export default function LandingPage({ accent, onOpenStudio, onLogin, userId }: L
           </section>
 
           <section id="cta" className="scroll-mt-28 py-16">
-            <div className="rounded-3xl bg-slate-100 border border-slate-200/80 p-8 sm:p-12 text-center max-w-4xl mx-auto">
-              <h2 className="text-2xl sm:text-3xl font-black text-[#0F172A]">Ready to build?</h2>
-              <p className="mt-2 text-slate-600">Join thousands of makers who ship faster with Huggy.</p>
+            <div className="rounded-3xl bg-slate-100 dark:bg-white/5 border border-slate-200/80 dark:border-white/5 p-8 sm:p-12 text-center max-w-4xl mx-auto">
+              <h2 className="text-2xl sm:text-3xl font-black text-[#0F172A] dark:text-white">Ready to build?</h2>
+              <p className="mt-2 text-slate-600 dark:text-slate-400">Join thousands of makers who ship faster with Huggy.</p>
               <div className="mt-8 relative">
                 <input
                   type="text"
@@ -534,7 +537,7 @@ export default function LandingPage({ accent, onOpenStudio, onLogin, userId }: L
                     if (e.key === 'Enter') openStudio();
                   }}
                   placeholder="What do you want to build?"
-                  className="w-full pl-5 pr-14 py-4 rounded-2xl border border-[#E2E8F0] bg-white text-[#0F172A] placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500/30 transition-shadow"
+                  className="w-full pl-5 pr-14 py-4 rounded-2xl border border-slate-200 dark:border-white/10 bg-white dark:bg-white/5 text-[#0F172A] dark:text-white placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500/30 transition-shadow"
                 />
                 <button
                   type="button"
@@ -557,7 +560,7 @@ export default function LandingPage({ accent, onOpenStudio, onLogin, userId }: L
                 <button
                   type="button"
                   onClick={go('pricing')}
-                  className="inline-flex items-center justify-center gap-2 px-8 py-3 rounded-xl border border-[#E2E8F0] bg-white text-[#0F172A] font-bold text-sm hover:bg-slate-50 transition-colors active:scale-[0.98]"
+                  className="inline-flex items-center justify-center gap-2 px-8 py-3 rounded-xl border border-slate-200 dark:border-white/10 bg-white dark:bg-white/5 text-[#0F172A] dark:text-white font-bold text-sm hover:bg-slate-50 dark:hover:bg-white/10 transition-colors active:scale-[0.98]"
                 >
                   See pricing
                   <span aria-hidden>›</span>
