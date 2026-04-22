@@ -44,6 +44,7 @@ import {
 import { DEFAULT_PREVIEW_CODE } from './lib/defaultAppCode.mjs';
 import { buildUserSiteToDir } from './lib/deploy.mjs';
 import { getCreditCost, formatCost } from './lib/creditCost.mjs';
+import { generateSchema } from './lib/schemaGen.mjs';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const root = path.join(__dirname, '..');
@@ -774,6 +775,33 @@ app.post('/api/projects/:id/deploy', async (req, res) => {
   }
 });
 
+/** Apply AI-generated SQL schema to the project's database via the existing pool connection. */
+app.post('/api/projects/:id/apply-schema', async (req, res) => {
+  if (!pool) return res.status(503).json({ error: 'Service unavailable' });
+  try {
+    if (!isUuid(req.params.id)) return res.status(400).json({ error: 'ID invalide.' });
+    const { sql, userId } = req.body || {};
+    if (!sql || typeof sql !== 'string') return res.status(400).json({ error: 'sql requis.' });
+
+    const project = await getProject(pool, req.params.id);
+    if (!project) return res.status(404).json({ error: 'Projet introuvable.' });
+    if (project.owner_id && project.owner_id !== userId) {
+      return res.status(403).json({ error: 'Non autorisé.' });
+    }
+
+    // Execute the SQL — pool already points at the project DB (Supabase / PostgreSQL)
+    await pool.query(sql);
+
+    // Persist the applied schema as a project file for reference
+    await upsertFile(pool, project.id, '.huggy/schema.sql', sql);
+
+    res.json({ ok: true, message: 'Schéma appliqué avec succès.' });
+  } catch (e) {
+    console.error('[apply-schema]', e);
+    res.status(500).json({ error: safeError(e) });
+  }
+});
+
 app.post('/api/projects/:id/export/github', async (req, res) => {
   if (!pool) return res.status(503).json({ error: 'Service unavailable' });
   try {
@@ -931,6 +959,12 @@ app.post('/api/generate-app/agentic-stream', rateLimiter, async (req, res) => {
       emit('agent_done', { agent: 'pm', label: 'Product Manager — plan d\'architecture prêt ✓', data: { complexity: agentPlan?.complexity, pages: agentPlan?.pages?.length || 0 } });
     } catch (e) {
       emit('agent_done', { agent: 'pm', label: 'Product Manager — fallback au prompt direct', warning: true });
+    }
+
+    // ── Schema suggestion (if PM agent detected a data model) ──
+    if (agentPlan?.dataModel?.length > 0) {
+      const { sql, tables } = generateSchema(agentPlan.dataModel);
+      if (sql) emit('schema_suggestion', { sql, tables });
     }
 
     // ── Credit cost (computed after PM agent knows complexity) ──

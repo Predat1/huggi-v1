@@ -204,6 +204,7 @@ export default function App() {
   const [credits, setCredits] = useState<number | null>(null);
   const [pendingCreditCost, setPendingCreditCost] = useState<number | null>(null);
   const [lastExport, setLastExport] = useState<any>(null);
+  const [schemaSuggestion, setSchemaSuggestion] = useState<{ sql: string; tables: string[]; applying: boolean } | null>(null);
   const [showAuthModal, setShowAuthModal] = useState(false);
   const [showBillingModal, setShowBillingModal] = useState(false);
   const [showSettingsModal, setShowSettingsModal] = useState(false);
@@ -464,16 +465,17 @@ export default function App() {
     return () => clearTimeout(t);
   }, [filesMap, activeFilePath, projectId, databaseEnabled]);
 
-  // Agent Memory: Persist chat history
+  // Agent Memory: Persist chat history (trimmed to last 60 to avoid bloat)
   useEffect(() => {
     if (!projectId || !databaseEnabled || messages.length === 0) return;
     const t = setTimeout(() => {
+      const trimmed = messages.slice(-60);
       fetch(`/api/projects/${projectId}/files`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ 
-          path: '.huggy/history.json', 
-          content: JSON.stringify(messages, null, 2) 
+        body: JSON.stringify({
+          path: '.huggy/history.json',
+          content: JSON.stringify(trimmed, null, 2),
         }),
       }).catch(e => console.error('Failed to sync history:', e));
     }, 2000);
@@ -806,7 +808,8 @@ export default function App() {
       let fullResponse = '';
       let aborted = false;
 
-      const historyForAI = messages.map(m => ({ role: m.sender === 'VOUS' ? 'user' : 'assistant', content: m.text }));
+      // Last 30 messages only — prevents token explosion on long sessions
+      const historyForAI = messages.slice(-30).map(m => ({ role: m.sender === 'VOUS' ? 'user' : 'assistant', content: m.text }));
 
       // Kick off SSE stream
       let response: Response;
@@ -862,6 +865,10 @@ export default function App() {
 
           case 'credit_info':
             if (event.cost != null) setPendingCreditCost(event.cost);
+            break;
+
+          case 'schema_suggestion':
+            if (event.sql) setSchemaSuggestion({ sql: event.sql, tables: event.tables || [], applying: false });
             break;
 
           case 'chunk':
@@ -1461,6 +1468,47 @@ export default function App() {
                     </motion.div>
                   )}
                 </div>
+
+                {/* ── Schema Suggestion Panel ── */}
+                {schemaSuggestion && (
+                  <div className="shrink-0 mx-3 mb-2 rounded-xl border border-blue-200 dark:border-blue-500/30 bg-blue-50 dark:bg-blue-950/40 overflow-hidden">
+                    <div className="flex items-center justify-between px-3 py-2 border-b border-blue-100 dark:border-blue-500/20">
+                      <div className="flex items-center gap-2">
+                        <div className="w-4 h-4 rounded bg-blue-600 flex items-center justify-center"><Database size={10} className="text-white" /></div>
+                        <span className="text-[11px] font-bold text-blue-700 dark:text-blue-300">Schéma BD suggéré</span>
+                        <span className="text-[9px] text-blue-500 bg-blue-100 dark:bg-blue-900/50 px-1.5 py-0.5 rounded-full font-semibold">{schemaSuggestion.tables.join(', ')}</span>
+                      </div>
+                      <div className="flex items-center gap-1.5">
+                        <button
+                          onClick={async () => {
+                            if (!projectId || !user?.id) return;
+                            setSchemaSuggestion(s => s ? { ...s, applying: true } : null);
+                            try {
+                              const r = await fetch(`/api/projects/${projectId}/apply-schema`, {
+                                method: 'POST',
+                                headers: { 'Content-Type': 'application/json' },
+                                body: JSON.stringify({ sql: schemaSuggestion.sql, userId: user.id }),
+                              });
+                              const d = await r.json();
+                              if (!r.ok) throw new Error(d.error || 'Erreur');
+                              showToast('Schéma appliqué ✓', 'success');
+                              setSchemaSuggestion(null);
+                            } catch (e: any) {
+                              showToast(e.message || 'Erreur lors de l\'application', 'info');
+                              setSchemaSuggestion(s => s ? { ...s, applying: false } : null);
+                            }
+                          }}
+                          disabled={schemaSuggestion.applying || !projectId}
+                          className="text-[10px] font-bold px-2.5 py-1 rounded-lg bg-blue-600 text-white hover:bg-blue-700 disabled:opacity-50 transition-colors"
+                        >
+                          {schemaSuggestion.applying ? 'Application…' : 'Appliquer à Supabase'}
+                        </button>
+                        <button onClick={() => setSchemaSuggestion(null)} className="text-[10px] text-blue-400 hover:text-blue-600 px-1">✕</button>
+                      </div>
+                    </div>
+                    <pre className="text-[9px] text-blue-800 dark:text-blue-200 font-mono px-3 py-2 overflow-x-auto max-h-32 leading-relaxed">{schemaSuggestion.sql}</pre>
+                  </div>
+                )}
 
                 {/* ── Chat Input ── */}
                 <div className="shrink-0 p-3 bg-gradient-to-t from-white via-white to-white/80 border-t border-slate-100/50">
