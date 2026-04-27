@@ -268,77 +268,124 @@ export default function LandingPage({ accent, onOpenStudio, onLogin, userId }: L
           </div>
         </div>
 
-        {mobileNavOpen && (
-          <div className="md:hidden border-t border-slate-100 dark:border-white/5 bg-white dark:bg-[#0A0A0A] px-6 py-4 flex flex-col gap-1">
-            {[
-              ['Features', 'features'],
-              ['How it works', 'how-it-works'],
-              ['Community', 'testimonials'],
-              ['Pricing', 'pricing'],
-              ['About', 'about'],
-              ['FAQ', 'faq'],
-              ['Contact', 'contact'],
-            ].map(([label, id]) => (
-              <a
-                key={id}
-                href={`#${id}`}
-                className="py-3 text-sm font-bold text-slate-700 dark:text-slate-300 border-b border-slate-50 dark:border-white/5 last:border-0"
-                onClick={go(id)}
+        <AnimatePresence>
+          {mobileNavOpen && (
+            <>
+              {/* Backdrop */}
+              <motion.div 
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                onClick={() => setMobileNavOpen(false)}
+                className="fixed inset-0 bg-slate-900/40 backdrop-blur-sm z-[120] md:hidden"
+              />
+              {/* Drawer */}
+              <motion.div 
+                initial={{ x: '100%' }}
+                animate={{ x: 0 }}
+                exit={{ x: '100%' }}
+                transition={{ type: 'spring', damping: 25, stiffness: 200 }}
+                className="fixed top-0 right-0 bottom-0 w-[280px] bg-white dark:bg-[#0F0F0F] z-[130] shadow-2xl md:hidden flex flex-col p-6"
               >
-                {label}
-              </a>
-            ))}
-            <button
-              type="button"
-              onClick={() => {
-                setMobileNavOpen(false);
-                onOpenStudio(buildInput.trim() || undefined);
-              }}
-              className={`mt-3 flex items-center justify-center gap-2 px-5 py-3 ${accent.bg} text-white rounded-xl text-sm font-bold`}
-            >
-              Get started
-            </button>
-          </div>
-        )}
+                <div className="flex items-center justify-between mb-8">
+                  <div className="flex items-center gap-2">
+                    <div className={`w-8 h-8 ${accent.bg} rounded-lg flex items-center justify-center text-white`}>
+                      <Zap size={16} fill="currentColor" />
+                    </div>
+                    <span className="text-sm font-black text-slate-900 dark:text-white uppercase">Huggy</span>
+                  </div>
+                  <button onClick={() => setMobileNavOpen(false)} className="p-2 text-slate-400 hover:text-slate-900 dark:hover:text-white transition-colors">
+                    <X size={20} />
+                  </button>
+                </div>
+
+                <nav className="flex flex-col gap-1">
+                  {[
+                    ['Features', 'features'],
+                    ['How it works', 'how-it-works'],
+                    ['Community', 'testimonials'],
+                    ['Pricing', 'pricing'],
+                    ['About', 'about'],
+                  ].map(([label, id], i) => (
+                    <motion.a
+                      key={id}
+                      href={`#${id}`}
+                      initial={{ opacity: 0, x: 20 }}
+                      animate={{ opacity: 1, x: 0 }}
+                      transition={{ delay: i * 0.05 }}
+                      className="py-3.5 text-[15px] font-bold text-slate-700 dark:text-slate-300 border-b border-slate-50 dark:border-white/5 last:border-0 hover:text-blue-600 transition-colors"
+                      onClick={go(id)}
+                    >
+                      {label}
+                    </motion.a>
+                  ))}
+                </nav>
+
+                <div className="mt-auto pt-6 space-y-3">
+                  <button
+                    onClick={() => {
+                      setMobileNavOpen(false);
+                      onLogin?.();
+                    }}
+                    className="w-full py-3.5 text-sm font-bold text-slate-600 dark:text-slate-400 bg-slate-50 dark:bg-white/5 rounded-xl transition-all"
+                  >
+                    Log in
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setMobileNavOpen(false);
+                      onOpenStudio(buildInput.trim() || undefined);
+                    }}
+                    className={`w-full py-4 ${accent.bg} text-white rounded-xl text-sm font-black shadow-lg shadow-blue-600/20 active:scale-[0.98] uppercase tracking-widest`}
+                  >
+                    Build Now
+                  </button>
+                </div>
+              </motion.div>
+            </>
+          )}
+        </AnimatePresence>
       </div>
 
       <div id="top" className="overflow-y-auto">
-        <div className="max-w-6xl mx-auto px-6">
-          <main className="pt-8 sm:pt-4 pb-12">
+        <div className="max-w-5xl mx-auto px-6">
+          <main className="pt-4 sm:pt-2 pb-12">
+            <div className="text-center">
               <motion.div
-                initial={{ opacity: 0, y: 20 }}
+                initial={{ opacity: 0, y: 15 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.6 }}
-                className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-blue-50 border border-blue-100 text-blue-600 text-xs font-black tracking-wide"
+                className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-blue-50 dark:bg-blue-500/10 border border-blue-100 dark:border-blue-500/20 text-blue-600 dark:text-blue-400 text-[10px] font-black tracking-widest uppercase"
               >
-                <Sparkles size={14} />
+                <Sparkles size={12} />
                 AI-POWERED APP BUILDER
               </motion.div>
 
               <motion.h1
-                initial={{ opacity: 0, y: 20 }}
+                initial={{ opacity: 0, y: 15 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.6, delay: 0.1 }}
-                className="mt-4 text-4xl sm:text-6xl lg:text-[76px] leading-none font-black tracking-tight"
+                className="mt-3 text-4xl sm:text-6xl lg:text-[72px] leading-[1.1] font-black tracking-tight"
               >
                 <span className="block text-[#0F172A] dark:text-white">Build any SaaS</span>
                 <span className="block text-blue-600 italic">instantly.</span>
               </motion.h1>
 
               <motion.p
-                initial={{ opacity: 0, y: 20 }}
+                initial={{ opacity: 0, y: 15 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.6, delay: 0.2 }}
-                className="mt-3 mx-auto max-w-xl text-slate-500 dark:text-slate-400 text-base leading-relaxed"
+                className="mt-3 mx-auto max-w-lg text-slate-500 dark:text-slate-400 text-sm sm:text-base leading-relaxed"
               >
                 Describe your project, Huggy does the rest. AI-generated code, UI, dashboards, and data tables in seconds.
               </motion.p>
 
               <motion.div
-                initial={{ opacity: 0, scale: 0.95 }}
+                initial={{ opacity: 0, scale: 0.98 }}
                 animate={{ opacity: 1, scale: 1 }}
                 transition={{ duration: 0.6, delay: 0.3 }}
-                className="mt-4 max-w-3xl mx-auto"
+                className="mt-6 max-w-2xl mx-auto"
               >
                 <HuggyChatInput
                   onSend={(prompt) => {
