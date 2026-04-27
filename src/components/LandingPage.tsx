@@ -311,19 +311,16 @@ export default function LandingPage({ accent, onOpenStudio, onLogin, userId }: L
                 Describe your project, Huggy does the rest. AI-generated code, UI, dashboards, and data tables in seconds.
               </p>
 
-              <div className="mt-4 max-w-3xl mx-auto">
-                <div className="rounded-3xl overflow-hidden shadow-2xl shadow-slate-900/10 dark:shadow-black/40 bg-white dark:bg-[#111] border border-slate-100 dark:border-white/5">
-                  <div className="p-6">
-                    <HuggyChatInput
-                      onSend={(prompt) => {
-                        if (prompt.trim()) setBuildInput(prompt);
-                        openStudio();
-                      }}
-                      placeholder="Build a CRM for real estate with client tracking..."
-                      modelLabel="Huggy AI"
-                    />
-                  </div>
-                </div>
+              <div className="mt-4 max-w-4xl mx-auto">
+                <HuggyChatInput
+                  onSend={(prompt) => {
+                    if (prompt.trim()) setBuildInput(prompt);
+                    openStudio();
+                  }}
+                  placeholder="Build a CRM for real estate with client tracking..."
+                  modelLabel="Huggy AI"
+                  className="shadow-2xl shadow-slate-900/10 dark:shadow-black/40"
+                />
               </div>
 
               {/* --- FEATURES SECTION (Redesigned: Glassmorphism) --- */}
@@ -493,19 +490,16 @@ export default function LandingPage({ accent, onOpenStudio, onLogin, userId }: L
                 Join thousands of makers who ship faster with Huggy. Describe your project and let the AI do the heavy lifting.
               </p>
 
-              <div className="max-w-3xl mx-auto">
-                <div className="rounded-[32px] overflow-hidden shadow-2xl shadow-blue-500/10 dark:shadow-black/60 bg-white dark:bg-[#111] border border-slate-100 dark:border-white/5 transition-all duration-500 hover:border-blue-500/30">
-                  <div className="p-6">
-                    <HuggyChatInput
-                      onSend={(prompt) => {
-                        if (prompt.trim()) setBuildInput(prompt);
-                        openStudio();
-                      }}
-                      placeholder="Ask Huggy to create anything..."
-                      modelLabel="Huggy AI"
-                    />
-                  </div>
-                </div>
+              <div className="max-w-4xl mx-auto">
+                <HuggyChatInput
+                  onSend={(prompt) => {
+                    if (prompt.trim()) setBuildInput(prompt);
+                    openStudio();
+                  }}
+                  placeholder="Ask Huggy to create anything..."
+                  modelLabel="Huggy AI"
+                  className="shadow-2xl shadow-blue-500/10 dark:shadow-black/60"
+                />
               </div>
 
               <div className="mt-12 flex flex-col sm:flex-row gap-4 justify-center items-center">

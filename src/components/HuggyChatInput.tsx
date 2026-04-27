@@ -111,10 +111,10 @@ export default function HuggyChatInput({
   return (
     <div className={`flex flex-col items-center gap-1.5 w-full ${className}`}>
       {/* ── Main input card ── */}
-      <div className="relative w-full p-[2px] rounded-[17px] overflow-hidden shadow-xl group/input">
+      <div className="relative w-full p-[2px] rounded-[32px] overflow-hidden shadow-xl group/input">
         <div className="absolute inset-[-1000%] animate-[spin_4s_linear_infinite] bg-[conic-gradient(from_90deg_at_50%_50%,transparent_0%,#3b82f6_50%,transparent_100%)] opacity-80 group-focus-within/input:opacity-100 transition-opacity duration-300" />
         <div
-          className="w-full h-full rounded-2xl overflow-hidden relative bg-white dark:bg-[#1E1E1E] border border-slate-200 dark:border-white/10 transition-colors duration-300"
+          className="w-full h-full rounded-[30px] overflow-hidden relative bg-white dark:bg-[#1E1E1E] border border-slate-200 dark:border-white/10 transition-colors duration-300"
         >
         {/* Branding (Subtle) */}
         {!disclaimer && (
@@ -154,7 +154,7 @@ export default function HuggyChatInput({
         )}
 
         {/* Textarea Area */}
-        <div className="px-5 pt-4 pb-2">
+        <div className="px-8 pt-8 pb-4">
           <textarea
             ref={textareaRef}
             value={value}
@@ -163,13 +163,13 @@ export default function HuggyChatInput({
             disabled={isLoading}
             placeholder={placeholder}
             rows={1}
-            className="w-full bg-transparent text-slate-900 dark:text-white text-[16px] font-medium placeholder-slate-400 dark:placeholder-slate-500 resize-none focus:outline-none leading-relaxed disabled:opacity-50"
-            style={{ caretColor: '#6366F1', minHeight: '32px' }}
+            className="w-full bg-transparent text-slate-900 dark:text-white text-[20px] font-medium placeholder-slate-400 dark:placeholder-slate-500 resize-none focus:outline-none leading-relaxed disabled:opacity-50"
+            style={{ caretColor: '#6366F1', minHeight: '48px' }}
           />
         </div>
 
         {/* ── Toolbar (Minimal) ── */}
-        <div className="flex items-center justify-between px-4 pb-4 pt-1">
+        <div className="flex items-center justify-between px-6 pb-6 pt-2">
           {/* Left Toolbar */}
           <div className="flex items-center">
             {/* Plus */}
@@ -204,7 +204,7 @@ export default function HuggyChatInput({
             <button
               onClick={handleSend}
               disabled={!canSend}
-              className={`w-11 h-11 min-w-[44px] min-h-[44px] rounded-full flex items-center justify-center transition-all ${
+              className={`w-14 h-14 min-w-[56px] min-h-[56px] rounded-full flex items-center justify-center transition-all ${
                 canSend 
                 ? 'bg-[#4F46E5] hover:bg-[#3730A3] text-white shadow-lg shadow-indigo-500/20 active:scale-95' 
                 : 'bg-slate-100 dark:bg-white/5 text-slate-300 dark:text-slate-600 cursor-not-allowed'
