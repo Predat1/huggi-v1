@@ -310,6 +310,7 @@ export default function App() {
   const [showAutoSaveSettings, setShowAutoSaveSettings] = useState(false);
   const [lastSaved, setLastSaved] = useState<Date | null>(null);
   const [projectId, setProjectId] = useState<string | null>(null);
+  const [projectName, setProjectName] = useState('Nouveau Projet');
   const [databaseEnabled, setDatabaseEnabled] = useState(false);
   // Landing par défaut : si aucun `?project=` n'est présent, on affiche une page marketing.
   const [studioMode, setStudioMode] = useState<boolean>(() => {
@@ -370,6 +371,7 @@ export default function App() {
             }).then((r) => r.json());
             if (cancelled) return;
             setProjectId(created.project.id);
+            setProjectName(created.project.name || 'Nouveau Projet');
             const map: Record<string, string> = {};
             for (const f of created.files) map[f.path] = f.content;
             setFilesMap(map);
@@ -387,6 +389,7 @@ export default function App() {
             map[f.path] = f.content;
           }
           setProjectId(pid);
+          setProjectName(data.project?.name || 'Nouveau Projet');
           setFilesMap(map);
           setActiveFilePath(PREVIEW_ENTRY);
           
@@ -427,6 +430,7 @@ export default function App() {
         }).then((r) => r.json());
         if (cancelled) return;
         setProjectId(created.project.id);
+        setProjectName(created.project.name || 'Nouveau Projet');
         const map: Record<string, string> = {};
         for (const f of created.files) map[f.path] = f.content;
         setFilesMap(map);
@@ -545,6 +549,7 @@ export default function App() {
           body: JSON.stringify({ name: 'Nouveau projet' }),
         }).then((r) => r.json());
         setProjectId(created.project.id);
+        setProjectName(created.project.name || 'Nouveau Projet');
         const map: Record<string, string> = {};
         for (const f of created.files) map[f.path] = f.content;
         setFilesMap(map);
@@ -1064,6 +1069,23 @@ export default function App() {
     } catch(e) { showToast('Erreur serveur', 'info'); }
   };
 
+  const handleRenameProject = async (newName: string) => {
+    if (!projectId || !user || newName === projectName) return;
+    try {
+      const res = await fetch(`/api/projects/${projectId}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ userId: user.id, name: newName })
+      });
+      if (res.ok) {
+        setProjectName(newName);
+        showToast('Nom du projet sauvegardé', 'success');
+      }
+    } catch (e) {
+      showToast('Erreur de renommage', 'info');
+    }
+  };
+
   return (
     <>
       {/* Toast Notification */}
@@ -1073,10 +1095,10 @@ export default function App() {
             initial={{ opacity: 0, y: -20, x: '-50%' }}
             animate={{ opacity: 1, y: 20, x: '-50%' }}
             exit={{ opacity: 0, y: -20, x: '-50%' }}
-            className="fixed top-0 left-1/2 z-[200] px-6 py-3 bg-slate-900 text-white rounded-2xl shadow-2xl flex items-center gap-3 min-w-[300px]"
+            className="fixed top-10 left-1/2 z-[200] px-6 py-3 bg-slate-900/90 dark:bg-white/95 backdrop-blur-xl text-white dark:text-slate-900 rounded-2xl shadow-[0_20px_50px_rgba(0,0,0,0.3)] flex items-center gap-3 min-w-[320px] border border-white/10 dark:border-slate-200"
           >
-            <div className={`w-2 h-2 rounded-full ${toast.type === 'success' ? 'bg-emerald-400' : 'bg-blue-400'} animate-pulse`} />
-            <span className="text-sm font-bold">{toast.message}</span>
+            <div className={`w-2 h-2 rounded-full ${toast.type === 'success' ? 'bg-emerald-400' : 'bg-blue-400'} animate-pulse shadow-[0_0_10px_rgba(52,211,153,0.5)]`} />
+            <span className="text-[11px] font-black uppercase tracking-widest">{toast.message}</span>
           </motion.div>
         )}
       </AnimatePresence>
@@ -1086,8 +1108,7 @@ export default function App() {
         onClose={() => setShowAuthModal(false)}
         defaultMode={authMode}
         onSuccess={() => {
-          showToast('Connexion réussie', 'success');
-          // No need to set user here as onAuthStateChange will handle it
+          showToast('Accès Elite déverrouillé', 'success');
         }}
       />
 
@@ -1102,117 +1123,77 @@ export default function App() {
         {studioMode ? (
           <motion.div
             key="studio"
-            initial={{ opacity: 0, scale: 0.98 }}
-            animate={{ opacity: 1, scale: 1 }}
-            exit={{ opacity: 0, scale: 1.02 }}
-            transition={{ duration: 0.35, ease: [0.22, 1, 0.36, 1] }}
-            className={`flex flex-col h-screen bg-slate-50 dark:bg-[#0A0A0A] text-slate-900 dark:text-slate-300 font-sans overflow-hidden ${activeAccentColor} transition-colors duration-300`}
-          >
-            {/* Show skeleton/loader if project data isn't ready yet but we have a projectId */}
-            {projectId && Object.keys(filesMap).length <= 1 && (
-              <div className="absolute inset-0 z-50 bg-white dark:bg-[#0A0A0A] flex flex-col items-center justify-center space-y-4">
-                <div className="w-12 h-12 bg-blue-600 rounded-2xl flex items-center justify-center text-white animate-pulse shadow-xl shadow-blue-600/20">
-                  <Zap size={24} fill="currentColor" />
-                </div>
-                <div className="flex flex-col items-center gap-1">
-                  <span className="text-sm font-black text-slate-800 dark:text-white uppercase tracking-widest">Initialisation du Studio</span>
-                  <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest animate-pulse">Chargement de votre univers...</span>
-                </div>
-              </div>
-            )}
-            {/* The entire studio content below (header + main) */}
-        ) : user ? (
-          <motion.div
-            key="dashboard"
-            initial={{ opacity: 0, x: 20 }}
-            animate={{ opacity: 1, x: 0 }}
-            exit={{ opacity: 0, x: -20 }}
-            transition={{ duration: 0.3, ease: [0.22, 1, 0.36, 1] }}
-            className="min-h-screen"
-          >
-            <UserDashboard
-              user={user}
-              credits={credits}
-              onLogout={() => signOut().then(() => setUser(null))}
-              onOpenStudio={(initialPrompt, openProjectId) => {
-                if (initialPrompt) setInputValue(initialPrompt);
-                setStudioMode(true);
-                if (openProjectId) {
-                  window.history.replaceState({}, '', `${window.location.pathname}?project=${openProjectId}`);
-                } else if (!new URLSearchParams(window.location.search).get('project')) {
-                  window.history.replaceState({}, '', `${window.location.pathname}?studio=1`);
-                }
-              }}
-            />
-          </motion.div>
-        ) : (
-          <motion.div
-            key="landing"
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            transition={{ duration: 0.3 }}
-            className="min-h-screen"
+            className={`flex flex-col h-screen bg-slate-50 dark:bg-[#070708] text-slate-900 dark:text-slate-300 font-sans overflow-hidden transition-colors duration-300`}
           >
-            <LandingPage
-              accent={ACCENT_COLORS[activeAccentColor]}
-              userId={user?.id}
-              onLogin={() => setShowAuthModal(true)}
-              onOpenStudio={(initialPrompt) => {
-                if (!user) {
-                  if (initialPrompt) setPendingPrompt(initialPrompt);
-                  setShowAuthModal(true);
-                  return;
-                }
-                if (initialPrompt) setInputValue(initialPrompt);
-                setStudioMode(true);
-                if (!new URLSearchParams(window.location.search).get('project')) {
-                  window.history.replaceState({}, '', `${window.location.pathname}?studio=1`);
-                }
-              }}
-            />
-          </motion.div>
-        )}
-      </AnimatePresence>
-
-      {/* Top Navigation Bar — Premium SaaS */}
-      <header className="h-14 border-b border-slate-200/80 dark:border-white/5 bg-white/90 dark:bg-[#0F0F0F]/90 backdrop-blur-xl flex items-center justify-between px-3 sm:px-5 z-10 shrink-0 shadow-sm transition-colors duration-300">
-        {/* Left: Brand & Back button */}
-        <div className="flex items-center gap-4 min-w-0">
-          <button 
-            onClick={() => {
-              setStudioMode(false);
-              window.history.replaceState({}, '', window.location.pathname);
-            }}
-            className="flex items-center gap-2 p-2 hover:bg-slate-100 dark:hover:bg-white/5 rounded-xl transition-all text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white group active:scale-95"
-            title="Retour au Dashboard"
-          >
-            <Home size={18} className="group-hover:scale-110 transition-transform" />
-          </button>
-          
-          <div className="h-6 w-px bg-slate-200 dark:bg-white/10" />
-          
-          <div className="flex items-center gap-3 min-w-0">
-            <div className={`w-8 h-8 bg-gradient-to-br from-blue-600 to-blue-700 rounded-xl flex items-center justify-center text-white shadow-lg shadow-blue-600/20 shrink-0`}>
-              <Zap size={16} fill="currentColor" />
-            </div>
-            <div className="flex flex-col min-w-0">
-              <div className="flex items-center gap-2">
-                <input
-                  type="text"
-                  defaultValue="Nouveau Projet"
-                  className="bg-transparent border-none p-0 text-sm font-black text-slate-900 dark:text-white focus:ring-0 w-32 sm:w-48 truncate placeholder:text-slate-400"
-                  onBlur={(e) => {
-                    // Logic to save project name could go here
-                    showToast('Nom mis à jour', 'success');
-                  }}
-                />
-                <span className="px-1.5 py-0.5 bg-emerald-500/10 text-[9px] font-black text-emerald-600 dark:text-emerald-400 rounded-md uppercase tracking-widest border border-emerald-500/20 shrink-0">Saved</span>
+            {/* Show skeleton/loader if project data isn't ready yet but we have a projectId */}
+            {projectId && Object.keys(filesMap).length <= 1 && (
+              <div className="absolute inset-0 z-50 bg-white dark:bg-[#070708] flex flex-col items-center justify-center space-y-6">
+                <motion.div 
+                  animate={{ rotate: 360 }}
+                  transition={{ duration: 4, repeat: Infinity, ease: "linear" }}
+                  className="w-16 h-16 bg-gradient-to-br from-blue-600 to-indigo-700 rounded-[24px] flex items-center justify-center text-white shadow-2xl shadow-blue-600/40"
+                >
+                  <Zap size={32} fill="currentColor" />
+                </motion.div>
+                <div className="flex flex-col items-center gap-2">
+                  <span className="text-[10px] font-black text-slate-900 dark:text-white uppercase tracking-[0.3em]">Huggy Elite Engine</span>
+                  <div className="flex items-center gap-2">
+                    <Loader2 size={12} className="animate-spin text-blue-500" />
+                    <span className="text-[9px] font-bold text-slate-400 uppercase tracking-widest">Séquence d'initialisation...</span>
+                  </div>
+                </div>
               </div>
-              <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest leading-none mt-0.5">Huggy Studio v1.0</span>
-            </div>
-          </div>
-        </div>
+            )}
+
+            {/* Top Navigation Bar — Premium Elite Studio */}
+            <header className="h-16 border-b border-slate-200 dark:border-white/[0.03] bg-white/80 dark:bg-[#070708]/80 backdrop-blur-2xl flex items-center justify-between px-6 z-10 shrink-0">
+              {/* Left: Brand & Breadcrumbs */}
+              <div className="flex items-center gap-6 min-w-0">
+                <motion.button 
+                  whileHover={{ x: -3 }}
+                  onClick={() => {
+                    setStudioMode(false);
+                    window.history.replaceState({}, '', window.location.pathname);
+                  }}
+                  className="flex items-center gap-2 text-slate-400 hover:text-slate-900 dark:hover:text-white transition-colors"
+                  title="Dashboard"
+                >
+                  <ChevronLeft size={20} />
+                </motion.button>
+                
+                <div className="h-8 w-px bg-slate-200 dark:bg-white/10" />
+                
+                <div className="flex items-center gap-4 min-w-0">
+                  <div className="flex items-center gap-2 text-[10px] font-black text-slate-400 uppercase tracking-widest">
+                    <Folder size={14} className="text-slate-300 dark:text-slate-600" />
+                    <span className="hidden sm:inline">Projets</span>
+                    <ChevronRight size={12} className="text-slate-300 dark:text-slate-700" />
+                  </div>
+
+                  <div className="flex flex-col min-w-0">
+                    <input
+                      type="text"
+                      value={projectName}
+                      onChange={(e) => setProjectName(e.target.value)}
+                      onBlur={(e) => handleRenameProject(e.target.value)}
+                      className="bg-transparent border-none p-0 text-sm font-black text-slate-900 dark:text-white focus:ring-0 w-32 sm:w-auto min-w-[100px] truncate hover:bg-slate-100 dark:hover:bg-white/5 rounded px-1 transition-colors"
+                      placeholder="Nom du projet..."
+                    />
+                    <div className="flex items-center gap-2 mt-0.5">
+                      <span className="text-[9px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-tighter truncate max-w-[150px]">
+                        {activeFilePath.split('/').pop()}
+                      </span>
+                      <div className="w-1 h-1 rounded-full bg-slate-300 dark:bg-slate-700" />
+                      <span className="text-[8px] font-black text-blue-500 uppercase tracking-widest">V1.0</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+              {/* REST OF HEADER ACTIONS ARE ALREADY IN THE FILE */}
+
 
         {/* Right: Actions */}
         <div className="flex items-center gap-2 sm:gap-3">

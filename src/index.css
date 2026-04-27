@@ -9,52 +9,45 @@
   }
 
   :root {
-    /* ── Huggy Design Tokens ── */
-    /* Primary */
+    /* ── Huggy Elite Design Tokens ── */
+    --elite-black: #030304;
+    --elite-black-card: #09090B;
+    --elite-blue: #2563EB;
+    --elite-blue-glow: rgba(37, 99, 235, 0.25);
+    
     --huggy-primary: #2563EB;
     --huggy-primary-hover: #1D4ED8;
-    --huggy-primary-light: #DBEAFE;
-    --huggy-primary-ghost: rgba(37, 99, 235, 0.08);
-    /* Secondary */
-    --huggy-secondary: #10B981;
-    --huggy-secondary-hover: #059669;
-    --huggy-secondary-light: #D1FAE5;
-    /* Accent */
-    --huggy-accent: #8B5CF6;
-    --huggy-accent-light: #EDE9FE;
-    /* Neutrals */
     --huggy-bg: #F8F9FB;
-    --huggy-bg-card: #FFFFFF;
-    --huggy-bg-dark: #0F172A;
-    --huggy-bg-dark-card: #1E293B;
-    --huggy-border: #E2E8F0;
-    --huggy-border-dark: #334155;
-    --huggy-text: #0F172A;
-    --huggy-text-secondary: #64748B;
-    --huggy-text-muted: #94A3B8;
-    --huggy-text-dark: #F1F5F9;
-    /* Radii */
-    --huggy-radius-sm: 0.5rem;
-    --huggy-radius-md: 0.75rem;
-    --huggy-radius-lg: 1rem;
-    --huggy-radius-xl: 1.5rem;
-    --huggy-radius-full: 9999px;
-    /* Shadows */
-    --huggy-shadow-sm: 0 1px 2px rgba(0,0,0,0.05);
-    --huggy-shadow-md: 0 4px 6px -1px rgba(0,0,0,0.07), 0 2px 4px -2px rgba(0,0,0,0.05);
-    --huggy-shadow-lg: 0 10px 15px -3px rgba(0,0,0,0.08), 0 4px 6px -4px rgba(0,0,0,0.04);
-    --huggy-shadow-glow: 0 0 20px rgba(37, 99, 235, 0.15);
-    /* Typography */
-    --huggy-font: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-    /* Legacy compat */
-    --bg-primary: #F8F9FB;
-    --bg-secondary: #FFFFFF;
-    --border-color: #E2E8F0;
-    --text-primary: #0F172A;
+    --huggy-bg-dark: #030304;
+    
+    --elite-glass-bg: rgba(255, 255, 255, 0.02);
+    --elite-glass-border: rgba(255, 255, 255, 0.05);
+    
+    --huggy-font: 'Inter', 'Outfit', -apple-system, sans-serif;
   }
 
   body {
-    @apply transition-colors duration-300;
+    @apply transition-colors duration-500 bg-white dark:bg-[#030304] text-slate-900 dark:text-slate-100;
+    font-family: var(--huggy-font);
+    -webkit-font-smoothing: antialiased;
+  }
+}
+
+@layer components {
+  .elite-glass {
+    @apply bg-white/[0.02] backdrop-blur-2xl border border-white/[0.05] shadow-2xl;
+  }
+  
+  .elite-mesh-bg {
+    background: 
+      radial-gradient(at 0% 0%, rgba(37, 99, 235, 0.08) 0, transparent 50%),
+      radial-gradient(at 100% 0%, rgba(99, 102, 241, 0.08) 0, transparent 50%),
+      radial-gradient(at 100% 100%, rgba(16, 185, 129, 0.05) 0, transparent 50%),
+      radial-gradient(at 0% 100%, rgba(244, 63, 94, 0.05) 0, transparent 50%);
+  }
+
+  .elite-title {
+    @apply font-black tracking-tighter italic uppercase;
   }
 }
 
@@ -68,74 +61,37 @@
 }
 
 @keyframes huggy-caret {
-  0%,
-  45% {
-    opacity: 1;
-  }
-  50%,
-  100% {
-    opacity: 0;
-  }
+  0%, 45% { opacity: 1; }
+  50%, 100% { opacity: 0; }
 }
 
 .huggy-stream-caret {
   animation: huggy-caret 1.05s steps(1, end) infinite;
 }
 
-@keyframes huggy-shimmer {
-  0% {
-    background-position: -120% 0;
-  }
-  100% {
-    background-position: 120% 0;
-  }
-}
-
-.huggy-thinking-shimmer {
-  background: linear-gradient(
-    90deg,
-    rgb(241 245 249) 0%,
-    rgb(248 250 252) 45%,
-    rgb(226 232 240) 50%,
-    rgb(248 250 252) 55%,
-    rgb(241 245 249) 100%
-  );
-  background-size: 200% 100%;
-  animation: huggy-shimmer 1.4s ease-in-out infinite;
-}
-
-/* Dark mode shimmer */
-.dark .huggy-thinking-shimmer {
-  background: linear-gradient(
-    90deg,
-    rgb(30 41 59) 0%,
-    rgb(51 65 85) 45%,
-    rgb(30 41 59) 50%,
-    rgb(51 65 85) 55%,
-    rgb(30 41 59) 100%
-  );
-  background-size: 200% 100%;
-}
-
 /* Dark mode scrollbar */
 .dark ::-webkit-scrollbar {
-  width: 6px;
-  height: 6px;
+  width: 4px;
+  height: 4px;
 }
 .dark ::-webkit-scrollbar-track {
   background: transparent;
 }
 .dark ::-webkit-scrollbar-thumb {
-  background: rgba(255, 255, 255, 0.1);
+  background: rgba(255, 255, 255, 0.05);
   border-radius: 9999px;
 }
 .dark ::-webkit-scrollbar-thumb:hover {
-  background: rgba(255, 255, 255, 0.2);
+  background: rgba(255, 255, 255, 0.1);
 }
 
-/* Smooth theme transition on all interactive elements */
+/* Transitions */
 *, *::before, *::after {
-  transition-property: background-color, border-color, color, fill, stroke;
-  transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
-  transition-duration: 150ms;
+  transition-property: background-color, border-color, color, transform, opacity, box-shadow;
+  transition-timing-function: cubic-bezier(0.22, 1, 0.36, 1);
+  transition-duration: 300ms;
+}
+
+.no-transition, .no-transition * {
+  transition: none !important;
 }

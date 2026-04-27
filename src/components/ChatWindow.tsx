@@ -63,24 +63,28 @@ export function ChatWindow({
   };
 
   return (
-    <div className="flex flex-col h-full bg-gradient-to-b from-white to-slate-50 dark:from-[#0A0A0A] dark:to-[#0F172A]">
+    <div className="flex flex-col h-full bg-[#070708] relative overflow-hidden">
+      {/* Decorative background glow */}
+      <div className="absolute top-0 right-0 w-64 h-64 bg-blue-600/5 rounded-full blur-[120px] pointer-events-none" />
+      <div className="absolute bottom-0 left-0 w-64 h-64 bg-indigo-600/5 rounded-full blur-[120px] pointer-events-none" />
+
       {/* Messages */}
-      <div className="flex-1 overflow-y-auto px-6 py-10 space-y-10 scrollbar-hide">
+      <div className="flex-1 overflow-y-auto px-6 py-8 space-y-8 scrollbar-hide relative z-10">
         <AnimatePresence mode="popLayout">
           {messages.length === 0 ? (
             <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -20 }}
+              initial={{ opacity: 0, scale: 0.95 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 1.05 }}
               className="h-full flex items-center justify-center"
             >
-              <div className="text-center max-w-md">
-                <div className="w-16 h-16 bg-blue-100 dark:bg-blue-600/20 rounded-full flex items-center justify-center mx-auto mb-4 border border-transparent dark:border-blue-500/20">
-                  <Zap size={24} className="text-blue-600 dark:text-blue-400" />
+              <div className="text-center max-w-xs">
+                <div className="w-20 h-20 bg-gradient-to-br from-blue-600/20 to-indigo-600/20 rounded-[32px] flex items-center justify-center mx-auto mb-6 border border-white/5 shadow-2xl">
+                  <Zap size={32} className="text-blue-500" fill="currentColor" />
                 </div>
-                <h3 className="text-lg font-bold text-slate-900 dark:text-white mb-2">Bienvenue dans Huggy Studio</h3>
-                <p className="text-slate-600 dark:text-slate-400 text-sm">
-                  Décrivez l'app que vous voulez construire et je vais générer le code React pour vous.
+                <h3 className="text-lg font-black text-white mb-2 uppercase tracking-tight">Huggy Elite Studio</h3>
+                <p className="text-slate-500 text-[11px] font-bold uppercase tracking-widest leading-relaxed">
+                  Décrivez votre vision ci-dessous. Je m'occupe de la structure, du style et du code.
                 </p>
               </div>
             </motion.div>
@@ -100,39 +104,51 @@ export function ChatWindow({
       </div>
 
       {/* Input Area */}
-      <div className="border-t border-slate-200 dark:border-white/10 bg-white dark:bg-[#111] p-8 shadow-sm">
+      <div className="p-6 bg-[#09090B]/80 backdrop-blur-3xl border-t border-white/[0.03] relative z-20">
         <div className="max-w-4xl mx-auto">
-          <div className="relative rounded-xl border border-slate-200 dark:border-white/10 bg-white dark:bg-white/5 shadow-sm focus-within:ring-2 focus-within:ring-blue-500/20 focus-within:border-blue-500 transition-all">
-            <textarea
-              ref={textareaRef}
-              value={input}
-              onChange={handleTextareaChange}
-              onKeyDown={handleKeyDown}
-              placeholder={placeholder}
-              disabled={isLoading}
-              className="w-full px-4 py-3 bg-transparent resize-none outline-none text-sm text-slate-900 dark:text-white placeholder:text-slate-400 dark:placeholder:text-slate-600 disabled:opacity-50"
-              rows={1}
-              style={{ maxHeight: '200px' }}
-            />
+          <div className="relative group">
+            <div className="absolute -inset-0.5 bg-gradient-to-r from-blue-600 to-indigo-600 rounded-2xl opacity-0 group-focus-within:opacity-20 transition-opacity blur-sm" />
+            <div className="relative rounded-2xl border border-white/5 bg-white/[0.02] focus-within:bg-white/[0.04] focus-within:border-blue-500/50 transition-all overflow-hidden shadow-2xl">
+              <textarea
+                ref={textareaRef}
+                value={input}
+                onChange={handleTextareaChange}
+                onKeyDown={handleKeyDown}
+                placeholder={placeholder}
+                disabled={isLoading}
+                className="w-full pl-5 pr-14 py-4 bg-transparent resize-none outline-none text-[13px] font-medium text-white placeholder:text-slate-600 disabled:opacity-50 min-h-[56px]"
+                rows={1}
+                style={{ maxHeight: '160px' }}
+              />
 
-            <motion.button
-              whileHover={{ scale: isLoading || !input.trim() ? 1 : 1.05 }}
-              whileTap={{ scale: isLoading || !input.trim() ? 1 : 0.95 }}
-              onClick={handleSend}
-              disabled={isLoading || !input.trim()}
-              className="absolute right-2 bottom-2 p-2.5 rounded-lg bg-blue-600 text-white hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-            >
-              {isLoading ? (
-                <Loader2 size={18} className="animate-spin" />
-              ) : (
-                <Send size={18} />
-              )}
-            </motion.button>
+              <div className="absolute right-2 bottom-2">
+                <motion.button
+                  whileHover={{ scale: isLoading || !input.trim() ? 1 : 1.05 }}
+                  whileTap={{ scale: isLoading || !input.trim() ? 1 : 0.95 }}
+                  onClick={handleSend}
+                  disabled={isLoading || !input.trim()}
+                  className="w-10 h-10 rounded-xl bg-blue-600 text-white flex items-center justify-center hover:bg-blue-500 disabled:bg-white/5 disabled:text-slate-600 transition-all shadow-xl shadow-blue-600/20"
+                >
+                  {isLoading ? (
+                    <Loader2 size={18} className="animate-spin" />
+                  ) : (
+                    <Send size={18} />
+                  )}
+                </motion.button>
+              </div>
+            </div>
           </div>
 
-          <p className="mt-2 text-xs text-slate-400 dark:text-slate-500 text-center">
-            Appuyez sur Shift + Entrée pour une nouvelle ligne
-          </p>
+          <div className="mt-3 flex items-center justify-center gap-4">
+             <div className="flex items-center gap-1.5 opacity-40 hover:opacity-100 transition-opacity cursor-help">
+                <div className="w-1 h-1 rounded-full bg-emerald-500" />
+                <span className="text-[8px] font-black text-white uppercase tracking-[0.2em]">IA Optimizée</span>
+             </div>
+             <div className="w-px h-2 bg-white/10" />
+             <p className="text-[8px] font-black text-slate-600 uppercase tracking-[0.2em]">
+               Shift + Entrée pour un saut de ligne
+             </p>
+          </div>
         </div>
       </div>
     </div>
@@ -150,62 +166,60 @@ function MessageBubble({ message, onCopy, isCopied = false }: MessageBubbleProps
 
   return (
     <motion.div
-      initial={{ opacity: 0, y: 10 }}
-      animate={{ opacity: 1, y: 0 }}
-      exit={{ opacity: 0, y: -10 }}
-      transition={{ duration: 0.2 }}
+      initial={{ opacity: 0, x: isUser ? 20 : -20 }}
+      animate={{ opacity: 1, x: 0 }}
+      exit={{ opacity: 0, scale: 0.95 }}
+      transition={{ duration: 0.3, ease: [0.22, 1, 0.36, 1] }}
       className={`flex ${isUser ? 'justify-end' : 'justify-start'}`}
     >
-      <div
-        className={`max-w-xl lg:max-w-2xl rounded-2xl px-6 py-4 ${
-          isUser
-            ? 'bg-blue-600 text-white rounded-br-none shadow-lg shadow-blue-600/20'
-            : 'bg-slate-100 dark:bg-white/5 text-slate-900 dark:text-slate-200 rounded-bl-none border border-transparent dark:border-white/5'
-        }`}
-      >
-        <div className="text-sm leading-relaxed whitespace-pre-wrap break-words">
-          {message.content}
-          {message.isStreaming && (
-            <motion.span
-              animate={{ opacity: [0.4, 1, 0.4] }}
-              transition={{ duration: 1.5, repeat: Infinity }}
-              className="inline-block ml-1 w-2 h-4 bg-white rounded"
-            />
+      <div className={`flex flex-col ${isUser ? 'items-end' : 'items-start'} max-w-[85%]`}>
+        <div
+          className={`relative rounded-3xl px-5 py-3.5 text-[13px] font-medium leading-relaxed ${
+            isUser
+              ? 'bg-blue-600 text-white rounded-tr-none shadow-2xl shadow-blue-600/20'
+              : 'bg-white/5 text-slate-200 rounded-tl-none border border-white/[0.05] backdrop-blur-xl'
+          }`}
+        >
+          <div className="whitespace-pre-wrap break-words">
+            {message.content}
+            {message.isStreaming && (
+              <motion.span
+                animate={{ opacity: [0.4, 1, 0.4] }}
+                transition={{ duration: 1.5, repeat: Infinity }}
+                className="inline-block ml-1 w-2 h-4 bg-blue-400 rounded-sm"
+              />
+            )}
+          </div>
+
+          {!isUser && onCopy && (
+            <button
+              onClick={onCopy}
+              className="absolute -right-10 top-0 p-2 text-slate-600 hover:text-white transition-colors opacity-0 group-hover:opacity-100"
+              title="Copier"
+            >
+              {isCopied ? (
+                <CheckCircle2 size={14} className="text-emerald-500" />
+              ) : (
+                <Copy size={14} />
+              )}
+            </button>
           )}
         </div>
 
-        <div
-          className={`mt-2 flex items-center justify-between gap-2 text-xs ${
-            isUser ? 'text-blue-100' : 'text-slate-500 dark:text-slate-500'
-          }`}
-        >
-          <span className="flex items-center gap-1">
-            {message.provider && (
-              <>
-                <span className="capitalize">{message.provider}</span>
-                <span>•</span>
-              </>
-            )}
-            {message.timestamp.toLocaleTimeString('fr-FR', {
+        <div className="mt-2 flex items-center gap-2 px-1">
+          <span className="text-[9px] font-black text-slate-600 uppercase tracking-widest">
+            {isUser ? 'Vous' : 'Huggy Elite'} • {message.timestamp.toLocaleTimeString('fr-FR', {
               hour: '2-digit',
               minute: '2-digit',
             })}
           </span>
-
-          {!isUser && onCopy && (
-            <motion.button
-              whileHover={{ scale: 1.1 }}
-              whileTap={{ scale: 0.95 }}
-              onClick={onCopy}
-              className="p-1 rounded hover:bg-white/20 transition-colors"
-              title="Copier"
-            >
-              {isCopied ? (
-                <CheckCircle2 size={14} className="text-green-500" />
-              ) : (
-                <Copy size={14} />
-              )}
-            </motion.button>
+          {!isUser && message.provider && (
+            <>
+              <div className="w-1 h-1 rounded-full bg-slate-800" />
+              <span className="text-[8px] font-black text-blue-500/50 uppercase tracking-tighter">
+                Powered by {message.provider}
+              </span>
+            </>
           )}
         </div>
       </div>

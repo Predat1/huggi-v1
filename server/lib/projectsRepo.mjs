@@ -31,8 +31,28 @@ export async function getProjectByDomain(pool, domain) {
 
 export async function updateProjectDomain(pool, id, customDomain) {
   await pool.query(
-    `UPDATE projects SET custom_domain = $2 WHERE id = $1`,
+    `UPDATE projects SET custom_domain = $2, updated_at = now() WHERE id = $1`,
     [id, customDomain],
+  );
+}
+
+/** @param {import('pg').Pool} pool */
+export async function updateProject(pool, id, { name, description }) {
+  const fields = [];
+  const values = [id];
+  let idx = 2;
+  if (name !== undefined) {
+    fields.push(`name = $${idx++}`);
+    values.push(name);
+  }
+  if (description !== undefined) {
+    fields.push(`description = $${idx++}`);
+    values.push(description);
+  }
+  if (fields.length === 0) return;
+  await pool.query(
+    `UPDATE projects SET ${fields.join(', ')}, updated_at = now() WHERE id = $1`,
+    values,
   );
 }
 

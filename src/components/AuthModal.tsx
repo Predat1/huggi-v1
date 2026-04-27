@@ -12,6 +12,10 @@ import {
   Github,
   CheckCircle2,
   AlertCircle,
+  Sparkles,
+  ShieldCheck,
+  Code2,
+  Globe
 } from 'lucide-react';
 import { signIn, signUp } from '../lib/supabaseClient';
 
@@ -23,10 +27,10 @@ interface AuthModalProps {
 }
 
 const FEATURES = [
-  'Générez des apps complètes en secondes',
-  'Preview en temps réel avec live editor',
-  'Export GitHub / ZIP en un clic',
-  'Déploiement cloud instantané',
+  { icon: Sparkles, text: 'Générez des apps complètes en secondes' },
+  { icon: Code2, text: 'Preview en temps réel avec live editor' },
+  { icon: Github, text: 'Export GitHub / ZIP en un clic' },
+  { icon: Globe, text: 'Déploiement cloud instantané' },
 ];
 
 export default function AuthModal({ isOpen, onClose, defaultMode = 'login', onSuccess }: AuthModalProps) {
@@ -39,7 +43,6 @@ export default function AuthModal({ isOpen, onClose, defaultMode = 'login', onSu
   const [success, setSuccess] = useState<string | null>(null);
   const emailRef = useRef<HTMLInputElement>(null);
 
-  // Reset state when modal opens/closes
   useEffect(() => {
     if (isOpen) {
       setMode(defaultMode);
@@ -48,11 +51,10 @@ export default function AuthModal({ isOpen, onClose, defaultMode = 'login', onSu
       setError(null);
       setSuccess(null);
       setLoading(false);
-      setTimeout(() => emailRef.current?.focus(), 120);
+      setTimeout(() => emailRef.current?.focus(), 150);
     }
   }, [isOpen, defaultMode]);
 
-  // ESC to close
   useEffect(() => {
     if (!isOpen) return;
     const handler = (e: KeyboardEvent) => {
@@ -78,13 +80,13 @@ export default function AuthModal({ isOpen, onClose, defaultMode = 'login', onSu
         setError(res.error);
       } else {
         if (mode === 'signup') {
-          setSuccess('Compte créé ! Vérifiez votre email pour confirmer votre inscription.');
+          setSuccess('Vérifiez votre email pour confirmer !');
         } else {
           setSuccess('Connexion réussie !');
           setTimeout(() => {
             onSuccess?.();
             onClose();
-          }, 900);
+          }, 800);
         }
       }
     } catch (err) {
@@ -92,14 +94,6 @@ export default function AuthModal({ isOpen, onClose, defaultMode = 'login', onSu
     } finally {
       setLoading(false);
     }
-  };
-
-  const switchMode = () => {
-    setMode(m => m === 'login' ? 'signup' : 'login');
-    setError(null);
-    setSuccess(null);
-    setEmail('');
-    setPassword('');
   };
 
   return (
@@ -110,102 +104,113 @@ export default function AuthModal({ isOpen, onClose, defaultMode = 'login', onSu
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
-          transition={{ duration: 0.2 }}
-          className="fixed inset-0 z-[500] flex items-center justify-center p-4"
-          style={{ background: 'rgba(2, 8, 23, 0.72)' }}
+          className="fixed inset-0 z-[1000] flex items-center justify-center p-4 sm:p-6 md:p-10 backdrop-blur-[12px]"
+          style={{ background: 'rgba(0, 0, 0, 0.4)' }}
           onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}
         >
+          {/* Neon Background Glow */}
+          <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] bg-blue-600/20 rounded-full blur-[120px] pointer-events-none animate-pulse" />
+          
           <motion.div
             key="auth-panel"
-            initial={{ opacity: 0, scale: 0.93, y: 32 }}
+            initial={{ opacity: 0, scale: 0.95, y: 20 }}
             animate={{ opacity: 1, scale: 1, y: 0 }}
-            exit={{ opacity: 0, scale: 0.93, y: 32 }}
-            transition={{ type: 'spring', damping: 28, stiffness: 340 }}
-            className="relative w-full max-w-[860px] rounded-[2rem] overflow-hidden shadow-[0_40px_120px_rgba(0,0,0,0.6)] flex border border-transparent dark:border-white/5"
-            style={{ minHeight: '560px' }}
+            exit={{ opacity: 0, scale: 0.95, y: 20 }}
+            transition={{ type: 'spring', damping: 25, stiffness: 300 }}
+            className="relative w-full max-w-[960px] bg-white dark:bg-[#0B0B0B] rounded-[40px] overflow-hidden shadow-[0_0_80px_rgba(0,0,0,0.5)] flex flex-col md:flex-row border border-slate-200 dark:border-white/5"
+            style={{ minHeight: '600px' }}
           >
-            {/* Left panel — decorative */}
-            <div
-              className="hidden md:flex md:w-[42%] flex-col justify-between p-10 relative overflow-hidden"
-              style={{
-                background: 'linear-gradient(145deg, #1e3a8a 0%, #1d4ed8 40%, #2563eb 70%, #3b82f6 100%)',
-              }}
-            >
-              {/* Animated orbs */}
-              <div className="absolute -top-16 -left-16 w-64 h-64 rounded-full bg-white/5 blur-3xl animate-pulse" />
-              <div className="absolute bottom-0 right-0 w-48 h-48 rounded-full bg-blue-300/10 blur-2xl" style={{ animationDelay: '1s' }} />
+            {/* Left Panel: The Vision */}
+            <div className="relative hidden md:flex md:w-[45%] flex-col justify-between p-12 bg-slate-900 overflow-hidden border-r border-white/5">
+              {/* Dynamic Gradient Backdrop */}
+              <div className="absolute inset-0 bg-gradient-to-br from-blue-700 via-blue-900 to-slate-950" />
+              <div className="absolute -top-24 -left-24 w-64 h-64 bg-blue-500/20 rounded-full blur-3xl animate-pulse" />
+              <div className="absolute bottom-0 right-0 w-80 h-80 bg-blue-600/10 rounded-full blur-[80px]" />
 
               <div className="relative z-10">
-                {/* Logo */}
-                <div className="flex items-center gap-2.5 mb-14">
-                  <div className="w-9 h-9 bg-white/15 backdrop-blur-sm rounded-xl flex items-center justify-center text-white border border-white/20 shadow-lg">
-                    <Zap size={18} fill="currentColor" />
+                <div className="flex items-center gap-3 mb-16">
+                  <div className="w-10 h-10 bg-white/10 backdrop-blur-md rounded-2xl flex items-center justify-center border border-white/20 shadow-2xl">
+                    <Zap size={20} className="text-white" fill="currentColor" />
                   </div>
-                  <span className="text-white font-black text-lg tracking-tight">Huggy</span>
+                  <span className="text-white font-black text-xl tracking-tight uppercase">Huggy <span className="text-blue-400">Studio</span></span>
                 </div>
 
-                <h2 className="text-white font-black text-3xl leading-tight tracking-tight">
-                  {mode === 'login' ? 'Bon retour\nparmi nous !' : 'Rejoignez\nHuggy Studio'}
-                </h2>
-                <p className="mt-4 text-blue-100 text-sm font-medium leading-relaxed opacity-80">
+                <motion.h2 
+                  initial={{ opacity: 0, x: -20 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  transition={{ delay: 0.2 }}
+                  className="text-white font-black text-4xl leading-[1.1] tracking-tight"
+                >
+                  {mode === 'login' ? 'Bienvenue\ndans le futur.' : 'Libérez votre\npotentiel créatif.'}
+                </motion.h2>
+                <p className="mt-6 text-blue-100/70 text-sm font-medium leading-relaxed max-w-[280px]">
                   {mode === 'login'
-                    ? 'Vos projets vous attendent. Connectez-vous pour reprendre là où vous vous êtes arrêté.'
-                    : 'Créez votre compte gratuit et commencez à construire des apps en quelques secondes.'}
+                    ? 'Accédez à votre espace de travail et continuez de bâtir vos projets avec la puissance de l\'IA.'
+                    : 'Rejoignez la nouvelle génération de constructeurs d\'applications et développez en un éclair.'}
                 </p>
               </div>
 
-              {/* Features list */}
-              <div className="relative z-10 space-y-3">
+              <div className="relative z-10 space-y-5">
                 {FEATURES.map((f, i) => (
                   <motion.div
-                    key={f}
-                    initial={{ opacity: 0, x: -16 }}
+                    key={i}
+                    initial={{ opacity: 0, x: -20 }}
                     animate={{ opacity: 1, x: 0 }}
-                    transition={{ delay: 0.1 + i * 0.07 }}
-                    className="flex items-center gap-2.5"
+                    transition={{ delay: 0.3 + i * 0.1 }}
+                    className="flex items-center gap-4 group"
                   >
-                    <div className="w-5 h-5 rounded-full bg-white/15 flex items-center justify-center shrink-0 border border-white/20">
-                      <CheckCircle2 size={11} className="text-white" />
+                    <div className="w-10 h-10 rounded-xl bg-white/5 flex items-center justify-center border border-white/10 group-hover:bg-white/10 group-hover:border-white/20 transition-all duration-300">
+                      <f.icon size={18} className="text-blue-400" />
                     </div>
-                    <span className="text-blue-50 text-xs font-semibold">{f}</span>
+                    <span className="text-slate-300 text-sm font-bold group-hover:text-white transition-colors">{f.text}</span>
                   </motion.div>
                 ))}
               </div>
+
+              <div className="relative z-10 pt-8 border-t border-white/10">
+                <div className="flex items-center gap-2">
+                  <div className="flex -space-x-2">
+                    {[1, 2, 3].map(i => (
+                      <div key={i} className="w-6 h-6 rounded-full border-2 border-slate-900 bg-slate-800" />
+                    ))}
+                  </div>
+                  <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">+ 5,000 Utilisateurs</span>
+                </div>
+              </div>
             </div>
 
-            {/* Right panel — form */}
-            <div className="flex-1 bg-white dark:bg-[#111] flex flex-col relative">
-              {/* Close button */}
+            {/* Right Panel: The Form */}
+            <div className="flex-1 flex flex-col relative bg-white dark:bg-[#0A0A0A]">
               <button
                 onClick={onClose}
-                className="absolute top-5 right-5 w-8 h-8 flex items-center justify-center rounded-full bg-slate-100 dark:bg-white/10 text-slate-500 dark:text-slate-400 hover:bg-slate-200 dark:hover:bg-white/20 hover:text-slate-800 dark:hover:text-white transition-all z-10"
+                className="absolute top-6 right-6 w-10 h-10 flex items-center justify-center rounded-2xl bg-slate-100 dark:bg-white/5 text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white transition-all z-20 active:scale-90"
               >
-                <X size={15} />
+                <X size={18} />
               </button>
 
-              <div className="flex-1 flex flex-col justify-center px-8 sm:px-10 py-12">
-                {/* Mobile logo */}
-                <div className="md:hidden flex items-center gap-2 mb-8">
-                  <div className="w-8 h-8 bg-blue-600 rounded-xl flex items-center justify-center text-white">
-                    <Zap size={15} fill="currentColor" />
+              <div className="flex-1 flex flex-col justify-center px-8 sm:px-16 py-12 max-w-[540px] mx-auto w-full">
+                {/* Branding Badge (Mobile only) */}
+                <div className="md:hidden flex justify-center mb-10">
+                  <div className="inline-flex items-center gap-2.5 px-4 py-2 rounded-2xl bg-blue-50 dark:bg-blue-500/10 border border-blue-100 dark:border-blue-500/20">
+                    <Zap size={18} className="text-blue-600 dark:text-blue-400" fill="currentColor" />
+                    <span className="text-xs font-black text-blue-700 dark:text-blue-400 uppercase tracking-widest tracking-widest">Huggy Studio</span>
                   </div>
-                  <span className="font-black text-slate-900 dark:text-white">Huggy</span>
                 </div>
 
-                {/* Tab switcher */}
-                <div className="flex bg-slate-100 dark:bg-white/5 rounded-xl p-1 mb-8 gap-1 border border-transparent dark:border-white/5">
+                {/* Tab Switcher */}
+                <div className="flex bg-slate-100 dark:bg-white/5 rounded-2xl p-1 mb-10 gap-1 border border-slate-200 dark:border-white/10">
                   {(['login', 'signup'] as const).map((tab) => (
                     <button
                       key={tab}
                       type="button"
                       onClick={() => { setMode(tab); setError(null); setSuccess(null); }}
-                      className={`flex-1 py-2 rounded-lg text-sm font-bold transition-all ${
+                      className={`flex-1 py-2.5 rounded-xl text-xs font-black uppercase tracking-widest transition-all ${
                         mode === tab
-                          ? 'bg-white dark:bg-white/10 shadow-sm text-slate-900 dark:text-white'
-                          : 'text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200'
+                          ? 'bg-white dark:bg-white/10 shadow-lg shadow-black/5 dark:shadow-none text-slate-900 dark:text-white'
+                          : 'text-slate-500 hover:text-slate-700 dark:hover:text-slate-300'
                       }`}
                     >
-                      {tab === 'login' ? 'Se connecter' : 'S\'inscrire'}
+                      {tab === 'login' ? 'Connexion' : 'Inscription'}
                     </button>
                   ))}
                 </div>
@@ -213,145 +218,127 @@ export default function AuthModal({ isOpen, onClose, defaultMode = 'login', onSu
                 <AnimatePresence mode="wait">
                   <motion.form
                     key={mode}
-                    initial={{ opacity: 0, x: 12 }}
-                    animate={{ opacity: 1, x: 0 }}
-                    exit={{ opacity: 0, x: -12 }}
-                    transition={{ duration: 0.18 }}
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, y: -10 }}
+                    transition={{ duration: 0.2 }}
                     onSubmit={handleSubmit}
-                    className="space-y-4"
+                    className="space-y-6"
                   >
-                    <h3 className="text-xl font-black text-slate-900 dark:text-white tracking-tight">
-                      {mode === 'login' ? 'Connexion à votre compte' : 'Créer un compte gratuit'}
-                    </h3>
+                    <div className="text-center md:text-left mb-2">
+                      <h3 className="text-2xl font-black text-slate-900 dark:text-white tracking-tight">
+                        {mode === 'login' ? 'Ravis de vous revoir' : 'Créez votre accès gratuit'}
+                      </h3>
+                    </div>
 
-                    {/* Email */}
-                    <div className="space-y-1.5">
-                      <label className="text-xs font-bold text-slate-600 dark:text-slate-400 uppercase tracking-wider">Email</label>
-                      <div className="relative">
-                        <Mail size={15} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" />
-                        <input
-                          ref={emailRef}
-                          type="email"
-                          value={email}
-                          onChange={e => setEmail(e.target.value)}
-                          required
-                          disabled={loading}
-                          placeholder="vous@exemple.com"
-                          className="w-full pl-10 pr-4 py-3 rounded-xl border border-slate-200 dark:border-white/10 bg-slate-50 dark:bg-white/5 text-slate-900 dark:text-white text-sm font-medium placeholder:text-slate-400 dark:placeholder:text-slate-600 focus:outline-none focus:ring-2 focus:ring-blue-500/30 focus:border-blue-500 focus:bg-white dark:focus:bg-white/10 transition-all disabled:opacity-50"
-                        />
+                    <div className="space-y-5">
+                      <div className="space-y-2">
+                        <label className="text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-[0.2em] ml-1">Email</label>
+                        <div className="relative group">
+                          <Mail size={16} className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-blue-500 transition-colors" />
+                          <input
+                            ref={emailRef}
+                            type="email"
+                            value={email}
+                            onChange={e => setEmail(e.target.value)}
+                            required
+                            disabled={loading}
+                            placeholder="vous@exemple.com"
+                            className="w-full pl-12 pr-4 py-4 rounded-2xl border border-slate-200 dark:border-white/10 bg-slate-50 dark:bg-white/5 text-slate-900 dark:text-white text-sm font-bold placeholder:text-slate-400 dark:placeholder:text-slate-700 focus:outline-none focus:ring-4 focus:ring-blue-500/10 focus:border-blue-500 transition-all disabled:opacity-50"
+                          />
+                        </div>
+                      </div>
+
+                      <div className="space-y-2">
+                        <div className="flex items-center justify-between ml-1">
+                          <label className="text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-[0.2em]">Mot de passe</label>
+                          {mode === 'login' && (
+                            <button type="button" className="text-[10px] font-black text-blue-600 uppercase tracking-widest hover:underline">Oublié ?</button>
+                          )}
+                        </div>
+                        <div className="relative group">
+                          <Lock size={16} className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-blue-500 transition-colors" />
+                          <input
+                            type={showPassword ? 'text' : 'password'}
+                            value={password}
+                            onChange={e => setPassword(e.target.value)}
+                            required
+                            disabled={loading}
+                            placeholder="••••••••"
+                            minLength={6}
+                            className="w-full pl-12 pr-12 py-4 rounded-2xl border border-slate-200 dark:border-white/10 bg-slate-50 dark:bg-white/5 text-slate-900 dark:text-white text-sm font-bold placeholder:text-slate-400 dark:placeholder:text-slate-700 focus:outline-none focus:ring-4 focus:ring-blue-500/10 focus:border-blue-500 transition-all disabled:opacity-50"
+                          />
+                          <button
+                            type="button"
+                            onClick={() => setShowPassword(v => !v)}
+                            className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-900 dark:hover:text-white transition-colors"
+                          >
+                            {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
+                          </button>
+                        </div>
                       </div>
                     </div>
 
-                    {/* Password */}
-                    <div className="space-y-1.5">
-                      <label className="text-xs font-bold text-slate-600 dark:text-slate-400 uppercase tracking-wider">Mot de passe</label>
-                      <div className="relative">
-                        <Lock size={15} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" />
-                        <input
-                          type={showPassword ? 'text' : 'password'}
-                          value={password}
-                          onChange={e => setPassword(e.target.value)}
-                          required
-                          disabled={loading}
-                          placeholder="••••••••"
-                          minLength={6}
-                          className="w-full pl-10 pr-11 py-3 rounded-xl border border-slate-200 dark:border-white/10 bg-slate-50 dark:bg-white/5 text-slate-900 dark:text-white text-sm font-medium placeholder:text-slate-400 dark:placeholder:text-slate-600 focus:outline-none focus:ring-2 focus:ring-blue-500/30 focus:border-blue-500 focus:bg-white dark:focus:bg-white/10 transition-all disabled:opacity-50"
-                        />
-                        <button
-                          type="button"
-                          tabIndex={-1}
-                          onClick={() => setShowPassword(v => !v)}
-                          className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 dark:text-slate-500 hover:text-slate-700 dark:hover:text-slate-200 transition-colors p-1"
-                        >
-                          {showPassword ? <EyeOff size={15} /> : <Eye size={15} />}
-                        </button>
-                      </div>
-                      {mode === 'signup' && (
-                        <p className="text-[11px] text-slate-400 font-medium">Minimum 6 caractères</p>
-                      )}
-                    </div>
-
-                    {/* Error / Success */}
                     <AnimatePresence>
-                      {error && (
+                      {(error || success) && (
                         <motion.div
-                          initial={{ opacity: 0, y: -8 }}
+                          initial={{ opacity: 0, y: -5 }}
                           animate={{ opacity: 1, y: 0 }}
-                          exit={{ opacity: 0, y: -8 }}
-                          className="flex items-start gap-2.5 p-3 bg-red-50 border border-red-100 rounded-xl"
+                          exit={{ opacity: 0, y: -5 }}
+                          className={`flex items-start gap-3 p-4 rounded-2xl border ${
+                            error 
+                              ? 'bg-rose-50 dark:bg-rose-500/5 border-rose-100 dark:border-rose-500/20 text-rose-600'
+                              : 'bg-emerald-50 dark:bg-emerald-500/5 border-emerald-100 dark:border-emerald-500/20 text-emerald-600'
+                          }`}
                         >
-                          <AlertCircle size={15} className="text-red-500 shrink-0 mt-0.5" />
-                          <p className="text-xs font-semibold text-red-700 dark:text-red-400">{error}</p>
-                        </motion.div>
-                      )}
-                      {success && (
-                        <motion.div
-                          initial={{ opacity: 0, y: -8 }}
-                          animate={{ opacity: 1, y: 0 }}
-                          exit={{ opacity: 0, y: -8 }}
-                          className="flex items-start gap-2.5 p-3 bg-emerald-50 border border-emerald-100 rounded-xl"
-                        >
-                          <CheckCircle2 size={15} className="text-emerald-500 shrink-0 mt-0.5" />
-                          <p className="text-xs font-semibold text-emerald-700 dark:text-emerald-400">{success}</p>
+                          {error ? <AlertCircle size={16} className="shrink-0 mt-0.5" /> : <CheckCircle2 size={16} className="shrink-0 mt-0.5" />}
+                          <p className="text-xs font-bold leading-relaxed">{error || success}</p>
                         </motion.div>
                       )}
                     </AnimatePresence>
 
-                    {/* Submit */}
                     <button
                       type="submit"
-                      disabled={loading || !email || !password}
-                      className="w-full py-3.5 rounded-xl bg-blue-600 hover:bg-blue-700 active:scale-[0.98] text-white font-bold text-sm flex items-center justify-center gap-2.5 transition-all shadow-lg shadow-blue-600/25 disabled:opacity-50 disabled:cursor-not-allowed disabled:shadow-none"
+                      disabled={loading}
+                      className="group w-full py-4 rounded-[20px] bg-blue-600 hover:bg-blue-700 active:scale-[0.98] text-white font-black text-xs uppercase tracking-[0.2em] flex items-center justify-center gap-3 transition-all shadow-xl shadow-blue-600/25 disabled:opacity-50"
                     >
                       {loading ? (
-                        <Loader2 size={17} className="animate-spin" />
+                        <Loader2 size={18} className="animate-spin" />
                       ) : (
                         <>
                           {mode === 'login' ? 'Se connecter' : 'Créer mon compte'}
-                          <ArrowRight size={16} />
+                          <ArrowRight size={16} className="group-hover:translate-x-1 transition-transform" />
                         </>
                       )}
                     </button>
 
-                    {/* Divider */}
-                    <div className="flex items-center gap-3">
-                      <div className="flex-1 h-px bg-slate-100 dark:bg-white/5" />
-                      <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider">ou</span>
-                      <div className="flex-1 h-px bg-slate-100 dark:bg-white/5" />
+                    <div className="relative pt-4 pb-2">
+                      <div className="absolute inset-0 flex items-center">
+                        <div className="w-full border-t border-slate-100 dark:border-white/10"></div>
+                      </div>
+                      <div className="relative flex justify-center text-[10px] uppercase">
+                        <span className="bg-white dark:bg-[#0A0A0A] px-4 text-slate-400 dark:text-slate-600 font-black tracking-[0.3em]">Ou</span>
+                      </div>
                     </div>
 
-                    {/* GitHub OAuth (placeholder — wirable) */}
                     <button
                       type="button"
-                      disabled
-                      title="Bientôt disponible"
-                      className="w-full py-3 rounded-xl border border-slate-200 dark:border-white/10 bg-slate-50 dark:bg-white/5 text-slate-400 dark:text-slate-500 font-bold text-sm flex items-center justify-center gap-2.5 cursor-not-allowed opacity-60"
+                      className="w-full py-4 rounded-[20px] border border-slate-200 dark:border-white/10 bg-white dark:bg-white/5 text-slate-900 dark:text-white font-black text-xs uppercase tracking-[0.2em] flex items-center justify-center gap-3 hover:bg-slate-50 dark:hover:bg-white/10 transition-all active:scale-[0.98]"
                     >
-                      <Github size={16} />
-                      Continuer avec GitHub
-                      <span className="ml-auto text-[10px] bg-slate-200 dark:bg-white/10 text-slate-500 dark:text-slate-400 px-1.5 py-0.5 rounded-full font-bold uppercase tracking-wider">Bientôt</span>
+                      <Github size={18} />
+                      GitHub
                     </button>
                   </motion.form>
                 </AnimatePresence>
 
-                {/* Switch mode (mobile friendly bottom text) */}
-                <p className="mt-6 text-center text-xs text-slate-500 dark:text-slate-400 font-medium">
-                  {mode === 'login' ? 'Pas encore de compte ?' : 'Déjà inscrit ?'}{' '}
-                  <button
-                    type="button"
-                    onClick={switchMode}
-                    className="text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 font-bold underline-offset-2 hover:underline transition-colors"
-                  >
-                    {mode === 'login' ? 'S\'inscrire gratuitement' : 'Se connecter'}
-                  </button>
-                </p>
-
-                <p className="mt-3 text-center text-[10px] text-slate-300 dark:text-slate-600">
-                  En continuant, vous acceptez nos{' '}
-                  <a href="#" className="underline hover:text-slate-500 dark:hover:text-slate-400 transition-colors">CGU</a>{' '}
-                  et notre{' '}
-                  <a href="#" className="underline hover:text-slate-500 dark:hover:text-slate-400 transition-colors">Politique de confidentialité</a>.
-                </p>
+                <div className="mt-10 pt-6 border-t border-slate-100 dark:border-white/10 text-center space-y-4">
+                   <p className="text-[10px] text-slate-400 dark:text-slate-600 leading-relaxed font-medium">
+                    En continuant, vous acceptez nos{' '}
+                    <a href="#" className="text-slate-900 dark:text-slate-300 underline font-bold">Conditions</a>{' '}
+                    et notre{' '}
+                    <a href="#" className="text-slate-900 dark:text-slate-300 underline font-bold">Confidentialité</a>.
+                  </p>
+                </div>
               </div>
             </div>
           </motion.div>
@@ -360,3 +347,4 @@ export default function AuthModal({ isOpen, onClose, defaultMode = 'login', onSu
     </AnimatePresence>
   );
 }
+

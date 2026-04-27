@@ -40,6 +40,7 @@ import {
   restoreProjectVersion,
   updateDeploymentContent,
   getDeploymentBySlug,
+  updateProject,
 } from './lib/projectsRepo.mjs';
 import { DEFAULT_PREVIEW_CODE } from './lib/defaultAppCode.mjs';
 import { buildUserSiteToDir } from './lib/deploy.mjs';
@@ -575,6 +576,23 @@ app.get('/api/projects/:id', async (req, res) => {
     const secrets = userId ? await getProjectSecrets(pool, project.id) : [];
     
     res.json({ project, files, deployments, secrets });
+  } catch (e) {
+    res.status(500).json({ error: safeError(e) });
+  }
+});
+
+app.patch('/api/projects/:id', async (req, res) => {
+  if (!pool) return res.status(503).json({ error: 'Service unavailable' });
+  try {
+    const { userId, name, description } = req.body || {};
+    if (!isUuid(req.params.id)) return res.status(400).json({ error: 'ID projet invalide.' });
+    const project = await getProject(pool, req.params.id);
+    if (!project) return res.status(404).json({ error: 'Projet introuvable.' });
+    if (project.owner_id && project.owner_id !== userId) {
+      return res.status(403).json({ error: 'Action non autorisée.' });
+    }
+    await updateProject(pool, req.params.id, { name, description });
+    res.json({ ok: true });
   } catch (e) {
     res.status(500).json({ error: safeError(e) });
   }
