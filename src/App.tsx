@@ -2287,52 +2287,73 @@ export default function App() {
         )}
 
         {activeStudioTab === 'code' && (
-          <div className="flex-1 flex h-full overflow-hidden">
-             <div className="w-[300px] border-r border-slate-200 dark:border-white/5 bg-slate-50/50 dark:bg-black/20 overflow-y-auto shrink-0 py-4">
-                <div className="px-6 mb-4 text-[10px] font-black text-slate-400 uppercase tracking-widest">Project Files</div>
-                {Object.keys(filesMap).sort().map(path => (
-                  <button
-                    key={path}
-                    onClick={() => {
-                      setActiveFilePath(path);
-                      setEditorLanguage(path.endsWith('.tsx') ? 'typescript' : path.endsWith('.css') ? 'css' : 'javascript');
-                    }}
-                    className={`w-full text-left px-6 py-2 text-xs font-medium transition-colors ${
-                      activeFilePath === path 
-                        ? 'text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-600/10' 
-                        : 'text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-white/5'
-                    }`}
-                  >
-                    {path.split('/').pop()}
-                  </button>
-                ))}
-             </div>
-             <div className="flex-1 flex flex-col min-w-0">
-                <div className="h-10 border-b border-slate-200 dark:border-white/5 bg-white dark:bg-black/20 flex items-center px-4 gap-2">
-                  <span className="text-[10px] font-black text-blue-500 bg-blue-50 dark:bg-blue-500/10 px-2 py-0.5 rounded uppercase">{editorLanguage}</span>
-                  <span className="text-[10px] font-bold text-slate-400 uppercase">{activeFilePath}</span>
+          <div className="flex-1 flex h-full overflow-hidden bg-[#1e1e1e] text-[#cccccc]">
+             <div className="w-[280px] border-r border-[#2b2b2b] bg-[#252526] overflow-y-auto shrink-0 py-4">
+                <div className="px-6 mb-4 text-[10px] font-black text-[#858585] uppercase tracking-[0.2em] flex items-center justify-between">
+                  <span>EXPLORATEUR</span>
+                  <div className="flex gap-1.5">
+                    <Plus size={12} className="cursor-pointer hover:text-white transition-colors" />
+                    <RefreshCw size={12} className="cursor-pointer hover:text-white transition-colors" />
+                  </div>
                 </div>
-                <Editor
-                  height="100%"
-                  language={editorLanguage}
-                  value={filesMap[activeFilePath] || ''}
-                  theme={editorTheme}
-                  onChange={(val) => {
-                    if (val !== undefined) {
-                      setFilesMap(prev => ({ ...prev, [activeFilePath]: val }));
-                    }
-                  }}
-                  options={{
-                    minimap: { enabled: showMinimap },
-                    fontSize: 13,
-                    fontFamily: "'Fira Code', 'JetBrains Mono', monospace",
-                    padding: { top: 20 },
-                    smoothScrolling: true,
-                    roundedSelection: true,
-                    cursorBlinking: 'smooth',
-                    cursorSmoothCaretAnimation: 'on',
-                  }}
-                />
+                <div className="space-y-[1px]">
+                  {Object.keys(filesMap).sort().map(path => (
+                    <button
+                      key={path}
+                      onClick={() => {
+                        setActiveFilePath(path);
+                        setEditorLanguage(path.endsWith('.tsx') ? 'typescript' : path.endsWith('.css') ? 'css' : 'javascript');
+                      }}
+                      className={`w-full text-left px-6 py-1.5 text-[13px] font-medium transition-colors flex items-center gap-2 group ${
+                        activeFilePath === path 
+                          ? 'text-white bg-[#37373d]' 
+                          : 'text-[#858585] hover:bg-[#2a2d2e] hover:text-[#cccccc]'
+                      }`}
+                    >
+                      <FileCode size={14} className={activeFilePath === path ? 'text-blue-400' : 'text-[#858585] group-hover:text-[#cccccc]'} />
+                      <span className="truncate">{path.split('/').pop()}</span>
+                    </button>
+                  ))}
+                </div>
+             </div>
+             <div className="flex-1 flex flex-col min-w-0 bg-[#1e1e1e]">
+                <div className="h-9 border-b border-[#2b2b2b] bg-[#252526] flex items-center px-4">
+                  <div className="flex items-center gap-2 px-4 h-full border-t-2 border-blue-500 bg-[#1e1e1e]">
+                    <FileCode size={14} className="text-blue-400" />
+                    <span className="text-[11px] font-medium text-[#cccccc]">{activeFilePath.split('/').pop()}</span>
+                  </div>
+                </div>
+                <div className="flex-1 relative">
+                  <Editor
+                    height="100%"
+                    language={editorLanguage}
+                    value={filesMap[activeFilePath] || ''}
+                    theme="vs-dark"
+                    onChange={(val) => {
+                      if (val !== undefined) {
+                        setFilesMap(prev => ({ ...prev, [activeFilePath]: val }));
+                      }
+                    }}
+                    options={{
+                      minimap: { enabled: showMinimap },
+                      fontSize: 13,
+                      fontFamily: "'Fira Code', 'JetBrains Mono', monospace",
+                      padding: { top: 20 },
+                      smoothScrolling: true,
+                      roundedSelection: true,
+                      cursorBlinking: 'smooth',
+                      cursorSmoothCaretAnimation: 'on',
+                      backgroundColor: '#1e1e1e',
+                      scrollbar: {
+                        vertical: 'visible',
+                        horizontal: 'visible',
+                        useShadows: false,
+                        verticalScrollbarSize: 10,
+                        horizontalScrollbarSize: 10
+                      }
+                    }}
+                  />
+                </div>
              </div>
           </div>
         )}
