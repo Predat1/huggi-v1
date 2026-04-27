@@ -74,6 +74,8 @@ import OnboardingModal from './components/OnboardingModal';
 import TemplatesModal from './components/TemplatesModal';
 import PricingSection from './components/PricingSection';
 import AuthModal from './components/AuthModal';
+import { ProjectAnalytics } from './components/ProjectAnalytics';
+import { DatabaseInterface } from './components/DatabaseInterface';
 
 type Message = {
   id: string;
@@ -333,6 +335,7 @@ export default function App() {
   const [showMagicStream, setShowMagicStream] = useState(false);
   const [showDebugStream, setShowDebugStream] = useState(false);
   const [debugPrompt, setDebugPrompt] = useState("");
+  const [activeStudioTab, setActiveStudioTab] = useState<'preview' | 'code' | 'database' | 'analytics'>('preview');
   const [toast, setToast] = useState<{message: string, type: 'success' | 'info'} | null>(null);
 
   const showToast = (message: string, type: 'success' | 'info' = 'success') => {
@@ -1264,11 +1267,32 @@ export default function App() {
                       </span>
                       <div className="w-1 h-1 rounded-full bg-slate-300 dark:bg-slate-700" />
                       <span className="text-[8px] font-black text-blue-500 uppercase tracking-widest">V1.0</span>
-                    </div>
                   </div>
                 </div>
               </div>
-              {/* REST OF HEADER ACTIONS ARE ALREADY IN THE FILE */}
+
+              {/* Sub-navigation Tabs — Central Elite Navigation */}
+              <div className="hidden md:flex items-center bg-slate-100/50 dark:bg-white/[0.03] p-1 rounded-2xl border border-slate-200/50 dark:border-white/5 mx-4">
+                {[
+                  { id: 'preview', label: 'Aperçu', icon: <Eye size={14} /> },
+                  { id: 'code', label: 'Code', icon: <Code2 size={14} /> },
+                  { id: 'database', label: 'Données', icon: <Database size={14} /> },
+                  { id: 'analytics', label: 'Analytics', icon: <BarChart3 size={14} /> },
+                ].map((tab) => (
+                  <button
+                    key={tab.id}
+                    onClick={() => setActiveStudioTab(tab.id as any)}
+                    className={`flex items-center gap-2 px-4 py-1.5 rounded-xl text-[11px] font-black uppercase tracking-widest transition-all ${
+                      activeStudioTab === tab.id 
+                        ? 'bg-white dark:bg-white/10 text-blue-600 dark:text-blue-400 shadow-sm' 
+                        : 'text-slate-400 hover:text-slate-600 dark:hover:text-slate-200'
+                    }`}
+                  >
+                    {tab.icon}
+                    {tab.label}
+                  </button>
+                ))}
+              </div>
 
 
         {/* Right: Actions */}
@@ -1343,8 +1367,10 @@ export default function App() {
         </div>
       </header>
 
-      <div className="flex flex-1 overflow-hidden">
-        {/* Left Sidebar */}
+      <div className="flex flex-1 overflow-hidden relative">
+        {activeStudioTab === 'preview' && (
+          <>
+            {/* Left Sidebar */}
         <aside className={`${isSidebarCollapsed ? 'w-16' : 'w-[400px]'} border-r border-slate-200 bg-white flex flex-col shrink-0 transition-all duration-300 ease-in-out`}>
           <div className="p-4 border-b border-slate-100 flex items-center justify-between relative min-h-[57px]">
             {!isSidebarCollapsed && (
@@ -2256,7 +2282,72 @@ export default function App() {
 
           {/* Resize Handle (Visual only) */}
           <div className="absolute left-0 top-1/2 -translate-y-1/2 w-1 h-8 bg-slate-200 rounded-full -ml-0.5 cursor-col-resize hover:bg-blue-400 transition-colors z-20" />
-        </main>
+            </div>
+          </>
+        )}
+
+        {activeStudioTab === 'code' && (
+          <div className="flex-1 flex h-full overflow-hidden">
+             <div className="w-[300px] border-r border-slate-200 dark:border-white/5 bg-slate-50/50 dark:bg-black/20 overflow-y-auto shrink-0 py-4">
+                <div className="px-6 mb-4 text-[10px] font-black text-slate-400 uppercase tracking-widest">Project Files</div>
+                {Object.keys(filesMap).sort().map(path => (
+                  <button
+                    key={path}
+                    onClick={() => {
+                      setActiveFilePath(path);
+                      setEditorLanguage(path.endsWith('.tsx') ? 'typescript' : path.endsWith('.css') ? 'css' : 'javascript');
+                    }}
+                    className={`w-full text-left px-6 py-2 text-xs font-medium transition-colors ${
+                      activeFilePath === path 
+                        ? 'text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-600/10' 
+                        : 'text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-white/5'
+                    }`}
+                  >
+                    {path.split('/').pop()}
+                  </button>
+                ))}
+             </div>
+             <div className="flex-1 flex flex-col min-w-0">
+                <div className="h-10 border-b border-slate-200 dark:border-white/5 bg-white dark:bg-black/20 flex items-center px-4 gap-2">
+                  <span className="text-[10px] font-black text-blue-500 bg-blue-50 dark:bg-blue-500/10 px-2 py-0.5 rounded uppercase">{editorLanguage}</span>
+                  <span className="text-[10px] font-bold text-slate-400 uppercase">{activeFilePath}</span>
+                </div>
+                <Editor
+                  height="100%"
+                  language={editorLanguage}
+                  value={filesMap[activeFilePath] || ''}
+                  theme={editorTheme}
+                  onChange={(val) => {
+                    if (val !== undefined) {
+                      setFilesMap(prev => ({ ...prev, [activeFilePath]: val }));
+                    }
+                  }}
+                  options={{
+                    minimap: { enabled: showMinimap },
+                    fontSize: 13,
+                    fontFamily: "'Fira Code', 'JetBrains Mono', monospace",
+                    padding: { top: 20 },
+                    smoothScrolling: true,
+                    roundedSelection: true,
+                    cursorBlinking: 'smooth',
+                    cursorSmoothCaretAnimation: 'on',
+                  }}
+                />
+             </div>
+          </div>
+        )}
+
+        {activeStudioTab === 'database' && (
+          <div className="flex-1 overflow-hidden">
+            <DatabaseInterface projectId={projectId} />
+          </div>
+        )}
+
+        {activeStudioTab === 'analytics' && (
+          <div className="flex-1 overflow-hidden">
+            <ProjectAnalytics />
+          </div>
+        )}
       </div>
     </motion.div>
     ) : user ? (
