@@ -1108,6 +1108,18 @@ export default function App() {
             transition={{ duration: 0.35, ease: [0.22, 1, 0.36, 1] }}
             className={`flex flex-col h-screen bg-slate-50 dark:bg-[#0A0A0A] text-slate-900 dark:text-slate-300 font-sans overflow-hidden ${activeAccentColor} transition-colors duration-300`}
           >
+            {/* Show skeleton/loader if project data isn't ready yet but we have a projectId */}
+            {projectId && Object.keys(filesMap).length <= 1 && (
+              <div className="absolute inset-0 z-50 bg-white dark:bg-[#0A0A0A] flex flex-col items-center justify-center space-y-4">
+                <div className="w-12 h-12 bg-blue-600 rounded-2xl flex items-center justify-center text-white animate-pulse shadow-xl shadow-blue-600/20">
+                  <Zap size={24} fill="currentColor" />
+                </div>
+                <div className="flex flex-col items-center gap-1">
+                  <span className="text-sm font-black text-slate-800 dark:text-white uppercase tracking-widest">Initialisation du Studio</span>
+                  <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest animate-pulse">Chargement de votre univers...</span>
+                </div>
+              </div>
+            )}
             {/* The entire studio content below (header + main) */}
         ) : user ? (
           <motion.div
