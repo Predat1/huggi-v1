@@ -30,6 +30,9 @@ import {
   RotateCw,
   ExternalLink,
   ChevronUp,
+  ChevronLeft,
+  ChevronRight,
+  Folder,
   Search,
   Check,
   Loader2,
@@ -2170,6 +2173,32 @@ export default function App() {
           <div className="absolute left-0 top-1/2 -translate-y-1/2 w-1 h-8 bg-slate-200 rounded-full -ml-0.5 cursor-col-resize hover:bg-blue-400 transition-colors z-20" />
         </main>
       </div>
+    </motion.div>
+    ) : user ? (
+      <motion.div key="dashboard" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="h-screen">
+        <UserDashboard 
+          user={user} 
+          credits={credits} 
+          onOpenStudio={(p, pid) => { 
+            if (pid) window.history.replaceState({}, '', `?project=${pid}`); 
+            setStudioMode(true); 
+            if (p) setInputValue(p); 
+          }} 
+          onLogout={() => signOut().then(() => setUser(null))} 
+        />
+      </motion.div>
+    ) : (
+      <motion.div key="landing" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="h-screen overflow-y-auto">
+        <LandingPage 
+          onOpenStudio={(p) => { 
+            setStudioMode(true); 
+            if (p) setInputValue(p); 
+          }} 
+          onLogin={() => { setAuthMode('login'); setShowAuthModal(true); }} 
+        />
+      </motion.div>
+    )}
+  </AnimatePresence>
 
       {/* Publishing Modal */}
       <AnimatePresence>
@@ -2283,9 +2312,6 @@ export default function App() {
 
       <SettingsModal isOpen={showSettingsModal} onClose={() => setShowSettingsModal(false)} projectId={projectId || ''} userId={user?.id} />
       <GithubExportModal isOpen={showExportModal} onClose={() => setShowExportModal(false)} projectId={projectId || ''} userId={user?.id} onStandardZipExport={handleExportZip} />
-        </motion.div>
-      )}
-      </AnimatePresence>
 
       {/* Onboarding */}
       <AnimatePresence>

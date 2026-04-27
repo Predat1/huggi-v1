@@ -22,7 +22,7 @@ import {
   Moon,
   Sun,
 } from 'lucide-react';
-import { motion } from 'motion/react';
+import { motion, AnimatePresence } from 'motion/react';
 import HuggyChatInput from './HuggyChatInput';
 import PricingSection from './PricingSection';
 import { useTheme } from '../contexts/ThemeContext';
@@ -36,7 +36,7 @@ export type AccentStyle = {
 };
 
 type LandingPageProps = {
-  accent: AccentStyle;
+  accent?: AccentStyle;
   onOpenStudio: (initialPrompt?: string) => void;
   onLogin?: () => void;
   userId?: string;
@@ -190,7 +190,11 @@ export default function LandingPage({ accent, onOpenStudio, onLogin, userId }: L
     const prev = document.body.style.overflow;
     document.body.style.overflow = 'hidden';
     return () => {
-      document.body.style.ov  return (
+      document.body.style.overflow = prev;
+    };
+  }, [mobileNavOpen]);
+
+  return (
     <div className="min-h-screen bg-[#030304] text-slate-100 font-sans antialiased transition-colors duration-300 relative overflow-x-hidden">
       {/* Immersive Mesh Gradients */}
       <div className="fixed inset-0 pointer-events-none z-0">
@@ -457,13 +461,6 @@ export default function LandingPage({ accent, onOpenStudio, onLogin, userId }: L
           </motion.div>
         )}
       </AnimatePresence>
-    </div>
-  );
-}        </div>
-            </div>
-          </div>
-        </footer>
-      </div>
     </div>
   );
 }

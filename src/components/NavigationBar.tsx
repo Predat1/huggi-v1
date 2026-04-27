@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { motion } from 'motion/react';
+import { motion, AnimatePresence } from 'motion/react';
 import { Zap, Menu, X, Home, Settings, HelpCircle, LogOut, ChevronRight } from 'lucide-react';
 
 type NavItem = {
