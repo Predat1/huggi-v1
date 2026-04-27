@@ -311,7 +311,7 @@ export default function LandingPage({ accent, onOpenStudio, onLogin, userId }: L
                 Describe your project, Huggy does the rest. AI-generated code, UI, dashboards, and data tables in seconds.
               </p>
 
-              <div className="mt-4 max-w-4xl mx-auto">
+              <div className="mt-4 max-w-3xl mx-auto">
                 <HuggyChatInput
                   onSend={(prompt) => {
                     if (prompt.trim()) setBuildInput(prompt);
@@ -490,7 +490,7 @@ export default function LandingPage({ accent, onOpenStudio, onLogin, userId }: L
                 Join thousands of makers who ship faster with Huggy. Describe your project and let the AI do the heavy lifting.
               </p>
 
-              <div className="max-w-4xl mx-auto">
+              <div className="max-w-3xl mx-auto">
                 <HuggyChatInput
                   onSend={(prompt) => {
                     if (prompt.trim()) setBuildInput(prompt);

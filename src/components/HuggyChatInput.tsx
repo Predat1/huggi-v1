@@ -154,7 +154,7 @@ export default function HuggyChatInput({
         )}
 
         {/* Textarea Area */}
-        <div className="px-5 pt-6 sm:px-8 sm:pt-8 pb-3">
+        <div className="px-6 pt-6 sm:px-7 sm:pt-7 pb-3">
           <textarea
             ref={textareaRef}
             value={value}
@@ -163,8 +163,8 @@ export default function HuggyChatInput({
             disabled={isLoading}
             placeholder={placeholder}
             rows={1}
-            className="w-full bg-transparent text-slate-900 dark:text-white text-[16px] sm:text-[20px] font-medium placeholder-slate-400 dark:placeholder-slate-500 resize-none focus:outline-none leading-relaxed disabled:opacity-50"
-            style={{ caretColor: '#6366F1', minHeight: '44px' }}
+            className="w-full bg-transparent text-slate-900 dark:text-white text-[16px] sm:text-[18px] font-medium placeholder-slate-400 dark:placeholder-slate-500 resize-none focus:outline-none leading-relaxed disabled:opacity-50"
+            style={{ caretColor: '#6366F1', minHeight: '40px' }}
           />
         </div>
 
