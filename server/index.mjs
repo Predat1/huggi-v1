@@ -48,6 +48,9 @@ import { getCreditCost, formatCost } from './lib/creditCost.mjs';
 import { storeSite, fetchSite } from './lib/siteStorage.mjs';
 import { canGenerate, canCreateProject, showViralBadge, resolvePlan } from './lib/planLimits.mjs';
 import { generateSchema } from './lib/schemaGen.mjs';
+import { runWebResearchAgent, needsWebResearch } from './lib/webResearch.mjs';
+import { runDBAAgent } from './lib/dbaAgent.mjs';
+import { runReviewerAgent, applyAutoFixes } from './lib/reviewAgent.mjs';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const root = path.join(__dirname, '..');
@@ -1004,14 +1007,40 @@ app.post('/api/generate-app/agentic-stream', rateLimiter, async (req, res) => {
       try { await createProjectVersion(pool, projectId, `Avant IA — ${new Date().toLocaleString('fr-FR')}`); } catch {}
     }
 
+    // ══════════════════════════════════════════════════════════════════════
+    // ── Agent 0: Web Research (FREE — no LLM, just HTTP) ──
+    // ══════════════════════════════════════════════════════════════════════
+    let webContext = '';
+    if (needsWebResearch(prompt)) {
+      emit('agent_start', { agent: 'research', label: 'Web Research — analyse des sources web...' });
+      try {
+        const research = await runWebResearchAgent(prompt);
+        if (research.didResearch) {
+          webContext = research.enrichedContext;
+          emit('agent_done', {
+            agent: 'research',
+            label: `Web Research — ${research.scrapedSites.length} site(s) analysé(s) ✓`,
+            data: { sites: research.scrapedSites.map(s => s.url), hasSearch: !!research.searchResults },
+          });
+        } else {
+          emit('agent_done', { agent: 'research', label: 'Web Research — aucun résultat pertinent', warning: true });
+        }
+      } catch (e) {
+        emit('agent_done', { agent: 'research', label: 'Web Research — ignoré (timeout)', warning: true });
+      }
+    }
+
+    // ══════════════════════════════════════════════════════════════════════
     // ── Agent 1: Product Manager ──
+    // ══════════════════════════════════════════════════════════════════════
     emit('agent_start', { agent: 'pm', label: 'Product Manager — analyse de votre requête...' });
-    let refinedPrompt = prompt;
+    const enrichedPrompt = webContext ? `${prompt}\n${webContext}` : prompt;
+    let refinedPrompt = enrichedPrompt;
     let agentPlan = null;
     let agentDatabase = null;
     try {
-      const pipeline = await runAgenticPipeline(prompt, { chatHistory, currentEntryCode, allFiles });
-      refinedPrompt = pipeline.refinedPrompt || prompt;
+      const pipeline = await runAgenticPipeline(enrichedPrompt, { chatHistory, currentEntryCode, allFiles });
+      refinedPrompt = pipeline.refinedPrompt || enrichedPrompt;
       agentPlan = pipeline.plan;
       agentDatabase = pipeline.database;
       emit('agent_done', { agent: 'pm', label: 'Product Manager — plan d\'architecture prêt ✓', data: { complexity: agentPlan?.complexity, pages: agentPlan?.pages?.length || 0 } });
@@ -1019,10 +1048,32 @@ app.post('/api/generate-app/agentic-stream', rateLimiter, async (req, res) => {
       emit('agent_done', { agent: 'pm', label: 'Product Manager — fallback au prompt direct', warning: true });
     }
 
-    // ── Schema suggestion (if PM agent detected a data model) ──
-    if (agentPlan?.dataModel?.length > 0) {
-      const { sql, tables } = generateSchema(agentPlan.dataModel);
-      if (sql) emit('schema_suggestion', { sql, tables });
+    // ══════════════════════════════════════════════════════════════════════
+    // ── Agent 2: DBA (Database Architect) ──
+    // ══════════════════════════════════════════════════════════════════════
+    let dbaResult = null;
+    if (agentPlan) {
+      emit('agent_start', { agent: 'dba', label: 'DBA — analyse des besoins base de données...' });
+      try {
+        dbaResult = await runDBAAgent(agentPlan, prompt);
+        if (dbaResult.needsDatabase && dbaResult.schema?.sql) {
+          emit('schema_suggestion', { sql: dbaResult.schema.sql, tables: dbaResult.schema.tables });
+          emit('agent_done', { agent: 'dba', label: `DBA — ${dbaResult.schema.tables.length} table(s) conçue(s) ✓`, data: { tables: dbaResult.schema.tables } });
+          // Inject DB context into refined prompt so Coder knows about the schema
+          if (dbaResult.architecture?.supabaseClientCode) {
+            refinedPrompt += `\n\n# DATABASE CONTEXT\nThe app uses Supabase. Tables: ${dbaResult.schema.tables.join(', ')}.\nInclude this Supabase client utility:\n${dbaResult.architecture.supabaseClientCode}`;
+          }
+        } else {
+          emit('agent_done', { agent: 'dba', label: 'DBA — pas de base de données requise ✓' });
+        }
+      } catch (e) {
+        emit('agent_done', { agent: 'dba', label: 'DBA — ignoré (fallback)', warning: true });
+        // Fallback to simple schemaGen if PM had a dataModel
+        if (agentPlan?.dataModel?.length > 0) {
+          const { sql, tables } = generateSchema(agentPlan.dataModel);
+          if (sql) emit('schema_suggestion', { sql, tables });
+        }
+      }
     }
 
     // ── Credit cost (computed after PM agent knows complexity) ──
@@ -1033,7 +1084,9 @@ app.post('/api/generate-app/agentic-stream', rateLimiter, async (req, res) => {
       return res.end();
     }
 
-    // ── Agent 2: Coder (streaming, Sonnet) ──
+    // ══════════════════════════════════════════════════════════════════════
+    // ── Agent 3: Coder (streaming, Sonnet) ──
+    // ══════════════════════════════════════════════════════════════════════
     emit('agent_start', { agent: 'coder', label: 'Coder — génération du code premium...' });
     let fullCodeText = '';
     await new Promise((resolve, reject) => {
@@ -1066,7 +1119,33 @@ app.post('/api/generate-app/agentic-stream', rateLimiter, async (req, res) => {
       }
     }
 
-    // ── Visual review removed — replaced by client-side ESLint (zero latency, zero cost) ──
+    // ══════════════════════════════════════════════════════════════════════
+    // ── Agent 4: Reviewer / QA (Haiku, fast) ──
+    // ══════════════════════════════════════════════════════════════════════
+    let reviewResult = null;
+    if (parsedFiles.length > 0) {
+      emit('agent_start', { agent: 'reviewer', label: 'QA Reviewer — vérification du code...' });
+      try {
+        reviewResult = await runReviewerAgent(parsedFiles, prompt);
+        // Auto-apply fixes if reviewer found fixable issues
+        if (reviewResult.fixes?.length > 0) {
+          parsedFiles = applyAutoFixes(parsedFiles, reviewResult.fixes);
+          emit('agent_done', {
+            agent: 'reviewer',
+            label: `QA Reviewer — score ${reviewResult.score}/100, ${reviewResult.fixes.length} correction(s) appliquée(s) ✓`,
+            data: { score: reviewResult.score, issues: reviewResult.issues.length, fixes: reviewResult.fixes.length },
+          });
+        } else {
+          emit('agent_done', {
+            agent: 'reviewer',
+            label: `QA Reviewer — score ${reviewResult.score}/100 ✓`,
+            data: { score: reviewResult.score, issues: reviewResult.issues.length },
+          });
+        }
+      } catch (e) {
+        emit('agent_done', { agent: 'reviewer', label: 'QA Reviewer — vérification ignorée', warning: true });
+      }
+    }
 
     // ── Persist to DB ──
     if (pool && projectId && parsedFiles.length > 0) {
@@ -1099,8 +1178,10 @@ app.post('/api/generate-app/agentic-stream', rateLimiter, async (req, res) => {
       creditsUsed: creditCost,
       creditsRemaining,
       agents: {
+        research: webContext ? { enriched: true } : null,
         plan: agentPlan ? { summary: agentPlan.summary, complexity: agentPlan.complexity } : null,
-        database: agentDatabase?.needsDatabase ? { explanation: agentDatabase.explanation } : null,
+        database: dbaResult?.needsDatabase ? { tables: dbaResult.schema?.tables, explanation: dbaResult.architecture?.explanation } : null,
+        review: reviewResult ? { score: reviewResult.score, issues: reviewResult.issues, approved: reviewResult.approved } : null,
       },
     });
     res.end();
