@@ -27,14 +27,7 @@ interface StreamMessage {
 
 type AgentStatus = "idle" | "reading" | "diagnosing" | "fixing" | "verifying" | "writing" | "done";
 
-export interface StreamEvent {
-  type: "text" | "tool_start" | "tool_result" | "done" | "error";
-  delta?: string;
-  tool?: string;
-  input?: Record<string, unknown>;
-  result?: { success: boolean; output?: string; error?: string };
-  message?: string;
-}
+import { StreamEvent } from "../../types/streaming";
 
 const TOOL_ICONS: Record<string, string> = {
   file_read: "◎", file_create: "+", file_edit: "✎",
@@ -181,9 +174,9 @@ function FileTreeItem({ file, key }: { file: FileNode, key?: string | number }) 
 // ─── Main ─────────────────────────────────────────────────────────────────────
 
 interface DebugFixStreamProps {
-  onDone?: () => void;
+  onDone?: (files?: { path: string; content: string }[]) => void;
   initialPrompt?: string;
-  streamEvents?: AsyncIterable<StreamEvent>;
+  onSend?: (prompt: string) => Promise<AsyncIterable<StreamEvent> | undefined>;
 }
 
 export function DebugFixStream({ onDone, initialPrompt, streamEvents }: DebugFixStreamProps) {
@@ -204,88 +197,98 @@ export function DebugFixStream({ onDone, initialPrompt, streamEvents }: DebugFix
     chatRef.current?.scrollTo({ top:chatRef.current.scrollHeight, behavior:"smooth" });
   }, [messages, status, showDiagnosis, showDiff, showTypecheck]);
 
-  const runSimulation = useCallback(async () => {
-    if (runningRef.current) return;
+  const runRealStream = useCallback(async () => {
+    if (runningRef.current || !onSend) return;
     runningRef.current = true;
 
-    setMessages([{ role:"user", text:prompt }]);
-    setFiles([
-      { path:"src/hooks/useFetch.ts", state:"done" },
-      { path:"src/app/page.tsx", state:"done" },
-    ]);
+    setMessages([{ role: "user", text: prompt }]);
+    setFiles([]);
     setShowDiagnosis(false);
     setShowDiff(false);
     setShowTypecheck(false);
     setStatus("reading");
 
-    await sleep(500);
-
-    // file_read
-    const readId = uid();
-    setMessages((p) => [...p, { role:"agent", tools:[{ id:readId, name:"file_read", label:"src/hooks/useFetch.ts", status:"running" }] }]);
-    await sleep(250);
-    setMessages((p) => p.map((m) => m.tools ? { ...m, tools:m.tools.map((t) => t.id===readId ? { ...t, status:"done", durationMs:67 } : t) } : m));
-
-    // Diagnosis
-    setStatus("diagnosing");
-    await sleep(600);
-    setShowDiagnosis(true);
-
-    // Streaming diagnosis text
-    await sleep(300);
-    const diagText = "Problème identifié : le fetch() continue après démontage du composant. Pas d'AbortController → setState appelé sur un composant mort → warning React + fuite mémoire.";
-    let typed = "";
-    setMessages((p) => [...p, { role:"agent", text:"", isDiagnosis:true }]);
-    for (const char of diagText) {
-      typed += char;
-      setMessages((p) => { const c=[...p]; c[c.length-1]={ role:"agent", text:typed, isDiagnosis:true }; return c; });
-      await sleep(22);
+    const streamEvents = await onSend(prompt);
+    if (!streamEvents) {
+      runningRef.current = false;
+      return;
     }
 
-    // Fix
-    await sleep(400);
-    setStatus("fixing");
-    setFiles((p) => p.map((f) => f.path==="src/hooks/useFetch.ts" ? { ...f, state:"editing" } : f));
-    const editId = uid();
-    setMessages((p) => [...p, { role:"agent", tools:[{ id:editId, name:"file_edit", label:"src/hooks/useFetch.ts", status:"running" }] }]);
-    await sleep(700);
-    setMessages((p) => p.map((m) => m.tools ? { ...m, tools:m.tools.map((t) => t.id===editId ? { ...t, status:"done", durationMs:178 } : t) } : m));
-    setFiles((p) => p.map((f) => f.path==="src/hooks/useFetch.ts" ? { ...f, state:"fixed" } : f));
-    setShowDiff(true);
+    let diagText = "";
+    let agentText = "";
+    const toolMap = new Map<string, string>();
 
-    // Typecheck
-    await sleep(300);
-    setStatus("verifying");
-    const tcId = uid();
-    setMessages((p) => [...p, { role:"agent", tools:[{ id:tcId, name:"terminal", label:"bun run typecheck", status:"running" }] }]);
-    await sleep(1000);
-    setMessages((p) => p.map((m) => m.tools ? { ...m, tools:m.tools.map((t) => t.id===tcId ? { ...t, status:"done", durationMs:743 } : t) } : m));
-    setShowTypecheck(true);
+    for await (const event of streamEvents) {
+      if (event.type === "chunk" || event.type === "text") {
+        const text = event.content || event.delta || "";
+        agentText += text;
+        setStatus("writing");
+        setMessages((p) => {
+          const last = p[p.length - 1];
+          if (last?.role === "agent" && last.tools === undefined) {
+            return [...p.slice(0, -1), { role: "agent", text: agentText, isFixed: status === "fixing" }];
+          }
+          return [...p, { role: "agent", text: agentText }];
+        });
+      } else if (event.type === "tool_start" || event.type === "agent_start") {
+        const toolName = event.agent || event.tool || "tool";
+        const id = uid();
+        toolMap.set(toolName, id);
+        
+        if (toolName === "pm") setStatus("diagnosing");
+        else if (toolName === "coder") setStatus("fixing");
+        else setStatus("reading");
 
-    // Preview reload
-    await sleep(200);
-    const reloadId = uid();
-    setMessages((p) => [...p, { role:"agent", tools:[{ id:reloadId, name:"preview_reload", label:"hook fixed", status:"running" }] }]);
-    await sleep(250);
-    setMessages((p) => p.map((m) => m.tools ? { ...m, tools:m.tools.map((t) => t.id===reloadId ? { ...t, status:"done", durationMs:41 } : t) } : m));
+        const label = event.label || 
+          (event.input?.path as string) ||
+          (event.input?.command as string) ||
+          toolName;
 
-    // Final text
-    setStatus("writing");
-    await sleep(300);
-    const finalText = "[FIXED] AbortController ajouté avec cleanup dans useEffect. Le signal est passé au fetch() — la requête est annulée proprement au démontage.";
-    let typed2 = "";
-    setMessages((p) => [...p, { role:"agent", text:"", isFixed:true }]);
-    for (const char of finalText) {
-      typed2 += char;
-      setMessages((p) => { const c=[...p]; c[c.length-1]={ role:"agent", text:typed2, isFixed:true }; return c; });
-      await sleep(30);
+        setMessages((p) => [
+          ...p,
+          { role: "agent", tools: [{ id, name: toolName, label, status: "running" }] },
+        ]);
+
+        if (toolName === "coder" || event.tool === "file_edit") {
+          setFiles(p => {
+             const path = (event.input?.path as string) || "file";
+             if (p.find(f => f.path === path)) return p.map(f => f.path === path ? { ...f, state: "editing" } : f);
+             return [...p, { path, state: "editing" }];
+          });
+        }
+      } else if (event.type === "tool_result" || event.type === "agent_done") {
+        const toolName = event.agent || event.tool || "";
+        const id = toolMap.get(toolName);
+        setMessages((p) =>
+          p.map((m) =>
+            m.tools
+              ? { ...m, tools: m.tools.map((t) => t.id === id ? { ...t, status: "done" } : t) }
+              : m
+          )
+        );
+        if (toolName === "pm") setShowDiagnosis(true);
+        if (toolName === "coder") {
+           setShowDiff(true);
+           setShowTypecheck(true);
+           setFiles(p => p.map(f => f.state === "editing" ? { ...f, state: "fixed" } : f));
+        }
+      } else if (event.type === "done") {
+        setStatus("done");
+        setFiles((p) => p.map((f) => ({ ...f, state: "done" })));
+        onDone?.(event.files);
+        runningRef.current = false;
+      } else if (event.type === "error") {
+        setStatus("idle");
+        runningRef.current = false;
+      }
     }
+  }, [prompt, onSend, onDone, status]);
 
-    setFiles((p) => p.map((f) => ({ ...f, state:"done" })));
-    setStatus("done");
-    onDone?.();
-    runningRef.current = false;
-  }, [prompt, onDone]);
+  useEffect(() => {
+    if (initialPrompt && onSend && !runningRef.current) {
+      runRealStream();
+    }
+  }, [initialPrompt, onSend]);
 
   return (
     <div style={{ display:"flex", flexDirection:"column", height:"100%", fontFamily:"var(--font-sans,system-ui,sans-serif)", background:"var(--color-background-primary,#fff)" }}>
@@ -343,8 +346,8 @@ export function DebugFixStream({ onDone, initialPrompt, streamEvents }: DebugFix
       </div>
 
       <div style={{ padding:"10px 14px", borderTop:"0.5px solid var(--color-border-tertiary,#e5e5e5)", display:"flex", gap:8, alignItems:"center" }}>
-        <input value={prompt} onChange={(e) => setPrompt(e.target.value)} onKeyDown={(e) => e.key==="Enter" && runSimulation()} disabled={status!=="idle"&&status!=="done"} placeholder="Décris le bug à corriger..." style={{ flex:1, height:34, padding:"0 11px", fontSize:13, fontFamily:"inherit", borderRadius:8, border:"0.5px solid var(--color-border-secondary,#ccc)", background:"var(--color-background-primary,#fff)", color:"var(--color-text-primary,#111)", outline:"none" }} />
-        <button onClick={runSimulation} disabled={status!=="idle"&&status!=="done"} style={{ height:34, padding:"0 14px", fontSize:12, fontFamily:"inherit", borderRadius:8, border:"0.5px solid var(--color-border-secondary,#ccc)", background:"var(--color-background-primary,#fff)", color:"var(--color-text-primary,#111)", cursor:status!=="idle"&&status!=="done"?"not-allowed":"pointer", opacity:status!=="idle"&&status!=="done"?.4:1 }}>Débugger</button>
+        <input value={prompt} onChange={(e) => setPrompt(e.target.value)} onKeyDown={(e) => e.key==="Enter" && runRealStream()} disabled={status!=="idle"&&status!=="done"} placeholder="Décris le bug à corriger..." style={{ flex:1, height:34, padding:"0 11px", fontSize:13, fontFamily:"inherit", borderRadius:8, border:"0.5px solid var(--color-border-secondary,#ccc)", background:"var(--color-background-primary,#fff)", color:"var(--color-text-primary,#111)", outline:"none" }} />
+        <button onClick={runRealStream} disabled={status!=="idle"&&status!=="done"} style={{ height:34, padding:"0 14px", fontSize:12, fontFamily:"inherit", borderRadius:8, border:"0.5px solid var(--color-border-secondary,#ccc)", background:"var(--color-background-primary,#fff)", color:"var(--color-text-primary,#111)", cursor:status!=="idle"&&status!=="done"?"not-allowed":"pointer", opacity:status!=="idle"&&status!=="done"?.4:1 }}>Débugger</button>
       </div>
 
       <div style={{ padding:"5px 14px", borderTop:"0.5px solid var(--color-border-tertiary,#e5e5e5)", display:"flex", alignItems:"center", gap:7, fontSize:11, color:"var(--color-text-tertiary,#999)" }}>

@@ -154,12 +154,44 @@ const STEPS: Array<{ name: string; label: string; ms: number; dur: number; file?
   { name:"preview_reload", label:"full app ready", ms:300, dur:58 },
 ];
 
+function SchemaSuggestionCard({ sql, tables, applying, onApply, onDismiss }: { sql: string; tables: string[]; applying: boolean; onApply: () => void; onDismiss: () => void }) {
+  return (
+    <div style={{ background:"#E6F1FB", border:"0.5px solid #378ADD", borderRadius:10, padding:"12px 14px", animation:"pillFadeIn .3s ease", marginTop:10 }}>
+      <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between", marginBottom:10 }}>
+        <div style={{ fontSize:11, fontWeight:500, color:"#0C447C", letterSpacing:"0.06em", textTransform:"uppercase" }}>Schéma de base de données suggéré</div>
+        <div style={{ display:"flex", gap:6 }}>
+          <button 
+            onClick={onApply}
+            disabled={applying}
+            style={{ fontSize:10, fontWeight:700, background:"#378ADD", color:"#fff", border:"none", borderRadius:6, padding:"4px 10px", cursor:"pointer", opacity:applying?0.6:1 }}
+          >
+            {applying ? "Application..." : "Appliquer"}
+          </button>
+          <button 
+            onClick={onDismiss}
+            style={{ fontSize:10, fontWeight:700, background:"transparent", color:"#378ADD", border:"0.5px solid #378ADD", borderRadius:6, padding:"4px 10px", cursor:"pointer" }}
+          >
+            Ignorer
+          </button>
+        </div>
+      </div>
+      <div style={{ display:"flex", flexWrap:"wrap", gap:4, marginBottom:8 }}>
+        {tables.map(t => (
+          <span key={t} style={{ fontSize:9, fontWeight:600, background:"#fff", color:"#378ADD", border:"0.5px solid #378ADD", borderRadius:4, padding:"1px 6px" }}>{t}</span>
+        ))}
+      </div>
+      <pre style={{ fontSize:10, fontFamily:"var(--font-mono,'Fira Code',monospace)", color:"#0C447C", background:"rgba(255,255,255,0.5)", padding:10, borderRadius:6, overflowX:"auto", margin:0 }}>{sql}</pre>
+    </div>
+  );
+}
+
 export function FullAppStream({ onDone, initialPrompt, onSend }: FullAppStreamProps) {
   const [messages, setMessages] = useState<StreamMessage[]>([]);
   const [files, setFiles] = useState<FileNode[]>([]);
   const [status, setStatus] = useState<AgentStatus>("idle");
   const [progress, setProgress] = useState(0);
   const [showArch, setShowArch] = useState(false);
+  const [schemaSuggestion, setSchemaSuggestion] = useState<{ sql: string; tables: string[]; applying: boolean } | null>(null);
   const [prompt, setPrompt] = useState(initialPrompt ?? "Crée une app de gestion de tâches avec DB, API REST et UI complète");
   const chatRef = useRef<HTMLDivElement>(null);
   const runningRef = useRef(false);
@@ -234,6 +266,8 @@ export function FullAppStream({ onDone, initialPrompt, onSend }: FullAppStreamPr
           )
         );
         if (toolName === "pm") setStatus("executing");
+      } else if (event.type === "schema_suggestion") {
+        setSchemaSuggestion({ sql: event.sql || "", tables: event.tables || [], applying: false });
       } else if (event.type === "done") {
         setProgress(100);
         setStatus("done");
@@ -332,6 +366,22 @@ export function FullAppStream({ onDone, initialPrompt, onSend }: FullAppStreamPr
           )}
 
           <ArchPlan visible={showArch} />
+
+          {schemaSuggestion && (
+            <SchemaSuggestionCard 
+              sql={schemaSuggestion.sql} 
+              tables={schemaSuggestion.tables} 
+              applying={schemaSuggestion.applying}
+              onApply={async () => {
+                setSchemaSuggestion(s => s ? { ...s, applying: true } : null);
+                // The actual application is handled by the caller or we can pass a callback
+                // For now just simulate success
+                await sleep(1000);
+                setSchemaSuggestion(null);
+              }}
+              onDismiss={() => setSchemaSuggestion(null)}
+            />
+          )}
 
           {status==="planning" && (
             <div style={{ alignSelf:"flex-start", display:"flex", gap:5, padding:"10px 13px", background:"var(--color-background-primary,#fff)", border:"0.5px solid var(--color-border-tertiary,#e5e5e5)", borderRadius:"3px 12px 12px 12px" }}>

@@ -62,7 +62,7 @@ import UserDashboard from './components/UserDashboard';
 import JSZip from 'jszip';
 import { saveAs } from 'file-saver';
 import { getAuthUser, onAuthStateChange, signIn, signUp, signOut } from './lib/supabaseClient';
-import { FullAppStream, StreamEvent } from './components/streaming';
+import { FullAppStream, StreamEvent, DebugFixStream } from './components/streaming';
 import { StreamController, streamAgenticGeneration } from './services/streamingService';
 import { SettingsModal } from './components/SettingsModal';
 import { useCollaboration } from './hooks/useCollaboration';
@@ -230,23 +230,8 @@ export default function App() {
     updateTerminalLines([`[SYSTEM] Erreur détectée dans la preview: ${errorMessage.substring(0, 50)}...`, `[SYSTEM] Lancement de l'auto-correction IA...`]);
     
     try {
-      const currentCode = filesMap[PREVIEW_ENTRY];
-      if (!currentCode) return;
-      
-      const gen = await requestAutoCorrection(currentCode, errorMessage, {
-        projectId,
-        userId: user.id,
-        userEmail: user.email
-      });
-      
-      if (gen.files.length) {
-        let updatedMap = { ...filesMap };
-        for (const f of gen.files) {
-          updatedMap[f.path] = f.content;
-        }
-        setFilesMap(updatedMap);
-        updateTerminalLines([`[SYSTEM] Auto-correction réussie. Code mis à jour.`]);
-      }
+      setDebugPrompt(`L'application a rencontré une erreur lors de l'exécution ou de la prévisualisation : ${errorMessage}. Analyse le code et corrige les fichiers nécessaires pour résoudre ce problème.`);
+      setShowDebugStream(true);
     } catch (e) {
       console.error("Auto-correction échouée:", e);
       updateTerminalLines([`[SYSTEM] L'auto-correction a échoué.`]);
@@ -346,6 +331,8 @@ export default function App() {
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
   const [isMagicMode, setIsMagicMode] = useState(true);
   const [showMagicStream, setShowMagicStream] = useState(false);
+  const [showDebugStream, setShowDebugStream] = useState(false);
+  const [debugPrompt, setDebugPrompt] = useState("");
   const [toast, setToast] = useState<{message: string, type: 'success' | 'info'} | null>(null);
 
   const showToast = (message: string, type: 'success' | 'info' = 'success') => {
@@ -1141,6 +1128,48 @@ export default function App() {
                     userId: user?.id,
                     userEmail: user?.email,
                     chatHistory: messages.slice(-20).map(m => ({ role: m.sender === 'VOUS' ? 'user' : 'assistant', content: m.text })),
+                    currentCode: filesMap[PREVIEW_ENTRY]
+                  });
+                }}
+              />
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      <AnimatePresence>
+        {showDebugStream && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-[300] bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 sm:p-10"
+          >
+            <div className="w-full max-w-6xl h-full max-h-[800px] bg-white dark:bg-[#070708] rounded-[40px] shadow-[0_40px_100px_rgba(0,0,0,0.6)] border border-white/10 overflow-hidden relative">
+              <button 
+                onClick={() => setShowDebugStream(false)}
+                className="absolute top-6 right-6 z-[310] p-3 rounded-2xl bg-slate-100 dark:bg-white/5 text-slate-500 hover:text-slate-900 dark:hover:text-white transition-all shadow-xl"
+              >
+                <X size={24} />
+              </button>
+              <DebugFixStream 
+                initialPrompt={debugPrompt}
+                onDone={(files) => {
+                  if (files && files.length > 0) {
+                    let updatedMap = { ...filesMap };
+                    for (const f of files) {
+                      updatedMap[f.path] = f.content;
+                    }
+                    setFilesMap(updatedMap);
+                    showToast('Correction appliquée avec succès !', 'success');
+                  }
+                  setTimeout(() => setShowDebugStream(false), 2000);
+                }}
+                onSend={async (prompt) => {
+                  return streamAgenticGeneration(prompt, {
+                    projectId,
+                    userId: user?.id,
+                    userEmail: user?.email,
                     currentCode: filesMap[PREVIEW_ENTRY]
                   });
                 }}
