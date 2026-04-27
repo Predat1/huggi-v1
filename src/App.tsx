@@ -1099,60 +1099,69 @@ export default function App() {
       />
 
       <AnimatePresence mode="wait" initial={false}>
-        {!studioMode ? (
+        {studioMode ? (
+          <motion.div
+            key="studio"
+            initial={{ opacity: 0, scale: 0.98 }}
+            animate={{ opacity: 1, scale: 1 }}
+            exit={{ opacity: 0, scale: 1.02 }}
+            transition={{ duration: 0.35, ease: [0.22, 1, 0.36, 1] }}
+            className={`flex flex-col h-screen bg-slate-50 dark:bg-[#0A0A0A] text-slate-900 dark:text-slate-300 font-sans overflow-hidden ${activeAccentColor} transition-colors duration-300`}
+          >
+            {/* The entire studio content below (header + main) */}
+        ) : user ? (
+          <motion.div
+            key="dashboard"
+            initial={{ opacity: 0, x: 20 }}
+            animate={{ opacity: 1, x: 0 }}
+            exit={{ opacity: 0, x: -20 }}
+            transition={{ duration: 0.3, ease: [0.22, 1, 0.36, 1] }}
+            className="min-h-screen"
+          >
+            <UserDashboard
+              user={user}
+              credits={credits}
+              onLogout={() => signOut().then(() => setUser(null))}
+              onOpenStudio={(initialPrompt, openProjectId) => {
+                if (initialPrompt) setInputValue(initialPrompt);
+                setStudioMode(true);
+                if (openProjectId) {
+                  window.history.replaceState({}, '', `${window.location.pathname}?project=${openProjectId}`);
+                } else if (!new URLSearchParams(window.location.search).get('project')) {
+                  window.history.replaceState({}, '', `${window.location.pathname}?studio=1`);
+                }
+              }}
+            />
+          </motion.div>
+        ) : (
           <motion.div
             key="landing"
-            className="min-h-screen"
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            transition={{ duration: 0.22, ease: [0.22, 1, 0.36, 1] }}
+            transition={{ duration: 0.3 }}
+            className="min-h-screen"
           >
-            {user ? (
-              <UserDashboard
-                user={user}
-                credits={credits}
-                onLogout={() => signOut().then(() => setUser(null))}
-                onOpenStudio={(initialPrompt, openProjectId) => {
-                  if (initialPrompt) setInputValue(initialPrompt);
-                  setStudioMode(true);
-                  // If opening an existing project, navigate to it
-                  if (openProjectId) {
-                    window.history.replaceState({}, '', `${window.location.pathname}?project=${openProjectId}`);
-                  } else if (!new URLSearchParams(window.location.search).get('project')) {
-                    window.history.replaceState({}, '', `${window.location.pathname}?studio=1`);
-                  }
-                }}
-              />
-            ) : (
-              <LandingPage
-                accent={ACCENT_COLORS[activeAccentColor]}
-                userId={user?.id}
-                onLogin={() => setShowAuthModal(true)}
-                onOpenStudio={(initialPrompt) => {
-                  if (!user) {
-                    if (initialPrompt) setPendingPrompt(initialPrompt);
-                    setShowAuthModal(true);
-                    return;
-                  }
-                  if (initialPrompt) setInputValue(initialPrompt);
-                  setStudioMode(true);
-                  if (!new URLSearchParams(window.location.search).get('project')) {
-                    window.history.replaceState({}, '', `${window.location.pathname}?studio=1`);
-                  }
-                }}
-              />
-            )}
+            <LandingPage
+              accent={ACCENT_COLORS[activeAccentColor]}
+              userId={user?.id}
+              onLogin={() => setShowAuthModal(true)}
+              onOpenStudio={(initialPrompt) => {
+                if (!user) {
+                  if (initialPrompt) setPendingPrompt(initialPrompt);
+                  setShowAuthModal(true);
+                  return;
+                }
+                if (initialPrompt) setInputValue(initialPrompt);
+                setStudioMode(true);
+                if (!new URLSearchParams(window.location.search).get('project')) {
+                  window.history.replaceState({}, '', `${window.location.pathname}?studio=1`);
+                }
+              }}
+            />
           </motion.div>
-      ) : (
-        <motion.div
-          key="studio"
-          className={`flex flex-col h-screen bg-slate-50 dark:bg-[#0A0A0A] text-slate-900 dark:text-slate-300 font-sans overflow-hidden ${activeAccentColor} transition-colors duration-300`}
-          initial={{ opacity: 0, y: 14 }}
-          animate={{ opacity: 1, y: 0 }}
-          exit={{ opacity: 0, y: -10 }}
-          transition={{ duration: 0.28, ease: [0.22, 1, 0.36, 1] }}
-        >
+        )}
+      </AnimatePresence>
 
       {/* Top Navigation Bar — Premium SaaS */}
       <header className="h-14 border-b border-slate-200/80 dark:border-white/5 bg-white/90 dark:bg-[#0F0F0F]/90 backdrop-blur-xl flex items-center justify-between px-3 sm:px-5 z-10 shrink-0 shadow-sm transition-colors duration-300">
