@@ -121,7 +121,7 @@ export default function AuthModal({ isOpen, onClose, defaultMode = 'login', onSu
             animate={{ opacity: 1, scale: 1, y: 0 }}
             exit={{ opacity: 0, scale: 0.93, y: 32 }}
             transition={{ type: 'spring', damping: 28, stiffness: 340 }}
-            className="relative w-full max-w-[860px] rounded-[2rem] overflow-hidden shadow-[0_40px_120px_rgba(0,0,0,0.6)] flex"
+            className="relative w-full max-w-[860px] rounded-[2rem] overflow-hidden shadow-[0_40px_120px_rgba(0,0,0,0.6)] flex border border-transparent dark:border-white/5"
             style={{ minHeight: '560px' }}
           >
             {/* Left panel — decorative */}
@@ -174,11 +174,11 @@ export default function AuthModal({ isOpen, onClose, defaultMode = 'login', onSu
             </div>
 
             {/* Right panel — form */}
-            <div className="flex-1 bg-white flex flex-col relative">
+            <div className="flex-1 bg-white dark:bg-[#111] flex flex-col relative">
               {/* Close button */}
               <button
                 onClick={onClose}
-                className="absolute top-5 right-5 w-8 h-8 flex items-center justify-center rounded-full bg-slate-100 hover:bg-slate-200 text-slate-500 hover:text-slate-800 transition-all z-10"
+                className="absolute top-5 right-5 w-8 h-8 flex items-center justify-center rounded-full bg-slate-100 dark:bg-white/10 text-slate-500 dark:text-slate-400 hover:bg-slate-200 dark:hover:bg-white/20 hover:text-slate-800 dark:hover:text-white transition-all z-10"
               >
                 <X size={15} />
               </button>
@@ -189,11 +189,11 @@ export default function AuthModal({ isOpen, onClose, defaultMode = 'login', onSu
                   <div className="w-8 h-8 bg-blue-600 rounded-xl flex items-center justify-center text-white">
                     <Zap size={15} fill="currentColor" />
                   </div>
-                  <span className="font-black text-slate-900">Huggy</span>
+                  <span className="font-black text-slate-900 dark:text-white">Huggy</span>
                 </div>
 
                 {/* Tab switcher */}
-                <div className="flex bg-slate-100 rounded-xl p-1 mb-8 gap-1">
+                <div className="flex bg-slate-100 dark:bg-white/5 rounded-xl p-1 mb-8 gap-1 border border-transparent dark:border-white/5">
                   {(['login', 'signup'] as const).map((tab) => (
                     <button
                       key={tab}
@@ -201,8 +201,8 @@ export default function AuthModal({ isOpen, onClose, defaultMode = 'login', onSu
                       onClick={() => { setMode(tab); setError(null); setSuccess(null); }}
                       className={`flex-1 py-2 rounded-lg text-sm font-bold transition-all ${
                         mode === tab
-                          ? 'bg-white shadow-sm text-slate-900'
-                          : 'text-slate-500 hover:text-slate-700'
+                          ? 'bg-white dark:bg-white/10 shadow-sm text-slate-900 dark:text-white'
+                          : 'text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200'
                       }`}
                     >
                       {tab === 'login' ? 'Se connecter' : 'S\'inscrire'}
@@ -220,13 +220,13 @@ export default function AuthModal({ isOpen, onClose, defaultMode = 'login', onSu
                     onSubmit={handleSubmit}
                     className="space-y-4"
                   >
-                    <h3 className="text-xl font-black text-slate-900 tracking-tight">
+                    <h3 className="text-xl font-black text-slate-900 dark:text-white tracking-tight">
                       {mode === 'login' ? 'Connexion à votre compte' : 'Créer un compte gratuit'}
                     </h3>
 
                     {/* Email */}
                     <div className="space-y-1.5">
-                      <label className="text-xs font-bold text-slate-600 uppercase tracking-wider">Email</label>
+                      <label className="text-xs font-bold text-slate-600 dark:text-slate-400 uppercase tracking-wider">Email</label>
                       <div className="relative">
                         <Mail size={15} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" />
                         <input
@@ -237,14 +237,14 @@ export default function AuthModal({ isOpen, onClose, defaultMode = 'login', onSu
                           required
                           disabled={loading}
                           placeholder="vous@exemple.com"
-                          className="w-full pl-10 pr-4 py-3 rounded-xl border border-slate-200 bg-slate-50 text-slate-900 text-sm font-medium placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500/30 focus:border-blue-500 focus:bg-white transition-all disabled:opacity-50"
+                          className="w-full pl-10 pr-4 py-3 rounded-xl border border-slate-200 dark:border-white/10 bg-slate-50 dark:bg-white/5 text-slate-900 dark:text-white text-sm font-medium placeholder:text-slate-400 dark:placeholder:text-slate-600 focus:outline-none focus:ring-2 focus:ring-blue-500/30 focus:border-blue-500 focus:bg-white dark:focus:bg-white/10 transition-all disabled:opacity-50"
                         />
                       </div>
                     </div>
 
                     {/* Password */}
                     <div className="space-y-1.5">
-                      <label className="text-xs font-bold text-slate-600 uppercase tracking-wider">Mot de passe</label>
+                      <label className="text-xs font-bold text-slate-600 dark:text-slate-400 uppercase tracking-wider">Mot de passe</label>
                       <div className="relative">
                         <Lock size={15} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" />
                         <input
@@ -255,13 +255,13 @@ export default function AuthModal({ isOpen, onClose, defaultMode = 'login', onSu
                           disabled={loading}
                           placeholder="••••••••"
                           minLength={6}
-                          className="w-full pl-10 pr-11 py-3 rounded-xl border border-slate-200 bg-slate-50 text-slate-900 text-sm font-medium placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500/30 focus:border-blue-500 focus:bg-white transition-all disabled:opacity-50"
+                          className="w-full pl-10 pr-11 py-3 rounded-xl border border-slate-200 dark:border-white/10 bg-slate-50 dark:bg-white/5 text-slate-900 dark:text-white text-sm font-medium placeholder:text-slate-400 dark:placeholder:text-slate-600 focus:outline-none focus:ring-2 focus:ring-blue-500/30 focus:border-blue-500 focus:bg-white dark:focus:bg-white/10 transition-all disabled:opacity-50"
                         />
                         <button
                           type="button"
                           tabIndex={-1}
                           onClick={() => setShowPassword(v => !v)}
-                          className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-700 transition-colors p-1"
+                          className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 dark:text-slate-500 hover:text-slate-700 dark:hover:text-slate-200 transition-colors p-1"
                         >
                           {showPassword ? <EyeOff size={15} /> : <Eye size={15} />}
                         </button>
@@ -281,7 +281,7 @@ export default function AuthModal({ isOpen, onClose, defaultMode = 'login', onSu
                           className="flex items-start gap-2.5 p-3 bg-red-50 border border-red-100 rounded-xl"
                         >
                           <AlertCircle size={15} className="text-red-500 shrink-0 mt-0.5" />
-                          <p className="text-xs font-semibold text-red-700">{error}</p>
+                          <p className="text-xs font-semibold text-red-700 dark:text-red-400">{error}</p>
                         </motion.div>
                       )}
                       {success && (
@@ -292,7 +292,7 @@ export default function AuthModal({ isOpen, onClose, defaultMode = 'login', onSu
                           className="flex items-start gap-2.5 p-3 bg-emerald-50 border border-emerald-100 rounded-xl"
                         >
                           <CheckCircle2 size={15} className="text-emerald-500 shrink-0 mt-0.5" />
-                          <p className="text-xs font-semibold text-emerald-700">{success}</p>
+                          <p className="text-xs font-semibold text-emerald-700 dark:text-emerald-400">{success}</p>
                         </motion.div>
                       )}
                     </AnimatePresence>
@@ -315,9 +315,9 @@ export default function AuthModal({ isOpen, onClose, defaultMode = 'login', onSu
 
                     {/* Divider */}
                     <div className="flex items-center gap-3">
-                      <div className="flex-1 h-px bg-slate-100" />
+                      <div className="flex-1 h-px bg-slate-100 dark:bg-white/5" />
                       <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider">ou</span>
-                      <div className="flex-1 h-px bg-slate-100" />
+                      <div className="flex-1 h-px bg-slate-100 dark:bg-white/5" />
                     </div>
 
                     {/* GitHub OAuth (placeholder — wirable) */}
@@ -325,32 +325,32 @@ export default function AuthModal({ isOpen, onClose, defaultMode = 'login', onSu
                       type="button"
                       disabled
                       title="Bientôt disponible"
-                      className="w-full py-3 rounded-xl border border-slate-200 bg-slate-50 text-slate-400 font-bold text-sm flex items-center justify-center gap-2.5 cursor-not-allowed opacity-60"
+                      className="w-full py-3 rounded-xl border border-slate-200 dark:border-white/10 bg-slate-50 dark:bg-white/5 text-slate-400 dark:text-slate-500 font-bold text-sm flex items-center justify-center gap-2.5 cursor-not-allowed opacity-60"
                     >
                       <Github size={16} />
                       Continuer avec GitHub
-                      <span className="ml-auto text-[10px] bg-slate-200 text-slate-500 px-1.5 py-0.5 rounded-full font-bold uppercase tracking-wider">Bientôt</span>
+                      <span className="ml-auto text-[10px] bg-slate-200 dark:bg-white/10 text-slate-500 dark:text-slate-400 px-1.5 py-0.5 rounded-full font-bold uppercase tracking-wider">Bientôt</span>
                     </button>
                   </motion.form>
                 </AnimatePresence>
 
                 {/* Switch mode (mobile friendly bottom text) */}
-                <p className="mt-6 text-center text-xs text-slate-500 font-medium">
+                <p className="mt-6 text-center text-xs text-slate-500 dark:text-slate-400 font-medium">
                   {mode === 'login' ? 'Pas encore de compte ?' : 'Déjà inscrit ?'}{' '}
                   <button
                     type="button"
                     onClick={switchMode}
-                    className="text-blue-600 hover:text-blue-700 font-bold underline-offset-2 hover:underline transition-colors"
+                    className="text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 font-bold underline-offset-2 hover:underline transition-colors"
                   >
                     {mode === 'login' ? 'S\'inscrire gratuitement' : 'Se connecter'}
                   </button>
                 </p>
 
-                <p className="mt-3 text-center text-[10px] text-slate-300">
+                <p className="mt-3 text-center text-[10px] text-slate-300 dark:text-slate-600">
                   En continuant, vous acceptez nos{' '}
-                  <a href="#" className="underline hover:text-slate-500 transition-colors">CGU</a>{' '}
+                  <a href="#" className="underline hover:text-slate-500 dark:hover:text-slate-400 transition-colors">CGU</a>{' '}
                   et notre{' '}
-                  <a href="#" className="underline hover:text-slate-500 transition-colors">Politique de confidentialité</a>.
+                  <a href="#" className="underline hover:text-slate-500 dark:hover:text-slate-400 transition-colors">Politique de confidentialité</a>.
                 </p>
               </div>
             </div>

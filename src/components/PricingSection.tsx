@@ -143,7 +143,7 @@ export default function PricingSection({ onCheckout, onOpenStudio, userId, isChe
               key={p.id}
               className={`relative rounded-3xl p-7 border flex flex-col transition-all duration-300 ${
                 p.hi
-                  ? 'border-blue-500 bg-slate-900 dark:bg-slate-900 shadow-2xl shadow-blue-900/30 scale-[1.02]'
+                  ? 'border-blue-500 bg-slate-900 dark:bg-[#0F172A] shadow-2xl shadow-blue-900/30 scale-[1.02]'
                   : 'border-slate-100 dark:border-white/8 bg-white dark:bg-[#111] hover:border-blue-200 dark:hover:border-blue-500/20 hover:shadow-xl'
               }`}
             >
@@ -167,7 +167,7 @@ export default function PricingSection({ onCheckout, onOpenStudio, userId, isChe
                   {price(p.monthlyPrice)}€
                 </span>
                 {p.monthlyPrice > 0 && (
-                  <span className={`text-xs font-bold ${p.hi ? 'text-slate-400' : 'text-slate-400'}`}>
+                  <span className={`text-xs font-bold ${p.hi ? 'text-slate-400 dark:text-slate-500' : 'text-slate-400'}`}>
                     /{annual ? 'mois*' : 'mois'}
                   </span>
                 )}

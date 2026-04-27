@@ -114,7 +114,7 @@ export function SecretsModal({ isOpen, onClose, projectId, userId }: SecretsModa
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
-          className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm"
+          className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/40 dark:bg-black/80 backdrop-blur-sm"
           onClick={(e) => e.target === e.currentTarget && onClose()}
         >
           <motion.div
@@ -122,22 +122,22 @@ export function SecretsModal({ isOpen, onClose, projectId, userId }: SecretsModa
             animate={{ scale: 1, opacity: 1, y: 0 }}
             exit={{ scale: 0.95, opacity: 0, y: 20 }}
             transition={{ type: 'spring', damping: 25, stiffness: 300 }}
-            className="bg-white rounded-2xl shadow-2xl w-full max-w-lg border border-slate-200 overflow-hidden"
+            className="bg-white dark:bg-[#111] rounded-2xl shadow-2xl w-full max-w-lg border border-slate-200 dark:border-white/10 overflow-hidden"
           >
             {/* Header */}
-            <div className="flex items-center justify-between px-6 py-4 border-b border-slate-100">
+            <div className="flex items-center justify-between px-6 py-4 border-b border-slate-100 dark:border-white/5">
               <div className="flex items-center gap-3">
                 <div className="w-8 h-8 bg-gradient-to-br from-violet-600 to-violet-700 rounded-xl flex items-center justify-center shadow-lg shadow-violet-600/25">
                   <Shield size={15} className="text-white" />
                 </div>
                 <div>
-                  <h2 className="text-sm font-black text-slate-900">Variables d'environnement</h2>
-                  <p className="text-[10px] text-slate-400 font-medium">Injectées côté serveur uniquement — jamais exposées au client</p>
+                  <h2 className="text-sm font-black text-slate-900 dark:text-white">Variables d'environnement</h2>
+                  <p className="text-[10px] text-slate-400 dark:text-slate-500 font-medium">Injectées côté serveur uniquement — jamais exposées au client</p>
                 </div>
               </div>
               <button
                 onClick={onClose}
-                className="p-1.5 rounded-lg hover:bg-slate-100 text-slate-400 hover:text-slate-900 transition-colors"
+                className="p-1.5 rounded-lg hover:bg-slate-100 dark:hover:bg-white/5 text-slate-400 dark:text-slate-500 hover:text-slate-900 dark:hover:text-white transition-colors"
               >
                 <X size={16} />
               </button>
@@ -146,7 +146,7 @@ export function SecretsModal({ isOpen, onClose, projectId, userId }: SecretsModa
             {/* Body */}
             <div className="p-6 space-y-4 max-h-[60vh] overflow-y-auto">
               {error && (
-                <div className="px-4 py-2.5 bg-rose-50 border border-rose-200 rounded-xl text-xs font-bold text-rose-600">
+                <div className="px-4 py-2.5 bg-rose-50 dark:bg-rose-500/10 border border-rose-200 dark:border-rose-500/20 rounded-xl text-xs font-bold text-rose-600 dark:text-rose-400">
                   {error}
                 </div>
               )}
@@ -157,7 +157,7 @@ export function SecretsModal({ isOpen, onClose, projectId, userId }: SecretsModa
                   <span className="text-xs font-medium">Chargement...</span>
                 </div>
               ) : secrets.length === 0 ? (
-                <div className="text-center py-6 text-slate-400">
+                <div className="text-center py-6 text-slate-400 dark:text-slate-600">
                   <Shield size={28} className="mx-auto mb-2 opacity-30" />
                   <p className="text-xs font-medium">Aucune variable configurée</p>
                 </div>
@@ -169,7 +169,7 @@ export function SecretsModal({ isOpen, onClose, projectId, userId }: SecretsModa
                         value={s.key}
                         onChange={(e) => handleUpdate(i, 'key', e.target.value.toUpperCase())}
                         onBlur={() => handleBlurSave(i)}
-                        className="w-36 shrink-0 px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-mono font-bold text-slate-700 focus:outline-none focus:border-violet-400 focus:ring-2 focus:ring-violet-100 transition-all"
+                        className="w-36 shrink-0 px-3 py-2 bg-slate-50 dark:bg-white/5 border border-slate-200 dark:border-white/10 rounded-xl text-xs font-mono font-bold text-slate-700 dark:text-slate-200 focus:outline-none focus:border-violet-400 dark:focus:border-violet-500 focus:ring-2 focus:ring-violet-100 dark:focus:ring-violet-500/20 transition-all"
                         placeholder="NOM_VAR"
                       />
                       <div className="flex-1 relative">
@@ -178,7 +178,7 @@ export function SecretsModal({ isOpen, onClose, projectId, userId }: SecretsModa
                           value={s.value}
                           onChange={(e) => handleUpdate(i, 'value', e.target.value)}
                           onBlur={() => handleBlurSave(i)}
-                          className="w-full px-3 py-2 pr-8 bg-slate-50 border border-slate-200 rounded-xl text-xs font-mono text-slate-700 focus:outline-none focus:border-violet-400 focus:ring-2 focus:ring-violet-100 transition-all"
+                          className="w-full px-3 py-2 pr-8 bg-slate-50 dark:bg-white/5 border border-slate-200 dark:border-white/10 rounded-xl text-xs font-mono text-slate-700 dark:text-slate-300 focus:outline-none focus:border-violet-400 dark:focus:border-violet-500 focus:ring-2 focus:ring-violet-100 dark:focus:ring-violet-500/20 transition-all"
                           placeholder="valeur..."
                         />
                         <button
@@ -192,7 +192,7 @@ export function SecretsModal({ isOpen, onClose, projectId, userId }: SecretsModa
                       <button
                         onClick={() => deleteSecret(s.key)}
                         disabled={saving === s.key}
-                        className="p-2 text-slate-300 hover:text-rose-500 hover:bg-rose-50 rounded-xl transition-all opacity-0 group-hover:opacity-100 disabled:opacity-50"
+                        className="p-2 text-slate-300 dark:text-slate-600 hover:text-rose-500 dark:hover:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-500/10 rounded-xl transition-all opacity-0 group-hover:opacity-100 disabled:opacity-50"
                       >
                         {saving === s.key ? <Loader2 size={14} className="animate-spin" /> : <Trash2 size={14} />}
                       </button>
@@ -202,14 +202,14 @@ export function SecretsModal({ isOpen, onClose, projectId, userId }: SecretsModa
               )}
 
               {/* Add new */}
-              <div className="pt-2 border-t border-slate-100">
-                <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-3">Ajouter une variable</p>
+              <div className="pt-2 border-t border-slate-100 dark:border-white/5">
+                <p className="text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest mb-3">Ajouter une variable</p>
                 <div className="flex items-center gap-2">
                   <input
                     value={newKey}
                     onChange={(e) => setNewKey(e.target.value.toUpperCase())}
                     onKeyDown={(e) => e.key === 'Enter' && handleAdd()}
-                    className="w-36 shrink-0 px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-mono font-bold text-slate-700 focus:outline-none focus:border-violet-400 focus:ring-2 focus:ring-violet-100 transition-all"
+                    className="w-36 shrink-0 px-3 py-2 bg-slate-50 dark:bg-white/5 border border-slate-200 dark:border-white/10 rounded-xl text-xs font-mono font-bold text-slate-700 dark:text-slate-200 focus:outline-none focus:border-violet-400 dark:focus:border-violet-500 focus:ring-2 focus:ring-violet-100 dark:focus:ring-violet-500/20 transition-all"
                     placeholder="API_KEY"
                   />
                   <input
@@ -217,7 +217,7 @@ export function SecretsModal({ isOpen, onClose, projectId, userId }: SecretsModa
                     onChange={(e) => setNewValue(e.target.value)}
                     onKeyDown={(e) => e.key === 'Enter' && handleAdd()}
                     type="password"
-                    className="flex-1 px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-mono text-slate-700 focus:outline-none focus:border-violet-400 focus:ring-2 focus:ring-violet-100 transition-all"
+                    className="flex-1 px-3 py-2 bg-slate-50 dark:bg-white/5 border border-slate-200 dark:border-white/10 rounded-xl text-xs font-mono text-slate-700 dark:text-slate-300 focus:outline-none focus:border-violet-400 dark:focus:border-violet-500 focus:ring-2 focus:ring-violet-100 dark:focus:ring-violet-500/20 transition-all"
                     placeholder="valeur secrète..."
                   />
                   <button
@@ -232,13 +232,13 @@ export function SecretsModal({ isOpen, onClose, projectId, userId }: SecretsModa
             </div>
 
             {/* Footer */}
-            <div className="px-6 py-4 border-t border-slate-100 bg-slate-50/50 flex items-center justify-between">
-              <p className="text-[10px] text-slate-400 font-medium">
+            <div className="px-6 py-4 border-t border-slate-100 dark:border-white/5 bg-slate-50/50 dark:bg-white/5 flex items-center justify-between">
+              <p className="text-[10px] text-slate-400 dark:text-slate-500 font-medium">
                 Sauvegarde automatique à chaque modification
               </p>
               <button
                 onClick={onClose}
-                className="px-4 py-2 bg-slate-900 hover:bg-slate-800 text-white text-xs font-bold rounded-xl transition-all active:scale-95"
+                className="px-4 py-2 bg-slate-900 dark:bg-white hover:bg-slate-800 dark:hover:opacity-90 text-white dark:text-slate-900 text-xs font-bold rounded-xl transition-all active:scale-95 shadow-lg"
               >
                 Fermer
               </button>

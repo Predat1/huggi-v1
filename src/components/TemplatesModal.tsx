@@ -135,7 +135,7 @@ export default function TemplatesModal({ onClose, onSelectTemplate }: Props) {
           <p className="text-xs text-slate-400">Ou décrivez votre propre idée dans le chat</p>
           <button
             onClick={onClose}
-            className="text-xs font-bold text-slate-500 hover:text-slate-700 dark:hover:text-white transition-colors"
+            className="text-xs font-bold text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-white transition-colors"
           >
             Commencer depuis zéro →
           </button>

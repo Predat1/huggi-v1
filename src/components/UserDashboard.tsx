@@ -240,9 +240,9 @@ export default function UserDashboard({ user, credits, onOpenStudio, onLogout }:
             <div className="flex justify-between items-center mb-2">
               <div className="flex items-center gap-1.5">
                 <Sparkles size={12} className="text-blue-400" />
-                <span className="text-xs font-bold text-white">Crédits</span>
+                <span className="text-xs font-bold text-slate-700 dark:text-white">Crédits</span>
               </div>
-              <span className="text-[10px] text-slate-400 font-bold">{credits ?? 0} restants</span>
+              <span className="text-[10px] text-slate-500 dark:text-slate-400 font-bold">{credits ?? 0} restants</span>
             </div>
             <div className="h-1.5 w-full bg-white/10 rounded-full overflow-hidden mb-2">
               <div
@@ -261,10 +261,10 @@ export default function UserDashboard({ user, credits, onOpenStudio, onLogout }:
               {(user?.email || 'U')[0].toUpperCase()}
             </div>
             <div className="flex-1 min-w-0">
-              <p className="text-xs font-bold text-white truncate">{user?.email?.split('@')[0] || 'Utilisateur'}</p>
-              <p className="text-[10px] text-slate-500 truncate">{user?.email}</p>
+              <p className="text-xs font-bold text-slate-900 dark:text-white truncate">{user?.email?.split('@')[0] || 'Utilisateur'}</p>
+              <p className="text-[10px] text-slate-500 dark:text-slate-500 truncate">{user?.email}</p>
             </div>
-            <button onClick={onLogout} title="Déconnexion" className="p-1.5 text-slate-500 hover:text-white hover:bg-white/10 rounded-lg transition-colors">
+            <button onClick={onLogout} title="Déconnexion" className="p-1.5 text-slate-500 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-white/10 rounded-lg transition-colors">
               <LogOut size={14} />
             </button>
           </div>
@@ -325,7 +325,7 @@ export default function UserDashboard({ user, credits, onOpenStudio, onLogout }:
                     <Clock size={18} className="text-blue-500 dark:text-blue-400" />
                     Reprendre mes travaux
                   </h2>
-                  <button onClick={() => setActiveTab('projects')} className="text-xs text-slate-500 hover:text-slate-900 dark:hover:text-white transition-colors">Voir tout</button>
+                  <button onClick={() => setActiveTab('projects')} className="text-xs text-slate-500 dark:text-slate-500 hover:text-slate-900 dark:hover:text-white transition-colors">Voir tout</button>
                 </div>
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                   {projects.slice(0, 3).map((proj) => (
@@ -368,7 +368,7 @@ export default function UserDashboard({ user, credits, onOpenStudio, onLogout }:
           <div className="flex-1 overflow-y-auto p-12 custom-scrollbar bg-slate-50 dark:bg-transparent">
             <div className="flex items-center justify-between mb-10">
               <h1 className="text-2xl font-bold text-slate-900 dark:text-white">Templates</h1>
-              <span className="text-xs text-slate-500">{TEMPLATES.length} templates disponibles</span>
+              <span className="text-xs text-slate-500 dark:text-slate-500">{TEMPLATES.length} templates disponibles</span>
             </div>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8">
               {TEMPLATES.map((tpl, i) => (
@@ -425,19 +425,19 @@ export default function UserDashboard({ user, credits, onOpenStudio, onLogout }:
             </div>
 
             {loadingProjects ? (
-              <div className="flex items-center justify-center py-20 text-slate-500">
-                <div className="w-6 h-6 border-2 border-slate-600 border-t-blue-500 rounded-full animate-spin mr-3" />
+              <div className="flex items-center justify-center py-20 text-slate-500 dark:text-slate-600">
+                <div className="w-6 h-6 border-2 border-slate-300 dark:border-white/10 border-t-blue-500 rounded-full animate-spin mr-3" />
                 Chargement…
               </div>
             ) : filteredProjects.length === 0 ? (
               <div className="text-center py-20">
-                <div className="w-16 h-16 bg-white/5 rounded-2xl flex items-center justify-center mx-auto mb-4">
-                  <Folder size={28} className="text-slate-600" />
+                <div className="w-16 h-16 bg-slate-200 dark:bg-white/5 rounded-2xl flex items-center justify-center mx-auto mb-4">
+                  <Folder size={28} className="text-slate-400 dark:text-slate-600" />
                 </div>
-                <p className="text-slate-500 font-medium mb-2">
+                <p className="text-slate-500 dark:text-slate-500 font-medium mb-2">
                   {searchQuery ? 'Aucun projet trouvé' : 'Pas encore de projets'}
                 </p>
-                <p className="text-slate-600 text-sm mb-6">
+                <p className="text-slate-600 dark:text-slate-600 text-sm mb-6">
                   {searchQuery ? 'Essayez un autre terme' : 'Créez votre premier projet depuis le Dashboard.'}
                 </p>
                 {!searchQuery && (
@@ -468,7 +468,7 @@ export default function UserDashboard({ user, credits, onOpenStudio, onLogout }:
                         {(proj.slug || proj.custom_domain) && (
                           <button
                             onClick={e => { e.stopPropagation(); window.open(proj.custom_domain ? `https://${proj.custom_domain}` : `/live/${proj.slug}`, '_blank'); }}
-                            className="p-1.5 hover:bg-white/10 rounded-lg transition-colors"
+                            className="p-1.5 hover:bg-slate-200 dark:hover:bg-white/10 rounded-lg transition-colors"
                             title="Voir en ligne"
                           >
                             <ExternalLink size={13} className="text-slate-400" />
@@ -502,21 +502,21 @@ export default function UserDashboard({ user, credits, onOpenStudio, onLogout }:
           <div className="flex-1 overflow-y-auto p-12 custom-scrollbar bg-slate-50 dark:bg-transparent">
             <div className="flex items-center justify-between mb-10">
               <h1 className="text-2xl font-bold text-slate-900 dark:text-white">Galerie Publique</h1>
-              <span className="text-xs text-slate-500">Projets publiés par la communauté</span>
+              <span className="text-xs text-slate-500 dark:text-slate-500">Projets publiés par la communauté</span>
             </div>
 
             {loadingGallery ? (
-              <div className="flex items-center justify-center py-20 text-slate-500">
-                <div className="w-6 h-6 border-2 border-slate-600 border-t-blue-500 rounded-full animate-spin mr-3" />
+              <div className="flex items-center justify-center py-20 text-slate-500 dark:text-slate-600">
+                <div className="w-6 h-6 border-2 border-slate-300 dark:border-white/10 border-t-blue-500 rounded-full animate-spin mr-3" />
                 Chargement de la galerie…
               </div>
             ) : galleryProjects.length === 0 ? (
               <div className="text-center py-20">
-                <div className="w-16 h-16 bg-white/5 rounded-2xl flex items-center justify-center mx-auto mb-4">
-                  <Globe size={28} className="text-slate-600" />
+                <div className="w-16 h-16 bg-slate-200 dark:bg-white/5 rounded-2xl flex items-center justify-center mx-auto mb-4">
+                  <Globe size={28} className="text-slate-400 dark:text-slate-600" />
                 </div>
-                <p className="text-slate-500 font-medium mb-2">Aucun projet public</p>
-                <p className="text-slate-600 text-sm mb-6">Publiez votre projet pour qu'il apparaisse ici !</p>
+                <p className="text-slate-500 dark:text-slate-500 font-medium mb-2">Aucun projet public</p>
+                <p className="text-slate-600 dark:text-slate-600 text-sm mb-6">Publiez votre projet pour qu'il apparaisse ici !</p>
               </div>
             ) : (
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
@@ -553,7 +553,7 @@ export default function UserDashboard({ user, credits, onOpenStudio, onLogout }:
         {activeTab === 'shortcuts' && (
           <div className="flex-1 overflow-y-auto p-8 custom-scrollbar bg-slate-50 dark:bg-transparent">
             <h1 className="text-2xl font-bold text-slate-900 dark:text-white mb-2">Raccourcis clavier</h1>
-            <p className="text-slate-500 text-sm mb-8">Accélérez votre workflow dans Huggy Studio.</p>
+            <p className="text-slate-500 dark:text-slate-500 text-sm mb-8">Accélérez votre workflow dans Huggy Studio.</p>
             <div className="max-w-lg space-y-3">
               {SHORTCUTS.map((s, i) => (
                 <div key={i} className="flex items-center justify-between p-4 bg-white dark:bg-white/[0.03] border border-slate-200 dark:border-white/5 rounded-2xl shadow-sm">

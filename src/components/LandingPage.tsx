@@ -343,7 +343,7 @@ export default function LandingPage({ accent, onOpenStudio, onLogin, userId }: L
                   ].map((c) => (
                     <div
                       key={c.t}
-                      className="group relative p-10 bg-white dark:bg-[#111] border border-slate-100 dark:border-white/5 rounded-[32px] overflow-hidden transition-all duration-500 hover:shadow-2xl hover:shadow-blue-500/10 dark:hover:shadow-blue-500/5 hover:-translate-y-2"
+                      className="group relative p-10 bg-white dark:bg-white/[0.02] border border-slate-100 dark:border-white/5 rounded-[32px] overflow-hidden transition-all duration-500 hover:shadow-2xl hover:shadow-blue-500/10 dark:hover:shadow-blue-500/5 hover:-translate-y-2"
                     >
                       <div className={`absolute top-0 right-0 w-32 h-32 bg-${c.accent}-500/5 blur-3xl rounded-full -mr-16 -mt-16 group-hover:bg-${c.accent}-500/10 transition-colors`} />
                       <div className={`w-14 h-14 rounded-2xl bg-${c.accent}-50 flex items-center justify-center text-${c.accent}-600 mb-6 group-hover:scale-110 transition-transform duration-500 border border-${c.accent}-100/50`}>
@@ -406,7 +406,7 @@ export default function LandingPage({ accent, onOpenStudio, onLogin, userId }: L
               {TESTIMONIALS.map((t, idx) => (
                 <article
                   key={t.name}
-                  className={`bg-white dark:bg-[#111] p-10 rounded-[40px] border border-slate-100 dark:border-white/5 shadow-sm flex flex-col transition-all duration-500 hover:shadow-2xl hover:-translate-y-2 group ${idx === 1 ? 'md:scale-105 z-10 border-blue-100 dark:border-blue-500/20' : ''}`}
+                  className={`bg-white dark:bg-white/[0.02] p-10 rounded-[40px] border border-slate-100 dark:border-white/5 shadow-sm flex flex-col transition-all duration-500 hover:shadow-2xl hover:-translate-y-2 group ${idx === 1 ? 'md:scale-105 z-10 border-blue-100 dark:border-blue-500/20' : ''}`}
                 >
                   <p className="text-slate-700 dark:text-slate-300 font-bold text-lg leading-relaxed mb-8">&ldquo;{t.quote}&rdquo;</p>
                   <div className="mt-auto pt-8 border-t border-slate-50 dark:border-white/5 flex items-center gap-4">
@@ -474,49 +474,59 @@ export default function LandingPage({ accent, onOpenStudio, onLogin, userId }: L
             </div>
           </section>
 
-          <section id="cta" className="scroll-mt-28 py-16">
-            <div className="rounded-3xl bg-slate-100 dark:bg-white/5 border border-slate-200/80 dark:border-white/5 p-8 sm:p-12 text-center max-w-4xl mx-auto">
-              <h2 className="text-2xl sm:text-3xl font-black text-[#0F172A] dark:text-white">Ready to build?</h2>
-              <p className="mt-2 text-slate-600 dark:text-slate-400">Join thousands of makers who ship faster with Huggy.</p>
-              <div className="mt-8 relative">
-                <input
-                  type="text"
-                  value={buildInput}
-                  onChange={(e) => setBuildInput(e.target.value)}
-                  onKeyDown={(e) => {
-                    if (e.key === 'Enter') openStudio();
-                  }}
-                  placeholder="What do you want to build?"
-                  className="w-full pl-5 pr-14 py-4 rounded-2xl border border-slate-200 dark:border-white/10 bg-white dark:bg-white/5 text-[#0F172A] dark:text-white placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500/30 transition-shadow"
-                />
-                <button
-                  type="button"
-                  onClick={openStudio}
-                  className="absolute right-2 top-1/2 -translate-y-1/2 w-10 h-10 rounded-xl bg-[#2563EB] text-white flex items-center justify-center hover:opacity-90 transition-opacity active:scale-95"
-                  aria-label="Envoyer"
-                >
-                  <ArrowUp size={18} />
-                </button>
+          <section id="cta" className="scroll-mt-28 py-32 relative overflow-hidden">
+            {/* Decorative Background Glows */}
+            <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-full h-full pointer-events-none opacity-50 dark:opacity-100">
+              <div className="absolute bottom-0 left-1/4 w-[500px] h-[300px] bg-blue-600/20 blur-[120px] rounded-full" />
+              <div className="absolute bottom-0 right-1/4 w-[500px] h-[300px] bg-indigo-600/20 blur-[120px] rounded-full" />
+            </div>
+
+            <div className="relative z-10 max-w-4xl mx-auto px-6 text-center">
+              <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-slate-100 dark:bg-white/5 border border-slate-200 dark:border-white/10 text-[10px] font-black text-slate-500 dark:text-slate-400 uppercase tracking-widest mb-6">
+                AI App Builder
               </div>
-              <div className="mt-6 flex flex-col sm:flex-row gap-3 justify-center">
+              
+              <h2 className="text-4xl sm:text-5xl font-black text-slate-900 dark:text-white tracking-tight mb-4">
+                Ready to build?
+              </h2>
+              <p className="text-lg text-slate-500 dark:text-slate-400 mb-12 max-w-xl mx-auto font-medium">
+                Join thousands of makers who ship faster with Huggy. Describe your project and let the AI do the heavy lifting.
+              </p>
+
+              <div className="max-w-3xl mx-auto">
+                <div className="rounded-[32px] overflow-hidden shadow-2xl shadow-blue-500/10 dark:shadow-black/60 bg-white dark:bg-[#111] border border-slate-100 dark:border-white/5 transition-all duration-500 hover:border-blue-500/30">
+                  <div className="p-6">
+                    <HuggyChatInput
+                      onSend={(prompt) => {
+                        if (prompt.trim()) setBuildInput(prompt);
+                        openStudio();
+                      }}
+                      placeholder="Ask Huggy to create anything..."
+                      modelLabel="Huggy AI"
+                    />
+                  </div>
+                </div>
+              </div>
+
+              <div className="mt-12 flex flex-col sm:flex-row gap-4 justify-center items-center">
                 <button
                   type="button"
                   onClick={() => onOpenStudio(buildInput.trim() || undefined)}
-                  className={`inline-flex items-center justify-center gap-2 px-8 py-3 rounded-xl ${accent.bg} text-white font-bold text-sm shadow-lg shadow-blue-600/25 hover:opacity-90 transition-all active:scale-[0.98]`}
+                  className={`px-8 py-3.5 rounded-2xl ${accent.bg} text-white font-bold text-sm shadow-xl shadow-blue-600/20 hover:scale-105 transition-all active:scale-95`}
                 >
                   Start building for free
-                  <span aria-hidden>›</span>
                 </button>
                 <button
                   type="button"
                   onClick={go('pricing')}
-                  className="inline-flex items-center justify-center gap-2 px-8 py-3 rounded-xl border border-slate-200 dark:border-white/10 bg-white dark:bg-white/5 text-[#0F172A] dark:text-white font-bold text-sm hover:bg-slate-50 dark:hover:bg-white/10 transition-colors active:scale-[0.98]"
+                  className="px-8 py-3.5 rounded-2xl border border-slate-200 dark:border-white/10 bg-white dark:bg-white/5 text-slate-900 dark:text-white font-bold text-sm hover:bg-slate-50 dark:hover:bg-white/10 transition-all active:scale-95"
                 >
                   See pricing
-                  <span aria-hidden>›</span>
                 </button>
               </div>
-              <p className="mt-6 text-xs text-slate-400">No credit card required. Free to start.</p>
+              <p className="mt-8 text-xs font-medium text-slate-400 dark:text-slate-500">
+                No credit card required. Instant access.
+              </p>
             </div>
           </section>
         </div>

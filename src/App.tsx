@@ -445,6 +445,13 @@ export default function App() {
     };
   }, [studioMode]);
 
+  const [isTerminalOpen, setIsTerminalOpen] = useState(false);
+  const [isGenerating, setIsGenerating] = useState(false);
+  const [isRestoring, setIsRestoring] = useState(false);
+  const [streamingMessage, setStreamingMessage] = useState<string>('');
+  const [agentTasks, setAgentTasks] = useState<AgentTask[]>([]);
+  const streamCancelRef = useRef<(() => void) | null>(null);
+
   // Auto-send prompt from landing page
   useEffect(() => {
     if (studioMode && inputValue && messages.length === 0 && !isGenerating && user) {
@@ -648,12 +655,7 @@ export default function App() {
 
     return () => clearInterval(intervalId);
   }, [autoSaveEnabled, autoSaveInterval, activeBottomTab, projectId, databaseEnabled, activeFilePath, filesMap]);
-  const [isTerminalOpen, setIsTerminalOpen] = useState(false);
-  const [isGenerating, setIsGenerating] = useState(false);
-  const [isRestoring, setIsRestoring] = useState(false);
-  const [streamingMessage, setStreamingMessage] = useState<string>('');
-  const [agentTasks, setAgentTasks] = useState<AgentTask[]>([]);
-  const streamCancelRef = useRef<(() => void) | null>(null);
+
 
   // ── Real-time collaboration (hook) ──────────────────────────────────
   const { onlineUsers, broadcastFileUpdate } = useCollaboration(
@@ -1261,13 +1263,9 @@ export default function App() {
         <aside className={`${isSidebarCollapsed ? 'w-16' : 'w-[400px]'} border-r border-slate-200 bg-white flex flex-col shrink-0 transition-all duration-300 ease-in-out`}>
           <div className="p-4 border-b border-slate-100 flex items-center justify-between relative min-h-[57px]">
             {!isSidebarCollapsed && (
-              <div 
-                onClick={() => setShowProjectMenu(!showProjectMenu)}
-                className="flex items-center gap-2 cursor-pointer hover:bg-slate-50 p-1 rounded transition-colors group"
-              >
+              <div className="flex items-center gap-2">
                 <div className={`w-4 h-4 ${ACCENT_COLORS[activeAccentColor].bg} rounded-sm`} />
-                <span className="font-bold text-sm text-slate-700">New Project</span>
-                <ChevronDown size={14} className={`text-slate-400 transition-transform ${showProjectMenu ? 'rotate-180' : ''}`} />
+                <span className="font-bold text-sm text-slate-700">Huggy Studio</span>
               </div>
             )}
             
@@ -1279,33 +1277,7 @@ export default function App() {
               {isSidebarCollapsed ? <Plus size={18} /> : <Maximize2 size={16} className="rotate-45" />}
             </button>
 
-            <AnimatePresence>
-              {showProjectMenu && (
-                <motion.div 
-                  initial={{ opacity: 0, y: 10 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  exit={{ opacity: 0, y: 10 }}
-                  className="absolute top-full left-4 mt-1 w-48 bg-white rounded-xl border border-slate-200 shadow-xl p-2 z-50"
-                >
-                  <button 
-                    onClick={handleNewProject}
-                    className="w-full flex items-center gap-2 px-3 py-2 hover:bg-slate-50 rounded-lg text-xs font-bold text-slate-600 transition-colors"
-                  >
-                    <Plus size={14} />
-                    Start New Project
-                  </button>
-                  <button className="w-full flex items-center gap-2 px-3 py-2 hover:bg-slate-50 rounded-lg text-xs font-bold text-slate-600 transition-colors">
-                    <FolderOpen size={14} />
-                    Open Project...
-                  </button>
-                  <div className="h-[1px] bg-slate-100 my-1" />
-                  <button className="w-full flex items-center gap-2 px-3 py-2 hover:bg-rose-50 hover:text-rose-600 rounded-lg text-xs font-bold text-slate-600 transition-colors">
-                    <Plus size={14} className="rotate-45" />
-                    Delete Project
-                  </button>
-                </motion.div>
-              )}
-            </AnimatePresence>
+
 
             {!isSidebarCollapsed && (
               <div className="flex items-center gap-3 text-slate-400 dark:text-slate-500">
@@ -1346,24 +1318,7 @@ export default function App() {
                         <p className="text-base font-black text-slate-800 dark:text-white">Huggy Studio</p>
                         <p className="text-xs text-slate-500 dark:text-slate-400 mt-1.5 max-w-[260px] leading-relaxed">Décrivez l'application que vous souhaitez créer. L'IA construira tout pour vous.</p>
                       </div>
-                      {/* Suggested prompts */}
-                      <div className="flex flex-col gap-2 w-full max-w-[280px] mt-2">
-                        {[
-                          { icon: '🎯', text: 'Dashboard de ventes moderne' },
-                          { icon: '🛒', text: 'E-commerce avec panier' },
-                          { icon: '📊', text: 'Analytics SaaS premium' },
-                        ].map((suggestion, i) => (
-                          <button
-                            key={i}
-                            onClick={() => { setInputValue(suggestion.text); setTimeout(() => handleSendMessage(suggestion.text), 50); }}
-                            className="flex items-center gap-2.5 px-4 py-2.5 bg-slate-50 dark:bg-white/5 hover:bg-blue-50 dark:hover:bg-blue-500/10 border border-slate-200 dark:border-white/10 hover:border-blue-200 dark:hover:border-blue-500/30 rounded-xl text-xs font-medium text-slate-600 dark:text-slate-300 hover:text-blue-700 dark:hover:text-blue-400 transition-all text-left group shadow-sm"
-                          >
-                            <span className="text-sm">{suggestion.icon}</span>
-                            <span className="flex-1">{suggestion.text}</span>
-                            <ArrowUp size={12} className="text-slate-400 dark:text-slate-500 group-hover:text-blue-500 transition-colors" />
-                          </button>
-                        ))}
-                      </div>
+
                     </div>
                   )}
 

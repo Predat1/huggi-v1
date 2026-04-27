@@ -63,7 +63,7 @@ export function ChatWindow({
   };
 
   return (
-    <div className="flex flex-col h-full bg-gradient-to-b from-white to-slate-50">
+    <div className="flex flex-col h-full bg-gradient-to-b from-white to-slate-50 dark:from-[#0A0A0A] dark:to-[#0F172A]">
       {/* Messages */}
       <div className="flex-1 overflow-y-auto px-6 py-10 space-y-10 scrollbar-hide">
         <AnimatePresence mode="popLayout">
@@ -75,11 +75,11 @@ export function ChatWindow({
               className="h-full flex items-center justify-center"
             >
               <div className="text-center max-w-md">
-                <div className="w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                  <Zap size={24} className="text-blue-600" />
+                <div className="w-16 h-16 bg-blue-100 dark:bg-blue-600/20 rounded-full flex items-center justify-center mx-auto mb-4 border border-transparent dark:border-blue-500/20">
+                  <Zap size={24} className="text-blue-600 dark:text-blue-400" />
                 </div>
-                <h3 className="text-lg font-bold text-slate-900 mb-2">Bienvenue dans Huggy Studio</h3>
-                <p className="text-slate-600 text-sm">
+                <h3 className="text-lg font-bold text-slate-900 dark:text-white mb-2">Bienvenue dans Huggy Studio</h3>
+                <p className="text-slate-600 dark:text-slate-400 text-sm">
                   Décrivez l'app que vous voulez construire et je vais générer le code React pour vous.
                 </p>
               </div>
@@ -100,9 +100,9 @@ export function ChatWindow({
       </div>
 
       {/* Input Area */}
-      <div className="border-t border-slate-200 bg-white p-8 shadow-sm">
+      <div className="border-t border-slate-200 dark:border-white/10 bg-white dark:bg-[#111] p-8 shadow-sm">
         <div className="max-w-4xl mx-auto">
-          <div className="relative rounded-xl border border-slate-200 bg-white shadow-sm focus-within:ring-2 focus-within:ring-blue-500/20 focus-within:border-blue-500 transition-all">
+          <div className="relative rounded-xl border border-slate-200 dark:border-white/10 bg-white dark:bg-white/5 shadow-sm focus-within:ring-2 focus-within:ring-blue-500/20 focus-within:border-blue-500 transition-all">
             <textarea
               ref={textareaRef}
               value={input}
@@ -110,7 +110,7 @@ export function ChatWindow({
               onKeyDown={handleKeyDown}
               placeholder={placeholder}
               disabled={isLoading}
-              className="w-full px-4 py-3 bg-transparent resize-none outline-none text-sm placeholder:text-slate-400 disabled:opacity-50"
+              className="w-full px-4 py-3 bg-transparent resize-none outline-none text-sm text-slate-900 dark:text-white placeholder:text-slate-400 dark:placeholder:text-slate-600 disabled:opacity-50"
               rows={1}
               style={{ maxHeight: '200px' }}
             />
@@ -130,7 +130,7 @@ export function ChatWindow({
             </motion.button>
           </div>
 
-          <p className="mt-2 text-xs text-slate-400 text-center">
+          <p className="mt-2 text-xs text-slate-400 dark:text-slate-500 text-center">
             Appuyez sur Shift + Entrée pour une nouvelle ligne
           </p>
         </div>
@@ -159,8 +159,8 @@ function MessageBubble({ message, onCopy, isCopied = false }: MessageBubbleProps
       <div
         className={`max-w-xl lg:max-w-2xl rounded-2xl px-6 py-4 ${
           isUser
-            ? 'bg-blue-600 text-white rounded-br-none'
-            : 'bg-slate-100 text-slate-900 rounded-bl-none'
+            ? 'bg-blue-600 text-white rounded-br-none shadow-lg shadow-blue-600/20'
+            : 'bg-slate-100 dark:bg-white/5 text-slate-900 dark:text-slate-200 rounded-bl-none border border-transparent dark:border-white/5'
         }`}
       >
         <div className="text-sm leading-relaxed whitespace-pre-wrap break-words">
@@ -176,7 +176,7 @@ function MessageBubble({ message, onCopy, isCopied = false }: MessageBubbleProps
 
         <div
           className={`mt-2 flex items-center justify-between gap-2 text-xs ${
-            isUser ? 'text-blue-100' : 'text-slate-500'
+            isUser ? 'text-blue-100' : 'text-slate-500 dark:text-slate-500'
           }`}
         >
           <span className="flex items-center gap-1">

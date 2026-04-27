@@ -39,14 +39,14 @@ export function AuthForm({ isSignUp = false, onSuccess }: AuthFormProps) {
   };
 
   return (
-    <div className="w-full max-w-md mx-auto p-6 bg-white rounded-lg shadow-md">
-      <h2 className="text-2xl font-bold mb-6 text-center text-gray-800">
+    <div className="w-full max-w-md mx-auto p-6 bg-white dark:bg-[#111] rounded-lg shadow-md border border-transparent dark:border-white/10">
+      <h2 className="text-2xl font-bold mb-6 text-center text-gray-800 dark:text-white">
         {isSignUpMode ? 'Créer un compte' : 'Se connecter'}
       </h2>
 
       <form onSubmit={handleSubmit} className="space-y-4">
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">
+          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
             Email
           </label>
           <input
@@ -55,13 +55,13 @@ export function AuthForm({ isSignUp = false, onSuccess }: AuthFormProps) {
             onChange={(e) => setEmail(e.target.value)}
             required
             disabled={loading}
-            className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent disabled:opacity-50"
+            className="w-full px-4 py-2 border border-gray-300 dark:border-white/10 bg-white dark:bg-white/5 text-gray-900 dark:text-white rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent disabled:opacity-50 transition-all"
             placeholder="user@example.com"
           />
         </div>
 
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">
+          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
             Mot de passe
           </label>
           <input
@@ -70,7 +70,7 @@ export function AuthForm({ isSignUp = false, onSuccess }: AuthFormProps) {
             onChange={(e) => setPassword(e.target.value)}
             required
             disabled={loading}
-            className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent disabled:opacity-50"
+            className="w-full px-4 py-2 border border-gray-300 dark:border-white/10 bg-white dark:bg-white/5 text-gray-900 dark:text-white rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent disabled:opacity-50 transition-all"
             placeholder="••••••••"
           />
         </div>
@@ -100,7 +100,7 @@ export function AuthForm({ isSignUp = false, onSuccess }: AuthFormProps) {
           setIsSignUpMode(!isSignUpMode);
           setError(null);
         }}
-        className="w-full mt-4 text-center text-sm text-blue-600 hover:text-blue-700 font-medium"
+        className="w-full mt-4 text-center text-sm text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 font-medium transition-colors"
       >
         {isSignUpMode ? 'Vous avez un compte? Se connecter' : "Pas de compte? S'inscrire"}
       </button>
@@ -120,12 +120,12 @@ export function AuthStatus({ user, onSignOut }: AuthStatusProps) {
   };
 
   if (!user) {
-    return <div className="text-gray-500">Non connecté</div>;
+    return <div className="text-gray-500 dark:text-gray-600">Non connecté</div>;
   }
 
   return (
     <div className="flex items-center justify-between gap-4">
-      <span className="text-sm text-gray-700">Connecté en tant que: {user.email}</span>
+      <span className="text-sm text-gray-700 dark:text-gray-300">Connecté en tant que: {user.email}</span>
       <button
         onClick={handleSignOut}
         className="flex items-center gap-2 px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors text-sm font-medium"

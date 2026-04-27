@@ -23,7 +23,7 @@ export function Loader({ size = 'md', text, variant = 'default' }: LoaderProps) 
         animate={{ rotate: 360 }}
         transition={{ duration: 1, repeat: Infinity, ease: 'linear' }}
       >
-        <Loader2 size={iconSize} className="text-blue-600" />
+        <Loader2 size={iconSize} className="text-blue-600 dark:text-blue-400" />
       </motion.div>
     );
   }
@@ -38,7 +38,7 @@ export function Loader({ size = 'md', text, variant = 'default' }: LoaderProps) 
           <div className="absolute inset-0 rounded-full bg-gradient-to-r from-blue-600 to-blue-400 opacity-20 blur-lg animate-pulse" />
           <Zap
             size={iconSize}
-            className="text-blue-600 relative"
+            className="text-blue-600 dark:text-blue-400 relative"
             fill="currentColor"
           />
         </div>
@@ -47,7 +47,7 @@ export function Loader({ size = 'md', text, variant = 'default' }: LoaderProps) 
         <motion.p
           initial={{ opacity: 0, y: -10 }}
           animate={{ opacity: 1, y: 0 }}
-          className="text-sm font-medium text-slate-600"
+          className="text-sm font-medium text-slate-600 dark:text-slate-400"
         >
           {text}
         </motion.p>
@@ -62,7 +62,7 @@ export function PageLoader() {
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       exit={{ opacity: 0 }}
-      className="fixed inset-0 bg-white/50 backdrop-blur-sm flex items-center justify-center z-50"
+      className="fixed inset-0 bg-white/50 dark:bg-black/50 backdrop-blur-sm flex items-center justify-center z-50"
     >
       <Loader size="lg" text="Chargement..." />
     </motion.div>
@@ -82,7 +82,7 @@ export function Skeleton({ className = '', count = 1 }: SkeletonProps) {
           key={i}
           animate={{ opacity: [0.6, 1, 0.6] }}
           transition={{ duration: 2, repeat: Infinity }}
-          className={`bg-slate-200 rounded-lg ${className}`}
+          className={`bg-slate-200 dark:bg-white/10 rounded-lg ${className}`}
         />
       ))}
     </div>

@@ -132,7 +132,7 @@ export default function HuggyChatInput({
                 className="flex items-center gap-1.5 py-1 pl-1 pr-2 rounded-full border border-slate-200 dark:border-white/10 border-dashed bg-slate-50 dark:bg-white/5 text-[13px] font-medium text-slate-700 dark:text-slate-300 group/tag transition-all hover:bg-slate-100 dark:hover:bg-white/10"
               >
                 <div 
-                  className="w-6 h-6 rounded-full flex items-center justify-center overflow-hidden shrink-0 border border-slate-200 shadow-sm"
+                  className="w-6 h-6 rounded-full flex items-center justify-center overflow-hidden shrink-0 border border-slate-200 dark:border-white/10 shadow-sm"
                   style={{ background: tag.color ?? '#378ADD' }}
                 >
                   {tag.avatar ? (
@@ -223,7 +223,7 @@ export default function HuggyChatInput({
 
       {/* Premium Disclaimer (Compact) */}
       {disclaimer && (
-        <p className="text-[12px] text-slate-400 text-center leading-relaxed mt-1 font-medium tracking-tight px-4 max-w-sm">
+        <p className="text-[12px] text-slate-400 dark:text-slate-500 text-center leading-relaxed mt-1 font-medium tracking-tight px-4 max-w-sm">
           {disclaimer.replace('Acme', 'Huggy')}
         </p>
       )}
