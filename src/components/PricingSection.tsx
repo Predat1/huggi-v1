@@ -12,8 +12,8 @@ const PLANS = [
     color: 'slate',
     hi: false,
     feats: [
-      '15 générations / mois',
-      '3 projets actifs',
+      '15 Crédits mensuels',
+      'Projets publics uniquement',
       'Déploiement avec badge Huggy',
       'Sous-domaine huggy.app',
       'Historique 7 jours',
@@ -22,66 +22,43 @@ const PLANS = [
     ctaAction: 'free',
   },
   {
-    id: 'starter',
-    name: 'Starter',
-    icon: Zap,
-    monthlyPrice: 19,
-    desc: 'Pour les créateurs qui veulent aller vite.',
-    color: 'blue',
-    hi: false,
-    feats: [
-      '150 générations / mois',
-      '10 projets actifs',
-      'Déploiements illimités',
-      'Badge Huggy retiré',
-      'Historique versions (20)',
-      'Support email',
-    ],
-    cta: 'Commencer avec Starter',
-    ctaAction: 'starter',
-  },
-  {
     id: 'pro',
     name: 'Pro',
-    icon: Star,
-    monthlyPrice: 49,
-    desc: 'Pour les startups et freelances sérieux.',
+    icon: Zap,
+    monthlyPrice: 25,
+    desc: 'Pour les créateurs qui veulent des résultats professionnels.',
     color: 'blue',
     hi: true,
-    badge: '✦ Meilleur rapport qualité/prix',
+    badge: '✦ Recommandé',
     feats: [
-      '500 générations / mois',
-      'Projets illimités',
+      '150 Crédits Premium / mois',
+      'Projets privés illimités',
       '1 domaine personnalisé',
-      'Modèle IA prioritaire (Sonnet)',
-      'Collaboration 3 membres',
-      'Historique versions 90 jours',
-      'Export code complet',
-      'Support prioritaire',
+      'Badge Huggy retiré',
+      'Modèle IA prioritaire (Sonnet 3.5)',
+      'Historique versions (20)',
     ],
     cta: 'Commencer avec Pro',
     ctaAction: 'pro',
   },
   {
-    id: 'agency',
-    name: 'Agency',
+    id: 'scale',
+    name: 'Scale',
     icon: Building2,
-    monthlyPrice: 149,
-    desc: 'Pour les agences et équipes à grande échelle.',
+    monthlyPrice: 69,
+    desc: 'Pour les freelances, startups et équipes de production.',
     color: 'slate',
     hi: false,
     feats: [
-      'Générations illimitées',
-      'Projets illimités',
+      '500 Crédits Premium / mois',
       'Domaines custom illimités',
-      'White-label (retire branding)',
-      'Accès API Huggy',
-      '10 membres équipe',
-      'SLA 99,9 %',
-      'Support dédié 24h',
+      'Export complet du code source',
+      'Collaboration d\'équipe (3 membres)',
+      'Achat de recharges possible',
+      'Support prioritaire',
     ],
-    cta: 'Contacter l\'équipe',
-    ctaAction: 'agency',
+    cta: 'Passer à Scale',
+    ctaAction: 'scale',
   },
 ];
 
@@ -240,6 +217,22 @@ export default function PricingSection({ onCheckout, onOpenStudio, userId, isChe
       {annual && (
         <p className="text-center text-xs text-slate-400 mt-6">*Prix affichés par mois, facturés annuellement. Résiliez à tout moment.</p>
       )}
+
+      {/* Add-ons Information */}
+      <div className="mt-12 max-w-2xl mx-auto bg-slate-50 dark:bg-white/[0.02] border border-slate-200 dark:border-white/5 rounded-2xl p-6 text-center">
+        <h4 className="text-sm font-black text-slate-900 dark:text-white uppercase tracking-widest mb-2">Recharges à la demande (Top-ups)</h4>
+        <p className="text-xs text-slate-500 dark:text-slate-400 mb-4">
+          Vous avez consommé tous les crédits de votre abonnement ce mois-ci ? Pas de panique. Sur les plans Pro et Scale, vous pouvez acheter des packs de crédits supplémentaires à tout moment sans changer d'abonnement.
+        </p>
+        <div className="inline-flex items-center gap-4 bg-white dark:bg-[#111] px-4 py-2 rounded-xl border border-slate-100 dark:border-white/5 shadow-sm">
+          <div className="flex items-center gap-1.5">
+            <Zap size={14} className="text-blue-500" />
+            <span className="text-xs font-bold text-slate-700 dark:text-slate-300">100 Crédits</span>
+          </div>
+          <span className="text-slate-300 dark:text-slate-700">—</span>
+          <span className="text-xs font-black text-slate-900 dark:text-white">15 €</span>
+        </div>
+      </div>
     </div>
   );
 }
