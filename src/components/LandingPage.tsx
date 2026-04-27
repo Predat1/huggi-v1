@@ -199,18 +199,21 @@ export default function LandingPage({ accent, onOpenStudio, onLogin, userId }: L
       <div className="sticky top-0 z-[110] border-b border-slate-100/80 dark:border-white/5 bg-white/85 dark:bg-black/85 backdrop-blur-md supports-[backdrop-filter]:bg-white/70 transition-[background,box-shadow] duration-300 shadow-[0_1px_0_rgba(15,23,42,0.04)] dark:shadow-none">
         <div className="max-w-6xl mx-auto px-6 h-16 grid grid-cols-2 md:grid-cols-[1fr_auto_1fr] items-center">
           {/* Left Side: Logo */}
-          <div className="flex items-center justify-start">
+          <div className="flex items-center justify-start gap-3">
             <button
               type="button"
               onClick={() => scrollToId('top')}
-              className="flex items-center gap-2 rounded-xl focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500/40"
+              className="flex items-center gap-2.5 rounded-xl focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500/40 group"
             >
               <div
-                className={`w-9 h-9 ${accent.bg} rounded-xl flex items-center justify-center text-white shadow-lg`}
+                className={`w-9 h-9 ${accent.bg} rounded-xl flex items-center justify-center text-white shadow-lg shadow-blue-600/20 group-hover:scale-105 transition-transform`}
               >
                 <Zap size={18} fill="currentColor" />
               </div>
-              <span className="text-sm font-black tracking-tight text-slate-900 dark:text-white">Huggy</span>
+              <div className="flex flex-col items-start leading-none">
+                <span className="text-[15px] font-black tracking-tight text-slate-900 dark:text-white uppercase">Huggy</span>
+                <span className="text-[9px] font-black text-blue-600 dark:text-blue-400 tracking-[0.2em] mt-0.5">V1.0</span>
+              </div>
             </button>
           </div>
 
@@ -224,30 +227,35 @@ export default function LandingPage({ accent, onOpenStudio, onLogin, userId }: L
           </nav>
 
           {/* Right Side: Actions */}
-          <div className="flex items-center justify-end gap-3">
+          <div className="flex items-center justify-end gap-3 sm:gap-6">
             <button
               onClick={() => onLogin && onLogin()}
-              className="hidden sm:inline-block text-xs font-black uppercase tracking-wider text-slate-400 dark:text-slate-500 hover:text-slate-900 dark:hover:text-white transition-colors duration-200"
+              className="hidden sm:inline-block text-[11px] font-black uppercase tracking-widest text-slate-400 dark:text-slate-500 hover:text-slate-900 dark:hover:text-white transition-all active:scale-95"
             >
-              Sign in
+              Log in
             </button>
-            {/* Dark mode toggle */}
-            <button
-              type="button"
-              onClick={toggleTheme}
-              className="hidden sm:flex items-center justify-center w-8 h-8 rounded-xl text-slate-400 dark:text-slate-500 hover:bg-slate-100 dark:hover:bg-white/10 hover:text-slate-900 dark:hover:text-white transition-all"
-              aria-label="Toggle theme"
-            >
-              {theme === 'dark' ? <Sun size={15} /> : <Moon size={15} />}
-            </button>
-            <button
-              type="button"
-              onClick={() => onOpenStudio(buildInput.trim() || undefined)}
-              className={`hidden sm:flex items-center gap-2 px-5 py-2.5 ${accent.bg} hover:opacity-90 text-white rounded-xl text-sm font-bold transition-all duration-200 shadow-lg shadow-blue-600/20 active:scale-[0.98]`}
-            >
-              <Sparkles size={16} />
-              Get started
-            </button>
+            
+            <div className="h-4 w-px bg-slate-200 dark:bg-white/10 hidden sm:block" />
+
+            <div className="flex items-center gap-2">
+              <button
+                type="button"
+                onClick={toggleTheme}
+                className="flex items-center justify-center w-9 h-9 rounded-xl text-slate-400 dark:text-slate-500 hover:bg-slate-100 dark:hover:bg-white/10 hover:text-slate-900 dark:hover:text-white transition-all active:scale-90"
+                aria-label="Toggle theme"
+              >
+                {theme === 'dark' ? <Sun size={16} /> : <Moon size={16} />}
+              </button>
+              
+              <button
+                type="button"
+                onClick={() => onOpenStudio(buildInput.trim() || undefined)}
+                className={`hidden sm:flex items-center gap-2 px-5 py-2.5 ${accent.bg} hover:brightness-110 text-white rounded-xl text-xs font-black transition-all shadow-xl shadow-blue-600/20 active:scale-[0.96] uppercase tracking-widest`}
+              >
+                <Sparkles size={14} />
+                Build Now
+              </button>
+            </div>
             <button
               type="button"
               className="md:hidden p-2 rounded-xl text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-white/10 transition-colors"

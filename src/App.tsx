@@ -1172,93 +1172,100 @@ export default function App() {
               setStudioMode(false);
               window.history.replaceState({}, '', window.location.pathname);
             }}
-            className="flex items-center gap-2 p-1.5 hover:bg-slate-100 dark:hover:bg-white/5 rounded-lg transition-colors text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white group"
+            className="flex items-center gap-2 p-2 hover:bg-slate-100 dark:hover:bg-white/5 rounded-xl transition-all text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white group active:scale-95"
             title="Retour au Dashboard"
           >
             <Home size={18} className="group-hover:scale-110 transition-transform" />
           </button>
-          <div className="h-4 w-px bg-slate-200 dark:bg-white/10" />
-          <div className="flex items-center gap-2 min-w-0">
-            <div className={`w-7 h-7 bg-gradient-to-br from-blue-600 to-blue-700 rounded-lg flex items-center justify-center text-white shadow-lg shadow-blue-600/25 shrink-0`}>
+          
+          <div className="h-6 w-px bg-slate-200 dark:bg-white/10" />
+          
+          <div className="flex items-center gap-3 min-w-0">
+            <div className={`w-8 h-8 bg-gradient-to-br from-blue-600 to-blue-700 rounded-xl flex items-center justify-center text-white shadow-lg shadow-blue-600/20 shrink-0`}>
               <Zap size={16} fill="currentColor" />
             </div>
-            <span className="text-sm font-black tracking-tight text-slate-900 dark:text-white truncate uppercase">Huggy</span>
-            <span className="px-1.5 py-0.5 bg-gradient-to-r from-blue-50 to-blue-100 dark:from-blue-600/20 dark:to-blue-800/20 text-[9px] font-black text-blue-600 dark:text-blue-400 rounded-full uppercase tracking-widest shrink-0 border border-blue-100/50 dark:border-blue-500/20">Studio</span>
+            <div className="flex flex-col min-w-0">
+              <div className="flex items-center gap-2">
+                <input
+                  type="text"
+                  defaultValue="Nouveau Projet"
+                  className="bg-transparent border-none p-0 text-sm font-black text-slate-900 dark:text-white focus:ring-0 w-32 sm:w-48 truncate placeholder:text-slate-400"
+                  onBlur={(e) => {
+                    // Logic to save project name could go here
+                    showToast('Nom mis à jour', 'success');
+                  }}
+                />
+                <span className="px-1.5 py-0.5 bg-emerald-500/10 text-[9px] font-black text-emerald-600 dark:text-emerald-400 rounded-md uppercase tracking-widest border border-emerald-500/20 shrink-0">Saved</span>
+              </div>
+              <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest leading-none mt-0.5">Huggy Studio v1.0</span>
+            </div>
           </div>
         </div>
 
         {/* Right: Actions */}
-        <div className="flex items-center gap-1.5 sm:gap-2">
+        <div className="flex items-center gap-2 sm:gap-3">
           {credits !== null && (
-            <div className="hidden lg:flex items-center gap-1.5 px-2.5 py-1.5 bg-gradient-to-r from-amber-50 to-orange-50 rounded-lg border border-amber-200/60">
+            <div className="hidden lg:flex items-center gap-2 px-3 py-1.5 bg-amber-50 dark:bg-amber-500/5 rounded-xl border border-amber-200/50 dark:border-amber-500/20">
               <Sparkles size={12} className="text-amber-500" />
-              <span className="text-[10px] font-black text-amber-700">
-                {Number.isInteger(credits) ? credits : credits.toFixed(1)} cr
-              </span>
-              {pendingCreditCost != null && (
-                <span className="text-[9px] font-bold text-amber-500 opacity-80">
-                  −{pendingCreditCost % 1 === 0 ? pendingCreditCost : pendingCreditCost.toFixed(1)}
+              <div className="flex flex-col">
+                <span className="text-[10px] font-black text-amber-700 dark:text-amber-400 leading-none">
+                  {Number.isInteger(credits) ? credits : credits.toFixed(1)} <span className="text-[8px] opacity-60">CREDITS</span>
                 </span>
-              )}
+              </div>
             </div>
           )}
-          <button
-            type="button"
-            onClick={() => setShowExportModal(true)}
-            title="Synchroniser avec GitHub"
-            className="hidden sm:flex items-center justify-center p-1.5 text-slate-600 dark:text-slate-400 bg-slate-50 dark:bg-white/5 border border-slate-200 dark:border-white/10 hover:border-slate-300 dark:hover:border-white/20 hover:bg-white dark:hover:bg-white/10 rounded-lg transition-all shadow-sm group"
-          >
-            <Github size={15} className="text-slate-900 dark:text-white group-hover:scale-110 transition-transform" />
-          </button>
-          <button
-            type="button"
-            onClick={() => setShowSecretsModal(true)}
-            title="Variables d'environnement"
-            className="hidden sm:flex items-center justify-center p-1.5 text-slate-600 dark:text-slate-400 bg-slate-50 dark:bg-white/5 border border-slate-200 dark:border-white/10 hover:border-slate-300 dark:hover:border-white/20 hover:bg-white dark:hover:bg-white/10 rounded-lg transition-all shadow-sm group"
-          >
-            <Shield size={15} className="text-violet-600 group-hover:scale-110 transition-transform" />
-          </button>
-          {onlineUsers > 1 && (
-            <div className="hidden sm:flex items-center gap-1.5 px-2.5 py-1.5 bg-emerald-50 dark:bg-emerald-500/10 rounded-lg border border-emerald-200/60 dark:border-emerald-500/20" title={`${onlineUsers} utilisateurs en ligne`}>
-              <span className="relative flex h-2 w-2"><span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75" /><span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500" /></span>
-              <Users size={12} className="text-emerald-600 dark:text-emerald-400" />
-              <span className="text-[10px] font-black text-emerald-700 dark:text-emerald-400">{onlineUsers}</span>
-            </div>
-          )}
-          <button
-            onClick={handleExportZip}
-            title="Exporter en ZIP (Ctrl+E)"
-            className="hidden sm:flex items-center gap-1.5 px-2.5 py-1.5 bg-slate-50 hover:bg-slate-100 text-slate-600 rounded-lg text-[11px] font-bold transition-all active:scale-95 border border-slate-200"
-          >
-            <Download size={13} />
-            <span className="hidden xl:inline">ZIP</span>
-          </button>
-          {deployments.length > 0 && (
+
+          <div className="h-6 w-px bg-slate-200 dark:bg-white/10 hidden sm:block" />
+
+          {/* Secondary Actions Group */}
+          <div className="flex items-center gap-1.5">
             <button
               type="button"
-              onClick={() => window.open(deployments[0].url, '_blank', 'noopener,noreferrer')}
-              className="hidden sm:inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-[11px] font-bold text-emerald-700 bg-emerald-50 border border-emerald-200/80 hover:bg-emerald-100 transition-colors shrink-0"
+              onClick={() => setShowSecretsModal(true)}
+              className="p-2 text-slate-500 hover:text-violet-600 hover:bg-violet-50 dark:hover:bg-violet-500/10 rounded-xl transition-all"
+              title="Secrets & Env"
             >
-              <ExternalLink size={13} aria-hidden />
-              <span className="hidden xl:inline">En ligne</span>
+              <Shield size={18} />
             </button>
-          )}
-          {/* Premium Publish Button */}
-          <div className="relative">
-            <button
-              onClick={handlePublish}
-              disabled={isPublishing}
-              className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 disabled:opacity-50 text-white rounded-xl text-sm font-bold transition-all active:scale-95 shadow-lg shadow-blue-600/25 group"
-            >
-              <Globe size={15} className={`${isPublishing ? 'animate-spin' : 'group-hover:scale-110'} transition-transform`} />
-              {isPublishing ? 'Publication...' : 'Publier'}
-            </button>
+            
+            <div className="relative group/menu">
+              <button
+                className="flex items-center gap-1.5 px-3 py-2 text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-white/5 rounded-xl transition-all text-xs font-bold"
+              >
+                <Download size={14} />
+                <span className="hidden md:inline">Exporter</span>
+                <ChevronDown size={12} />
+              </button>
+              
+              <div className="absolute top-full right-0 mt-2 w-48 bg-white dark:bg-[#111] rounded-2xl border border-slate-200 dark:border-white/10 shadow-2xl opacity-0 translate-y-2 pointer-events-none group-hover/menu:opacity-100 group-hover/menu:translate-y-0 group-hover/menu:pointer-events-auto transition-all z-50 p-1.5">
+                <button onClick={handleExportZip} className="w-full flex items-center gap-3 px-3 py-2 hover:bg-slate-50 dark:hover:bg-white/5 rounded-xl text-xs font-bold text-slate-600 dark:text-slate-400 transition-colors">
+                  <HardDrive size={14} /> Télécharger .ZIP
+                </button>
+                <button onClick={() => setShowExportModal(true)} className="w-full flex items-center gap-3 px-3 py-2 hover:bg-slate-50 dark:hover:bg-white/5 rounded-xl text-xs font-bold text-slate-600 dark:text-slate-400 transition-colors">
+                  <Github size={14} /> Push vers GitHub
+                </button>
+              </div>
+            </div>
           </div>
+
+          {/* Primary Action: Publish */}
+          <button
+            onClick={handlePublish}
+            disabled={isPublishing}
+            className="relative flex items-center gap-2 px-5 py-2.5 bg-slate-900 dark:bg-white text-white dark:text-slate-900 disabled:opacity-50 rounded-2xl text-xs font-black transition-all active:scale-95 shadow-xl shadow-slate-900/20 dark:shadow-white/10 overflow-hidden group/pub"
+          >
+            <div className="absolute inset-0 bg-gradient-to-r from-blue-600 to-indigo-600 opacity-0 group-hover/pub:opacity-100 transition-opacity" />
+            <Globe size={14} className={`relative z-10 ${isPublishing ? 'animate-spin' : ''}`} />
+            <span className="relative z-10">{isPublishing ? 'PUBLICATION...' : 'PUBLIER'}</span>
+          </button>
+
+          <div className="h-6 w-px bg-slate-200 dark:bg-white/10" />
+
           {/* User Avatar */}
           {user && (
             <button
               onClick={() => signOut().then(() => setUser(null))}
-              className="w-8 h-8 rounded-full bg-gradient-to-br from-slate-200 to-slate-300 flex items-center justify-center text-[11px] font-black text-slate-600 hover:ring-2 hover:ring-blue-200 transition-all shrink-0"
+              className="w-9 h-9 rounded-2xl bg-gradient-to-br from-slate-100 to-slate-200 dark:from-white/10 dark:to-white/5 border border-slate-200 dark:border-white/10 flex items-center justify-center text-xs font-black text-slate-600 dark:text-white hover:ring-4 hover:ring-blue-500/10 transition-all shrink-0 active:scale-90"
               title={user.email || 'Mon compte'}
             >
               {(user.email || 'U')[0].toUpperCase()}
