@@ -268,17 +268,17 @@ export default function LandingPage({ accent, onOpenStudio, onLogin, userId }: L
               className="inline-flex items-center gap-2 px-5 py-2 rounded-full bg-blue-500/10 border border-blue-500/20 text-blue-400 text-[10px] font-black tracking-[0.3em] uppercase mb-8"
             >
               <Sparkles size={12} />
-              AI-First SaaS Infrastructure
+              AI-POWERED APP BUILDER
             </motion.div>
 
             <motion.h1
               initial={{ opacity: 0, y: 15 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.1 }}
-              className="text-4xl sm:text-6xl lg:text-[72px] leading-tight font-black tracking-tight text-slate-900 dark:text-white"
+              className="text-5xl sm:text-7xl lg:text-[100px] leading-[1.1] font-black tracking-tight text-slate-900 dark:text-white"
             >
-              Générez votre <br />
-              <span className="text-blue-500">SaaS</span> en 60 secondes.
+              Build any SaaS <br />
+              <span className="text-blue-500 italic">instantly.</span>
             </motion.h1>
 
             <motion.p
