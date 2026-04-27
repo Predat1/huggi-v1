@@ -195,13 +195,13 @@ export default function LandingPage({ accent, onOpenStudio, onLogin, userId }: L
   }, [mobileNavOpen]);
 
   return (
-    <div className="min-h-screen bg-[#030304] text-slate-100 font-sans antialiased transition-colors duration-300 relative overflow-x-hidden">
+    <div className="min-h-screen bg-white dark:bg-[#030304] text-slate-900 dark:text-slate-100 font-sans antialiased transition-colors duration-300 relative overflow-x-hidden">
       <div className="fixed inset-0 pointer-events-none z-0">
-        <div className="absolute top-0 left-0 w-full h-full bg-[#030304]" />
+        <div className="absolute top-0 left-0 w-full h-full bg-white dark:bg-[#030304]" />
         <div className="absolute top-[-10%] left-[-10%] w-[40%] h-[40%] bg-blue-600/5 rounded-full blur-[120px]" />
       </div>
 
-      <div className="sticky top-0 z-[110] border-b border-white/5 bg-black/40 backdrop-blur-3xl supports-[backdrop-filter]:bg-black/20 transition-all duration-300">
+      <div className="sticky top-0 z-[110] border-b border-slate-100 dark:border-white/5 bg-white/80 dark:bg-black/40 backdrop-blur-3xl supports-[backdrop-filter]:bg-white/60 dark:supports-[backdrop-filter]:bg-black/20 transition-all duration-300">
         <div className="max-w-7xl mx-auto px-6 h-20 grid grid-cols-3 items-center">
           {/* Left Side: Logo */}
           <div className="flex items-center justify-start gap-3">
@@ -216,18 +216,18 @@ export default function LandingPage({ accent, onOpenStudio, onLogin, userId }: L
                 <Zap size={20} fill="currentColor" />
               </div>
               <div className="flex flex-col items-start leading-none">
-                <span className="text-lg font-black tracking-tighter text-white uppercase italic">Huggy</span>
+                <span className="text-lg font-black tracking-tighter text-slate-900 dark:text-white uppercase italic">Huggy</span>
                 <span className="text-[10px] font-black text-blue-500 tracking-[0.3em] mt-0.5">ELITE ENGINE</span>
               </div>
             </button>
           </div>
 
           {/* Center Side: Navigation */}
-          <nav className="hidden md:flex items-center justify-center gap-10 text-[11px] font-black text-slate-500 uppercase tracking-widest">
-            <a href="#features" onClick={go('features')} className="hover:text-white transition-colors duration-200">Capabilities</a>
-            <a href="#how-it-works" onClick={go('how-it-works')} className="hover:text-white transition-colors duration-200">Process</a>
-            <a href="#testimonials" onClick={go('testimonials')} className="hover:text-white transition-colors duration-200 whitespace-nowrap">Community</a>
-            <a href="#pricing" onClick={go('pricing')} className="hover:text-white transition-colors duration-200">Pricing</a>
+          <nav className="hidden md:flex items-center justify-center gap-10 text-[11px] font-black text-slate-500 dark:text-slate-400 uppercase tracking-widest">
+            <a href="#features" onClick={go('features')} className="hover:text-blue-600 dark:hover:text-white transition-colors duration-200">Capabilities</a>
+            <a href="#how-it-works" onClick={go('how-it-works')} className="hover:text-blue-600 dark:hover:text-white transition-colors duration-200">Process</a>
+            <a href="#testimonials" onClick={go('testimonials')} className="hover:text-blue-600 dark:hover:text-white transition-colors duration-200 whitespace-nowrap">Community</a>
+            <a href="#pricing" onClick={go('pricing')} className="hover:text-blue-600 dark:hover:text-white transition-colors duration-200">Pricing</a>
           </nav>
 
           {/* Right Side: Actions */}
@@ -242,7 +242,7 @@ export default function LandingPage({ accent, onOpenStudio, onLogin, userId }: L
             <button
               type="button"
               onClick={() => onOpenStudio(buildInput.trim() || undefined)}
-              className="hidden sm:flex items-center gap-2 px-6 py-3 bg-white text-black hover:bg-slate-100 rounded-2xl text-[11px] font-black transition-all shadow-2xl shadow-white/5 active:scale-[0.96] uppercase tracking-widest"
+              className="hidden sm:flex items-center gap-2 px-6 py-3 bg-slate-900 dark:bg-white text-white dark:text-black hover:opacity-90 rounded-2xl text-[11px] font-black transition-all shadow-2xl active:scale-[0.96] uppercase tracking-widest"
             >
               <Sparkles size={14} />
               Accès Studio
@@ -275,7 +275,7 @@ export default function LandingPage({ accent, onOpenStudio, onLogin, userId }: L
               initial={{ opacity: 0, y: 15 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.1 }}
-              className="text-4xl sm:text-6xl lg:text-[72px] leading-tight font-black tracking-tight text-white"
+              className="text-4xl sm:text-6xl lg:text-[72px] leading-tight font-black tracking-tight text-slate-900 dark:text-white"
             >
               Générez votre <br />
               <span className="text-blue-500">SaaS</span> en 60 secondes.
@@ -321,12 +321,12 @@ export default function LandingPage({ accent, onOpenStudio, onLogin, userId }: L
                   viewport={{ once: true }}
                   transition={{ delay: i * 0.1 }}
                   whileHover={{ y: -10 }}
-                  className="group relative p-8 bg-transparent border border-white/[0.03] rounded-[40px] hover:bg-white/[0.02] transition-all duration-500"
+                  className="group relative p-8 bg-white dark:bg-transparent border border-slate-100 dark:border-white/[0.03] rounded-[40px] hover:border-blue-200 dark:hover:border-white/[0.05] transition-all duration-500 shadow-sm dark:shadow-none"
                 >
                    <div className={`w-12 h-12 rounded-2xl bg-${c.color}-500/10 flex items-center justify-center text-${c.color}-400 mb-6 group-hover:scale-110 transition-transform`}>
                      <c.icon size={22} />
                    </div>
-                   <h3 className="text-lg font-black text-white mb-3 italic">{c.t}</h3>
+                   <h3 className="text-lg font-black text-slate-900 dark:text-white mb-3 italic">{c.t}</h3>
                    <p className="text-[13px] font-medium text-slate-500 leading-relaxed">{c.d}</p>
                 </motion.div>
               ))}
@@ -342,7 +342,7 @@ export default function LandingPage({ accent, onOpenStudio, onLogin, userId }: L
                    <div className="w-8 h-px bg-blue-500/50" />
                    The Flow
                 </div>
-                <h2 className="text-4xl sm:text-6xl font-black text-white leading-tight tracking-tighter italic">
+                <h2 className="text-4xl sm:text-6xl font-black text-slate-900 dark:text-white leading-tight tracking-tighter italic">
                   De l'idée brute au <br /> <span className="text-blue-500">produit d'élite.</span>
                 </h2>
                 <p className="mt-8 text-slate-400 text-lg font-medium leading-relaxed">
@@ -355,10 +355,10 @@ export default function LandingPage({ accent, onOpenStudio, onLogin, userId }: L
                   { n: '02', t: 'Génération Synaptique', d: 'Construction du code source, du style atomique et des routes API en parallèle.' },
                   { n: '03', t: 'Déploiement Orbital', d: 'Votre application est mise en ligne instantanément sur notre infrastructure cloud optimisée.' },
                 ].map((s) => (
-                  <div key={s.n} className="p-8 rounded-[32px] bg-white/[0.02] border border-white/5 flex gap-6 group hover:bg-white/[0.04] transition-all">
+                  <div key={s.n} className="p-8 rounded-[32px] bg-slate-50 dark:bg-white/[0.02] border border-slate-100 dark:border-white/5 flex gap-6 group hover:bg-slate-100 dark:hover:bg-white/[0.04] transition-all">
                     <span className="text-3xl font-black text-blue-600/40 group-hover:text-blue-500 transition-colors">{s.n}</span>
                     <div>
-                      <h4 className="text-white font-black text-lg mb-1">{s.t}</h4>
+                      <h4 className="text-slate-900 dark:text-white font-black text-lg mb-1">{s.t}</h4>
                       <p className="text-sm text-slate-500 font-medium">{s.d}</p>
                     </div>
                   </div>
@@ -372,7 +372,7 @@ export default function LandingPage({ accent, onOpenStudio, onLogin, userId }: L
            <div className="max-w-6xl mx-auto px-6">
              <div className="text-center mb-12">
                 <h2 className="text-xs font-black text-blue-500 uppercase tracking-[0.5em] mb-4">Elite Community</h2>
-                <p className="text-4xl sm:text-5xl font-black text-white tracking-tight leading-none italic">
+                <p className="text-4xl sm:text-5xl font-black text-slate-900 dark:text-white tracking-tight leading-none italic">
                   Ils bâtissent le futur <br /> avec Huggy.
                 </p>
              </div>
@@ -384,18 +384,18 @@ export default function LandingPage({ accent, onOpenStudio, onLogin, userId }: L
                    whileInView={{ opacity: 1, y: 0 }}
                    viewport={{ once: true }}
                    transition={{ delay: i * 0.1 }}
-                   className="p-10 rounded-[48px] bg-transparent border border-white/[0.03] hover:border-blue-500/20 transition-all group"
+                   className="p-10 rounded-[48px] bg-slate-50 dark:bg-transparent border border-slate-100 dark:border-white/[0.03] hover:border-blue-500/20 transition-all group shadow-sm dark:shadow-none"
                  >
                    <div className="flex gap-1 mb-8">
                       {[1,2,3,4,5].map(s => <Star key={s} size={12} className="fill-blue-500 text-blue-500" />)}
                    </div>
-                   <p className="text-white font-bold text-lg leading-relaxed mb-10">&ldquo;{t.quote}&rdquo;</p>
+                   <p className="text-slate-900 dark:text-white font-bold text-lg leading-relaxed mb-10">&ldquo;{t.quote}&rdquo;</p>
                    <div className="flex items-center gap-4">
                       <div className="w-12 h-12 rounded-2xl bg-blue-600/10 text-blue-500 flex items-center justify-center font-black text-xs border border-blue-500/10">
                         {t.initials}
                       </div>
                       <div>
-                        <p className="text-white font-black text-sm uppercase tracking-tight">{t.name}</p>
+                        <p className="text-slate-900 dark:text-white font-black text-sm uppercase tracking-tight">{t.name}</p>
                         <p className="text-blue-500 text-[10px] font-black uppercase tracking-widest">{t.role}</p>
                       </div>
                    </div>
@@ -405,7 +405,7 @@ export default function LandingPage({ accent, onOpenStudio, onLogin, userId }: L
            </div>
         </section>
 
-        <section id="pricing" className="py-12 border-t border-white/5">
+        <section id="pricing" className="py-12 border-t border-slate-100 dark:border-white/5 bg-slate-50/30 dark:bg-transparent">
           <PricingSection
             onCheckout={handleCheckout}
             onOpenStudio={() => onOpenStudio?.()}
@@ -425,7 +425,7 @@ export default function LandingPage({ accent, onOpenStudio, onLogin, userId }: L
                     <FooterStarIcon className="text-blue-500" />
                     <span className="text-xs font-black uppercase tracking-[0.4em] text-white/40">Studio</span>
                   </div>
-                  <h2 className="text-2xl sm:text-3xl font-black text-white italic tracking-tighter leading-tight">
+                  <h2 className="text-2xl sm:text-3xl font-black text-slate-900 dark:text-white italic tracking-tighter leading-tight">
                     Prêt à bâtir votre <span className="text-blue-500">empire digital ?</span>
                   </h2>
                 </header>
@@ -433,24 +433,21 @@ export default function LandingPage({ accent, onOpenStudio, onLogin, userId }: L
                 <div className="flex flex-col gap-8 lg:flex-row lg:items-center lg:justify-between lg:gap-10">
                   <div>
                     <p className="text-sm font-normal text-slate-500 leading-normal">Contactez-nous :</p>
-                    <a
-                      href="mailto:contact@huggy.sbs"
-                      className="mt-2 inline-flex items-center gap-2 text-base font-bold text-white hover:text-blue-400 transition-colors"
-                    >
+                    <a href="mailto:contact@huggy.sbs" className="mt-2 inline-flex items-center gap-2 text-base font-bold text-slate-900 dark:text-white hover:text-blue-500 transition-colors">
                       contact@huggy.sbs
                       <ExternalLink size={15} className="text-slate-500" />
                     </a>
                   </div>
                   <nav className="flex flex-wrap items-center gap-x-8 gap-y-2 text-sm font-medium text-slate-500 lg:justify-end">
-                    <a href="#about" onClick={go('about')} className="hover:text-white transition-colors duration-200">À propos</a>
-                    <a href="#pricing" onClick={go('pricing')} className="hover:text-white transition-colors duration-200">Tarifs</a>
-                    <a href="#features" onClick={go('features')} className="hover:text-white transition-colors duration-200">Templates</a>
-                    <a href="#contact" onClick={go('contact')} className="hover:text-white transition-colors duration-200">Contact</a>
+                    <a href="#about" onClick={go('about')} className="hover:text-slate-900 dark:hover:text-white transition-colors duration-200 whitespace-nowrap">À propos</a>
+                    <a href="#pricing" onClick={go('pricing')} className="hover:text-slate-900 dark:hover:text-white transition-colors duration-200 whitespace-nowrap">Tarifs</a>
+                    <a href="#features" onClick={go('features')} className="hover:text-slate-900 dark:hover:text-white transition-colors duration-200 whitespace-nowrap">Templates</a>
+                    <a href="#contact" onClick={go('contact')} className="hover:text-slate-900 dark:hover:text-white transition-colors duration-200 whitespace-nowrap">Contact</a>
                   </nav>
                 </div>
 
                 <div className="mt-16 flex justify-center">
-                  <span className="select-none text-[clamp(3rem,10vw,6rem)] font-black tracking-tighter text-white lowercase leading-none opacity-20 italic">
+                  <span className="select-none text-[clamp(3rem,10vw,6rem)] font-black tracking-tighter text-slate-900 dark:text-white lowercase leading-none opacity-5 dark:opacity-20 italic">
                     huggy
                   </span>
                 </div>
@@ -460,14 +457,22 @@ export default function LandingPage({ accent, onOpenStudio, onLogin, userId }: L
                     © 2026 Huggy. Tous droits réservés.
                   </p>
                   <div className="flex flex-wrap items-center justify-center gap-x-4 gap-y-2 text-xs text-slate-500">
-                    <a href="#" className="hover:text-white transition-colors">CGU</a>
-                    <span className="text-white/10">|</span>
-                    <a href="#" className="hover:text-white transition-colors">Confidentialité</a>
-                    <span className="text-white/10">|</span>
+                    <button
+                      onClick={toggleTheme}
+                      className="flex items-center gap-2 px-3 py-1.5 rounded-xl bg-slate-100 dark:bg-white/5 hover:bg-slate-200 dark:hover:bg-white/10 transition-all text-slate-600 dark:text-slate-400 font-bold uppercase tracking-widest text-[9px]"
+                    >
+                      {theme === 'dark' ? <Moon size={12} /> : <Sun size={12} />}
+                      {theme === 'dark' ? 'Sombre' : 'Clair'}
+                    </button>
+                    <span className="text-slate-200 dark:text-white/10">|</span>
+                    <a href="#" className="hover:text-slate-900 dark:hover:text-white transition-colors">CGU</a>
+                    <span className="text-slate-200 dark:text-white/10">|</span>
+                    <a href="#" className="hover:text-slate-900 dark:hover:text-white transition-colors">Confidentialité</a>
+                    <span className="text-slate-200 dark:text-white/10">|</span>
                     <span className="flex items-center gap-4">
-                      <a href="#" className="hover:text-white transition-colors"><Linkedin size={16} /></a>
-                      <a href="#" className="hover:text-white transition-colors"><Twitter size={16} /></a>
-                      <a href="#" className="hover:text-white transition-colors"><Github size={16} /></a>
+                      <a href="#" className="hover:text-slate-900 dark:hover:text-white transition-colors"><Linkedin size={16} /></a>
+                      <a href="#" className="hover:text-slate-900 dark:hover:text-white transition-colors"><Twitter size={16} /></a>
+                      <a href="#" className="hover:text-slate-900 dark:hover:text-white transition-colors"><Github size={16} /></a>
                     </span>
                   </div>
                 </div>
@@ -483,20 +488,20 @@ export default function LandingPage({ accent, onOpenStudio, onLogin, userId }: L
             initial={{ opacity: 0, x: '100%' }}
             animate={{ opacity: 1, x: 0 }}
             exit={{ opacity: 0, x: '100%' }}
-            className="fixed inset-0 z-[200] bg-black p-8 flex flex-col md:hidden"
+            className="fixed inset-0 z-[200] bg-white dark:bg-black p-8 flex flex-col md:hidden"
           >
             <div className="flex justify-between items-center mb-20">
-               <span className="text-2xl font-black italic text-white">HUGGY</span>
-               <button onClick={() => setMobileNavOpen(false)}><X size={32} /></button>
+               <span className="text-2xl font-black italic text-slate-900 dark:text-white">HUGGY</span>
+               <button onClick={() => setMobileNavOpen(false)} className="text-slate-900 dark:text-white"><X size={32} /></button>
             </div>
-            <nav className="flex flex-col gap-8 text-4xl font-black italic">
+            <nav className="flex flex-col gap-8 text-4xl font-black italic text-slate-900 dark:text-white">
                <a href="#features" onClick={() => setMobileNavOpen(false)}>Capabilities</a>
                <a href="#how-it-works" onClick={() => setMobileNavOpen(false)}>Process</a>
                <a href="#pricing" onClick={() => setMobileNavOpen(false)}>Pricing</a>
             </nav>
             <button
                onClick={() => { setMobileNavOpen(false); onOpenStudio(); }}
-               className="mt-auto w-full py-6 bg-white text-black rounded-3xl font-black text-xl uppercase italic shadow-2xl"
+               className="mt-auto w-full py-6 bg-slate-900 dark:bg-white text-white dark:text-black rounded-3xl font-black text-xl uppercase italic shadow-2xl"
             >
                Get Started
             </button>
