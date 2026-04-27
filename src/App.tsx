@@ -1664,6 +1664,7 @@ export default function App() {
                     placeholder="Décrivez ce que vous voulez construire..."
                     modelLabel="Huggy AI"
                   />
+                  </div>
                 </div>
               </>
             ) : activeSidebarTab === 'history' ? (

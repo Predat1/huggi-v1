@@ -15,19 +15,19 @@ export const PLANS = {
     teamSeats: 1,
     priorityAI: false,
   },
-  starter: {
-    name: 'Starter',
-    maxProjects: 10,
+  pro: {
+    name: 'Pro',
+    maxProjects: 15,
     maxGenerationsPerMonth: 150,
-    maxDeployments: null, // unlimited
-    customDomain: false,
+    maxDeployments: null,
+    customDomain: true,
     removeBadge: true,
     apiAccess: false,
     teamSeats: 1,
-    priorityAI: false,
+    priorityAI: true,
   },
-  pro: {
-    name: 'Pro',
+  scale: {
+    name: 'Scale',
     maxProjects: null,
     maxGenerationsPerMonth: 500,
     maxDeployments: null,
@@ -37,10 +37,10 @@ export const PLANS = {
     teamSeats: 3,
     priorityAI: true,
   },
-  agency: {
-    name: 'Agency',
+  business: {
+    name: 'Business',
     maxProjects: null,
-    maxGenerationsPerMonth: null,
+    maxGenerationsPerMonth: null, // Unlimited fair use
     maxDeployments: null,
     customDomain: true,
     removeBadge: true,
@@ -53,9 +53,9 @@ export const PLANS = {
 /** Map Stripe plan IDs / tier names → plan key */
 export function resolvePlan(tier, isPro) {
   if (!tier || tier === 'free') return 'free';
-  if (tier === 'agency') return 'agency';
+  if (tier === 'business') return 'business';
+  if (tier === 'scale') return 'scale';
   if (tier === 'pro' || isPro) return 'pro';
-  if (tier === 'starter' || tier === 'hobby') return 'starter';
   return 'free';
 }
 

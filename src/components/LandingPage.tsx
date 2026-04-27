@@ -414,7 +414,7 @@ export default function LandingPage({ accent, onOpenStudio, onLogin, userId }: L
           />
         </section>
 
-        <footer className="py-24 px-6 bg-[#030304] overflow-hidden">
+        <footer className="py-24 px-6 bg-slate-50 dark:bg-[#030304] border-t border-slate-100 dark:border-none overflow-hidden">
           <div className="max-w-7xl mx-auto relative">
             <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[150%] aspect-square bg-blue-600/[0.03] rounded-full blur-[120px] pointer-events-none" />
             
@@ -423,7 +423,7 @@ export default function LandingPage({ accent, onOpenStudio, onLogin, userId }: L
                 <header className="max-w-sm">
                   <div className="flex items-center gap-2 mb-6">
                     <FooterStarIcon className="text-blue-500" />
-                    <span className="text-xs font-black uppercase tracking-[0.4em] text-white/40">Studio</span>
+                    <span className="text-xs font-black uppercase tracking-[0.4em] text-slate-400 dark:text-white/40">Studio</span>
                   </div>
                   <h2 className="text-2xl sm:text-3xl font-black text-slate-900 dark:text-white italic tracking-tighter leading-tight">
                     Prêt à bâtir votre <span className="text-blue-500">empire digital ?</span>

@@ -224,7 +224,7 @@ export default function UserDashboard({ user, credits, onOpenStudio, onLogout }:
               onClick={() => setActiveTab(id as any)}
               className={`w-full flex items-center gap-4 px-5 py-3.5 rounded-2xl text-[11px] font-black uppercase tracking-widest transition-all relative group ${
                 activeTab === id 
-                  ? 'bg-blue-600/5 dark:bg-white/5 text-blue-600 dark:text-white' 
+                  ? 'bg-blue-600/10 dark:bg-white/5 text-blue-600 dark:text-white' 
                   : 'text-slate-500 dark:text-slate-500 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-white/[0.02]'
               }`}
             >
@@ -242,12 +242,14 @@ export default function UserDashboard({ user, credits, onOpenStudio, onLogout }:
           <div className="p-4 bg-slate-100 dark:bg-white/[0.03] rounded-3xl border border-slate-200 dark:border-white/5">
             <div className="flex justify-between items-center mb-3">
               <span className="text-[9px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest">Crédits IA</span>
-              <span className="text-[10px] font-black text-blue-600 dark:text-white">{credits ?? 0}/100</span>
+              <span className="text-[10px] font-black text-blue-600 dark:text-white">
+                {credits ?? 0}/{user?.tier === 'pro' ? 150 : user?.tier === 'scale' ? 500 : user?.tier === 'business' ? 1500 : 15}
+              </span>
             </div>
             <div className="h-1.5 w-full bg-slate-200 dark:bg-white/5 rounded-full overflow-hidden">
               <motion.div
                 initial={{ width: 0 }}
-                animate={{ width: `${Math.min(((credits ?? 0) / 100) * 100, 100)}%` }}
+                animate={{ width: `${Math.min(((credits ?? 0) / (user?.tier === 'pro' ? 150 : user?.tier === 'scale' ? 500 : user?.tier === 'business' ? 1500 : 15)) * 100, 100)}%` }}
                 className="h-full bg-blue-600 rounded-full"
               />
             </div>
@@ -280,7 +282,7 @@ export default function UserDashboard({ user, credits, onOpenStudio, onLogout }:
       </aside>
 
       {/* ── Main Area ── */}
-      <main className="flex-1 flex flex-col relative overflow-hidden">
+      <main className="flex-1 flex flex-col bg-white dark:bg-[#070708] relative overflow-hidden transition-colors duration-300">
         
         {/* Top Header Bar */}
         <header className="h-20 flex items-center justify-between px-10 border-b border-slate-100 dark:border-white/[0.03] bg-white/50 dark:bg-[#070708]/50 backdrop-blur-xl shrink-0 z-10">
@@ -338,14 +340,14 @@ export default function UserDashboard({ user, credits, onOpenStudio, onLogout }:
                       initial={{ opacity: 0, scale: 0.95 }}
                       animate={{ opacity: 1, scale: 1 }}
                       transition={{ delay: i * 0.1 }}
-                      className="p-6 bg-white/[0.03] border border-white/5 rounded-[32px] flex items-center gap-5 hover:bg-white/[0.05] transition-all group"
+                      className="p-6 bg-slate-50 dark:bg-white/[0.03] border border-slate-100 dark:border-white/5 rounded-[32px] flex items-center gap-5 hover:bg-slate-100 dark:hover:bg-white/[0.05] transition-all group shadow-sm dark:shadow-none"
                     >
-                      <div className={`w-12 h-12 rounded-2xl bg-white/5 flex items-center justify-center ${stat.color} group-hover:scale-110 transition-transform`}>
+                      <div className={`w-12 h-12 rounded-2xl bg-slate-100 dark:bg-white/5 flex items-center justify-center ${stat.color} group-hover:scale-110 transition-transform`}>
                         <stat.icon size={20} />
                       </div>
                       <div>
                         <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest">{stat.label}</p>
-                        <p className="text-xl font-black text-white tracking-tight">{stat.value}</p>
+                        <p className="text-xl font-black text-slate-900 dark:text-white tracking-tight">{stat.value}</p>
                       </div>
                     </motion.div>
                   ))}

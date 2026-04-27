@@ -216,8 +216,8 @@ app.post('/api/webhook/stripe', express.raw({ type: 'application/json' }), async
     const userId = session.metadata?.userId;
     const plan   = session.metadata?.plan || 'pro';
     if (userId && pool) {
-      const creditsMap = { hobby: 1000, pro: 3000, scale: 10000 };
-      const creditsToAdd = creditsMap[plan] || 3000;
+      const creditsMap = { pro: 150, scale: 500, business: 1500 };
+      const creditsToAdd = creditsMap[plan] || 150;
       try {
         await pool.query(
           `UPDATE profiles SET tier = $2, is_pro = true, credits = credits + $3,
@@ -239,12 +239,12 @@ app.post('/api/webhook/stripe', express.raw({ type: 'application/json' }), async
         // Refresh credits every billing cycle
         const sub = await stripe.subscriptions.retrieve(subId);
         const plan = sub.metadata?.plan || 'pro';
-        const creditsMap = { hobby: 1000, pro: 3000, scale: 10000 };
+        const creditsMap = { pro: 150, scale: 500, business: 1500 };
         await pool.query(
           `UPDATE profiles SET credits = credits + $2, subscription_status = 'active',
            current_period_end = to_timestamp($3)
            WHERE subscription_id = $1`,
-          [subId, creditsMap[plan] || 3000, sub.current_period_end],
+          [subId, creditsMap[plan] || 150, sub.current_period_end],
         );
         console.log(`[Stripe] Invoice paid: sub=${subId}`);
       } catch (e) { console.error('[Stripe] invoice.payment_succeeded', e); }
@@ -277,14 +277,14 @@ app.post('/api/checkout', express.json(), async (req, res) => {
     // Subscription price IDs — set these in env after creating plans in Stripe Dashboard.
     // Falls back to inline price_data for development / first-time setup.
     const priceIds = {
-      hobby: process.env.STRIPE_PRICE_HOBBY,
       pro:   process.env.STRIPE_PRICE_PRO,
       scale: process.env.STRIPE_PRICE_SCALE,
+      business: process.env.STRIPE_PRICE_BUSINESS,
     };
     const planMeta = {
-      hobby: { unit_amount: 1900, name: 'Huggy Hobby' },
-      pro:   { unit_amount: 4900, name: 'Huggy Pro' },
-      scale: { unit_amount: 14900, name: 'Huggy Scale' },
+      pro:   { unit_amount: 2500, name: 'Huggy Pro' },
+      scale: { unit_amount: 6900, name: 'Huggy Scale' },
+      business: { unit_amount: 12900, name: 'Huggy Business' },
     };
     const selected = planMeta[plan] || planMeta.pro;
     const priceId  = priceIds[plan];
