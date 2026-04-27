@@ -1296,22 +1296,22 @@ export default function App() {
               {/* Sub-navigation Tabs — Central Elite Navigation */}
               <div className="hidden md:flex items-center bg-slate-100/50 dark:bg-white/[0.03] p-1 rounded-2xl border border-slate-200/50 dark:border-white/5 mx-4">
                 {[
-                  { id: 'preview', label: 'Aperçu', icon: <Eye size={14} /> },
-                  { id: 'code', label: 'Code', icon: <Code2 size={14} /> },
-                  { id: 'database', label: 'Données', icon: <Database size={14} /> },
-                  { id: 'analytics', label: 'Analytics', icon: <BarChart3 size={14} /> },
+                  { id: 'preview', label: 'Aperçu', icon: <Eye size={16} /> },
+                  { id: 'code', label: 'Code', icon: <Code2 size={16} /> },
+                  { id: 'database', label: 'Données', icon: <Database size={16} /> },
+                  { id: 'analytics', label: 'Analytics', icon: <BarChart3 size={16} /> },
                 ].map((tab) => (
                   <button
                     key={tab.id}
                     onClick={() => setActiveStudioTab(tab.id as any)}
-                    className={`flex items-center gap-2 px-4 py-1.5 rounded-xl text-[11px] font-black uppercase tracking-widest transition-all ${
+                    className={`flex items-center justify-center w-10 h-10 rounded-xl transition-all ${
                       activeStudioTab === tab.id 
-                        ? 'bg-white dark:bg-white/10 text-blue-600 dark:text-blue-400 shadow-sm' 
+                        ? 'bg-white dark:bg-white/10 text-blue-600 dark:text-blue-400 shadow-sm border border-slate-200/50 dark:border-white/10' 
                         : 'text-slate-400 hover:text-slate-600 dark:hover:text-slate-200'
                     }`}
+                    title={tab.label}
                   >
                     {tab.icon}
-                    {tab.label}
                   </button>
                 ))}
               </div>
@@ -1401,7 +1401,7 @@ export default function App() {
         {activeStudioTab === 'preview' && (
           <>
             {/* Left Sidebar */}
-        <aside className={`${isSidebarCollapsed ? 'w-16' : 'w-[320px]'} border-r border-slate-200 bg-white flex flex-col shrink-0 transition-all duration-300 ease-in-out`}>
+        <aside className={`${isSidebarCollapsed ? 'w-16' : 'w-[300px]'} border-r border-slate-200 bg-white flex flex-col shrink-0 transition-all duration-300 ease-in-out`}>
           <div className="p-4 border-b border-slate-100 flex items-center justify-between relative min-h-[57px]">
             {!isSidebarCollapsed && (
               <div className="flex items-center gap-2">
@@ -1444,7 +1444,7 @@ export default function App() {
             {activeSidebarTab === 'chat' ? (
               <>
                 {/* ── Chat Messages ── */}
-                <div className="flex-1 overflow-y-auto p-3 space-y-3 scrollbar-hide">
+                <div className="flex-1 overflow-y-auto p-2.5 space-y-2.5 scrollbar-hide">
                   {messages.length === 0 && !isGenerating && (
                     <div className="flex flex-col items-center justify-center h-full gap-5 text-center px-4">
                       <div className="relative">
@@ -1652,7 +1652,7 @@ export default function App() {
                       Upgrade
                     </button>
                   </div>
-                  <div className="px-3 pb-3">
+                  <div className="px-2 pb-2">
                     <HuggyChatInput
                     onSend={(prompt) => {
                       if (prompt) {
