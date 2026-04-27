@@ -2,7 +2,9 @@
 
 import { useState, useRef, useEffect, useCallback } from "react";
 
-type ToolStatus = "running" | "done" | "error";
+import { StreamEvent } from "../../types/streaming";
+
+type ToolStatus = "running" | "done" | "error" | "pending" | "success";
 
 interface ToolPill {
   id: string;
@@ -25,15 +27,6 @@ interface StreamMessage {
 }
 
 type AgentStatus = "idle" | "planning" | "executing" | "writing" | "done";
-
-export interface StreamEvent {
-  type: "text" | "tool_start" | "tool_result" | "done" | "error";
-  delta?: string;
-  tool?: string;
-  input?: Record<string, unknown>;
-  result?: { success: boolean; output?: string; error?: string };
-  message?: string;
-}
 
 const TOOL_ICONS: Record<string, string> = {
   file_read: "◎", file_create: "+", file_edit: "✎",
@@ -198,8 +191,9 @@ export function FullAppStream({ onDone, initialPrompt, onSend }: FullAppStreamPr
     let fileCount = 0;
 
     for await (const event of streamEvents) {
-      if (event.type === "text" && event.delta) {
-        agentText += event.delta;
+      if ((event.type === "chunk" || event.type === "text") && (event.content || event.delta)) {
+        const text = event.content || event.delta || "";
+        agentText += text;
         setStatus("writing");
         setMessages((p) => {
           const last = p[p.length - 1];
@@ -208,44 +202,55 @@ export function FullAppStream({ onDone, initialPrompt, onSend }: FullAppStreamPr
           }
           return [...p, { role: "agent", text: agentText }];
         });
-      } else if (event.type === "tool_start" && event.tool && event.input) {
+      } else if ((event.type === "tool_start" || event.type === "agent_start") && (event.tool || event.agent)) {
         setStatus("executing");
-        const id = uid();
-        toolMap.set(event.tool, id);
-        const label =
-          (event.input.path as string) ??
-          (event.input.command as string) ??
-          (event.input.packages as string[])?.join(", ") ??
-          event.tool;
+        const id = event.agent || event.tool || uid();
+        const toolName = event.agent || event.tool || "tool";
+        toolMap.set(toolName, id);
+        
+        const label = event.label || 
+          (event.input?.path as string) ||
+          (event.input?.command as string) ||
+          (event.input?.packages as string[])?.join(", ") ||
+          toolName;
+
         setMessages((p) => [
           ...p,
-          { role: "agent", tools: [{ id, name: event.tool!, label, status: "running" }] },
+          { role: "agent", tools: [{ id, name: toolName, label, status: "running" }] },
         ]);
-        if (event.tool === "file_create" || event.tool === "file_edit") {
-          setFiles((p) => {
-            const path = event.input!.path as string;
-            const category = path.includes("types") ? "type" : path.includes("components") ? "component" : "config";
-            const exists = p.find((f) => f.path === path);
-            if (exists) return p.map((f) => f.path === path ? { ...f, state: event.tool === "file_create" ? "new" : "editing" } : f);
-            return [...p, { path, state: event.tool === "file_create" ? "new" : "editing", category: category as any }];
-          });
-          fileCount++;
-          setProgress(Math.min(90, fileCount * 10)); // pseudo progress
+        
+        // Simuler des fichiers pour le visuel si c'est le codeur
+        if (toolName === "coder" || event.tool === "file_create") {
+           // On verra plus tard comment extraire les fichiers réels s'ils arrivent progressivement
         }
-      } else if (event.type === "tool_result" && event.tool) {
-        const id = toolMap.get(event.tool);
+      } else if ((event.type === "tool_result" || event.type === "agent_done") && (event.tool || event.agent)) {
+        const toolName = event.agent || event.tool || "";
+        const id = toolMap.get(toolName);
         setMessages((p) =>
           p.map((m) =>
             m.tools
-              ? { ...m, tools: m.tools.map((t) => t.id === id ? { ...t, status: event.result?.success ? "done" : "error" } : t) }
+              ? { ...m, tools: m.tools.map((t) => t.id === id ? { ...t, status: "success" } : t) }
               : m
           )
         );
+        if (toolName === "pm") setStatus("executing");
       } else if (event.type === "done") {
         setProgress(100);
         setStatus("done");
         setFiles((p) => p.map((f) => ({ ...f, state: "done" })));
-        onDone?.(files);
+        
+        // Mettre à jour les fichiers réels si présents
+        if (event.files) {
+          const newFiles: FileNode[] = event.files.map(f => ({
+            path: f.path,
+            state: "done",
+            category: f.path.includes("types") ? "type" : f.path.includes("components") ? "component" : "config"
+          }));
+          setFiles(newFiles);
+          onDone?.(newFiles);
+        } else {
+          onDone?.(files);
+        }
         runningRef.current = false;
       } else if (event.type === "error") {
         setStatus("idle");

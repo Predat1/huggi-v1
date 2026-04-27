@@ -2,6 +2,7 @@
  * Service de streaming AI avec support SSE
  * Génère des réponses en temps réel avec callbacks
  */
+import { StreamEvent } from '../types/streaming';
 
 export type StreamOptions = {
   onChunk?: (chunk: string) => void;
@@ -275,5 +276,70 @@ export class StreamController {
 
   getFullText(): string {
     return this.fullText;
+  }
+}
+
+/**
+ * Stream une génération agentique complexe (Expert Mode)
+ */
+export async function* streamAgenticGeneration(
+  prompt: string,
+  params: {
+    currentCode?: string;
+    projectId?: string | null;
+    chatHistory?: { role: string; content: string }[];
+    userId?: string;
+    userEmail?: string;
+  },
+  signal?: AbortSignal,
+): AsyncIterable<StreamEvent> {
+  const response = await fetch('/api/generate-app/agentic-stream', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      prompt,
+      currentCode: params.currentCode,
+      projectId: params.projectId,
+      chatHistory: params.chatHistory,
+      userId: params.userId,
+      userEmail: params.userEmail,
+    }),
+    signal,
+  });
+
+  if (!response.ok) {
+    const errorData = await response.json().catch(() => ({}));
+    throw new Error(errorData.error || `HTTP ${response.status}`);
+  }
+
+  const reader = response.body?.getReader();
+  if (!reader) return;
+
+  const decoder = new TextDecoder();
+  let buffer = '';
+
+  try {
+    while (true) {
+      const { done, value } = await reader.read();
+      if (done) break;
+
+      buffer += decoder.decode(value, { stream: true });
+      const lines = buffer.split('\n');
+      buffer = lines.pop() ?? '';
+
+      for (const line of lines) {
+        const trimmed = line.trim();
+        if (trimmed.startsWith('data: ')) {
+          try {
+            const data = JSON.parse(trimmed.slice(6));
+            yield data as StreamEvent;
+          } catch (e) {
+            console.warn('Erreur de parsing SSE:', e);
+          }
+        }
+      }
+    }
+  } finally {
+    reader.releaseLock();
   }
 }

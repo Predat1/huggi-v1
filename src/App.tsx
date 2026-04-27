@@ -63,7 +63,7 @@ import JSZip from 'jszip';
 import { saveAs } from 'file-saver';
 import { getAuthUser, onAuthStateChange, signIn, signUp, signOut } from './lib/supabaseClient';
 import { FullAppStream, StreamEvent } from './components/streaming';
-import { StreamController } from './services/streamingService';
+import { StreamController, streamAgenticGeneration } from './services/streamingService';
 import { SettingsModal } from './components/SettingsModal';
 import { useCollaboration } from './hooks/useCollaboration';
 import { useVersions } from './hooks/useVersions';
@@ -344,6 +344,8 @@ export default function App() {
   const [showMoreMenu, setShowMoreMenu] = useState(false);
   const [showProjectMenu, setShowProjectMenu] = useState(false);
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
+  const [isMagicMode, setIsMagicMode] = useState(true);
+  const [showMagicStream, setShowMagicStream] = useState(false);
   const [toast, setToast] = useState<{message: string, type: 'success' | 'info'} | null>(null);
 
   const showToast = (message: string, type: 'success' | 'info' = 'success') => {
@@ -814,6 +816,12 @@ export default function App() {
 
     setMessages(prev => [...prev, newUserMsg]);
     setInputValue('');
+
+    if (isMagicMode) {
+      setShowMagicStream(true);
+      return;
+    }
+
     streamCancelRef.current?.();
     streamCancelRef.current = null;
     setIsGenerating(true);
@@ -1102,6 +1110,42 @@ export default function App() {
           >
             <div className={`w-2 h-2 rounded-full ${toast.type === 'success' ? 'bg-emerald-400' : 'bg-blue-400'} animate-pulse shadow-[0_0_10px_rgba(52,211,153,0.5)]`} />
             <span className="text-[11px] font-black uppercase tracking-widest">{toast.message}</span>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      <AnimatePresence>
+        {showMagicStream && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-[300] bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 sm:p-10"
+          >
+            <div className="w-full max-w-6xl h-full max-h-[800px] bg-white dark:bg-[#070708] rounded-[40px] shadow-[0_40px_100px_rgba(0,0,0,0.6)] border border-white/10 overflow-hidden relative">
+              <button 
+                onClick={() => setShowMagicStream(false)}
+                className="absolute top-6 right-6 z-[310] p-3 rounded-2xl bg-slate-100 dark:bg-white/5 text-slate-500 hover:text-slate-900 dark:hover:text-white transition-all shadow-xl"
+              >
+                <X size={24} />
+              </button>
+              <FullAppStream 
+                initialPrompt={inputValue}
+                onDone={(files) => {
+                  setShowMagicStream(false);
+                  showToast('Génération terminée avec succès !', 'success');
+                }}
+                onSend={async (prompt) => {
+                  return streamAgenticGeneration(prompt, {
+                    projectId,
+                    userId: user?.id,
+                    userEmail: user?.email,
+                    chatHistory: messages.slice(-20).map(m => ({ role: m.sender === 'VOUS' ? 'user' : 'assistant', content: m.text })),
+                    currentCode: filesMap[PREVIEW_ENTRY]
+                  });
+                }}
+              />
+            </div>
           </motion.div>
         )}
       </AnimatePresence>
@@ -1494,6 +1538,18 @@ export default function App() {
                 {/* ── Chat Input ── */}
                 <div className="shrink-0 p-3 bg-gradient-to-t from-white via-white to-white/80 dark:from-[#0d0d0d] dark:via-[#0d0d0d] dark:to-transparent border-t border-slate-100/50 dark:border-white/5">
                   <div className="flex items-center gap-1.5 mb-2">
+                    <button
+                      type="button"
+                      onClick={() => setIsMagicMode(!isMagicMode)}
+                      className={`flex items-center gap-1.5 px-2.5 py-1 text-[10px] font-bold border rounded-lg transition-all ${
+                        isMagicMode 
+                          ? 'bg-blue-600 border-blue-600 text-white shadow-lg shadow-blue-600/20' 
+                          : 'bg-slate-50 dark:bg-white/5 border-slate-200 dark:border-white/10 text-slate-500 dark:text-slate-400'
+                      }`}
+                    >
+                      <Zap size={10} fill={isMagicMode ? "currentColor" : "none"} />
+                      Magic Mode {isMagicMode ? 'ON' : 'OFF'}
+                    </button>
                     <button
                       type="button"
                       onClick={() => setShowTemplates(true)}
