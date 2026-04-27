@@ -33,6 +33,14 @@ const AVATAR_COLORS = [
   '#7F77DD', '#378ADD', '#1D9E75', '#EF9F27', '#D4537E',
 ];
 
+const TYPEWRITER_EXAMPLES = [
+  "Build a SaaS dashboard for startups...",
+  "Create a CRM for real estate with client tracking...",
+  "Design a premium portfolio with dark mode...",
+  "Generate a full-stack e-commerce store...",
+  "Build a collaboration tool like Slack...",
+];
+
 function TagPill(props: any) {
   const { tag, onRemove } = props;
   return (
@@ -80,7 +88,35 @@ export default function HuggyChatInput({
   const [value, setValue] = useState('');
   const [tags, setTags] = useState<ChatTag[]>(defaultTags);
   const [isListening, setIsListening] = useState(false);
+  const [placeholderText, setPlaceholderText] = useState('');
+  const [placeholderIndex, setPlaceholderIndex] = useState(0);
+  const [isDeleting, setIsDeleting] = useState(false);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
+
+  // Typewriter effect
+  useEffect(() => {
+    const currentFull = TYPEWRITER_EXAMPLES[placeholderIndex];
+    let timeout: any;
+
+    if (isDeleting) {
+      timeout = setTimeout(() => {
+        setPlaceholderText(prev => prev.slice(0, -1));
+        if (placeholderText === '') {
+          setIsDeleting(false);
+          setPlaceholderIndex((prev) => (prev + 1) % TYPEWRITER_EXAMPLES.length);
+        }
+      }, 30);
+    } else {
+      timeout = setTimeout(() => {
+        setPlaceholderText(currentFull.slice(0, placeholderText.length + 1));
+        if (placeholderText === currentFull) {
+          timeout = setTimeout(() => setIsDeleting(true), 2500);
+        }
+      }, 70);
+    }
+
+    return () => clearTimeout(timeout);
+  }, [placeholderText, isDeleting, placeholderIndex]);
 
   // Auto-resize textarea
   useEffect(() => {
@@ -161,7 +197,7 @@ export default function HuggyChatInput({
             onChange={(e) => setValue(e.target.value)}
             onKeyDown={handleKeyDown}
             disabled={isLoading}
-            placeholder={placeholder}
+            placeholder={placeholderText}
             rows={1}
             className="w-full bg-transparent text-slate-900 dark:text-white text-[16px] sm:text-[18px] font-medium placeholder-slate-400 dark:placeholder-slate-500 resize-none focus:outline-none leading-relaxed disabled:opacity-50"
             style={{ caretColor: '#6366F1', minHeight: '40px' }}
