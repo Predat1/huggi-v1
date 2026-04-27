@@ -112,7 +112,7 @@ export default function HuggyChatInput({
     <div className={`flex flex-col items-center gap-1.5 w-full ${className}`}>
       {/* ── Main input card ── */}
       <div className="relative w-full p-[2px] rounded-[32px] overflow-hidden shadow-xl group/input">
-        <div className="absolute inset-[-1000%] animate-[spin_3s_linear_infinite] bg-[conic-gradient(from_90deg_at_50%_50%,#3b82f6_0%,#6366f1_25%,#a855f7_50%,#6366f1_75%,#3b82f6_100%)] opacity-60 group-focus-within/input:opacity-100 transition-opacity duration-500" />
+        <div className="absolute inset-[-1000%] animate-[spin_8s_linear_infinite] bg-[conic-gradient(from_0deg,#4285F4,#9B72CB,#D96570,#F4AF40,#9B72CB,#4285F4)] opacity-50 group-focus-within/input:opacity-100 transition-opacity duration-700" />
         <div
           className="w-full h-full rounded-[30px] overflow-hidden relative bg-white dark:bg-[#1E1E1E] border border-slate-200 dark:border-white/10 transition-colors duration-300"
         >
