@@ -60,6 +60,25 @@ const PLANS = [
     cta: 'Passer à Scale',
     ctaAction: 'scale',
   },
+  {
+    id: 'business',
+    name: 'Business',
+    icon: Building2,
+    monthlyPrice: 129,
+    desc: 'Pour les agences et les équipes en pleine croissance.',
+    color: 'blue',
+    hi: false,
+    feats: [
+      'Crédits illimités (Fair use)',
+      'Accès API complet',
+      'Marque blanche totale',
+      'Support dédié 24/7',
+      'SLA de 99.9%',
+      'SSO & Sécurité avancée',
+    ],
+    cta: 'Contacter la vente',
+    ctaAction: 'business',
+  },
 ];
 
 type PricingSectionProps = {
@@ -122,7 +141,7 @@ export default function PricingSection({ onCheckout, onOpenStudio, userId, isChe
       </div>
 
       {/* Cards */}
-      <div className="flex flex-wrap justify-center gap-6 max-w-6xl mx-auto px-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 max-w-[90rem] mx-auto px-4">
         {PLANS.map((p) => {
           const Icon = p.icon;
           return (

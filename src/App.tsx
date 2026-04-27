@@ -1444,7 +1444,7 @@ export default function App() {
             {activeSidebarTab === 'chat' ? (
               <>
                 {/* ── Chat Messages ── */}
-                <div className="flex-1 overflow-y-auto p-4 space-y-5 scrollbar-hide">
+                <div className="flex-1 overflow-y-auto p-3 space-y-3 scrollbar-hide">
                   {messages.length === 0 && !isGenerating && (
                     <div className="flex flex-col items-center justify-center h-full gap-5 text-center px-4">
                       <div className="relative">
@@ -1652,7 +1652,8 @@ export default function App() {
                       Upgrade
                     </button>
                   </div>
-                  <HuggyChatInput
+                  <div className="px-3 pb-3">
+                    <HuggyChatInput
                     onSend={(prompt) => {
                       if (prompt) {
                         setInputValue(prompt);

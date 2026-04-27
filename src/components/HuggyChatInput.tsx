@@ -190,7 +190,7 @@ export default function HuggyChatInput({
         )}
 
         {/* Textarea Area */}
-        <div className="px-6 pt-6 sm:px-7 sm:pt-7 pb-3">
+        <div className="px-5 pt-4 sm:px-6 sm:pt-5 pb-2">
           <textarea
             ref={textareaRef}
             value={value}
@@ -199,13 +199,13 @@ export default function HuggyChatInput({
             disabled={isLoading}
             placeholder={placeholderText}
             rows={1}
-            className="w-full bg-transparent text-slate-900 dark:text-white text-[16px] sm:text-[18px] font-medium placeholder-slate-400 dark:placeholder-slate-500 resize-none focus:outline-none leading-relaxed disabled:opacity-50"
-            style={{ caretColor: '#6366F1', minHeight: '40px' }}
+            className="w-full bg-transparent text-slate-900 dark:text-white text-[14px] sm:text-[15px] font-medium placeholder-slate-400 dark:placeholder-slate-500 resize-none focus:outline-none leading-relaxed disabled:opacity-50"
+            style={{ caretColor: '#6366F1', minHeight: '32px' }}
           />
         </div>
 
         {/* ── Toolbar (Minimal) ── */}
-        <div className="flex items-center justify-between px-4 pb-4 sm:px-6 sm:pb-6 pt-1">
+        <div className="flex items-center justify-between px-3 pb-3 sm:px-4 sm:pb-4 pt-1">
           {/* Left Toolbar */}
           <div className="flex items-center">
             {/* Plus */}
@@ -240,7 +240,7 @@ export default function HuggyChatInput({
             <button
               onClick={handleSend}
               disabled={!canSend}
-              className={`w-11 h-11 sm:w-14 sm:h-14 min-w-[44px] sm:min-w-[56px] min-h-[44px] sm:min-h-[56px] rounded-full flex items-center justify-center transition-all ${
+              className={`w-10 h-10 sm:w-11 sm:h-11 min-w-[40px] sm:min-w-[44px] min-h-[40px] sm:min-h-[44px] rounded-full flex items-center justify-center transition-all ${
                 canSend 
                 ? 'bg-[#4F46E5] hover:bg-[#3730A3] text-white shadow-lg shadow-indigo-500/20 active:scale-95' 
                 : 'bg-slate-100 dark:bg-white/5 text-slate-300 dark:text-slate-600 cursor-not-allowed'
