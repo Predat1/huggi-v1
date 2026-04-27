@@ -11,6 +11,7 @@ export function createPool() {
     url.includes('ssl=true') ||
     url.includes('supabase.co') ||
     url.includes('railway.app') ||
+    url.includes('.onrender.com') ||
     process.env.DATABASE_SSL === 'true';
 
   // Default to secure TLS verification when SSL is enabled.

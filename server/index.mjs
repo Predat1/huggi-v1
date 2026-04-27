@@ -123,7 +123,7 @@ const stripe = process.env.STRIPE_SECRET_KEY ? new Stripe(process.env.STRIPE_SEC
 
 const app = express();
 app.disable('x-powered-by');
-app.set('trust proxy', 1); // Railway / reverse proxy
+app.set('trust proxy', 1); // Render / Railway / reverse proxy
 
 const httpServer = createServer(app);
 const wss = new WebSocketServer({ server: httpServer });
@@ -351,7 +351,7 @@ app.use((req, res, next) => {
 /** Middleware: Custom Domains Router */
 app.use(async (req, res, next) => {
   const host = (req.get('host') || '').split(':')[0];
-  if (!pool || host === 'localhost' || host === '127.0.0.1' || host.endsWith('.railway.app') || host.endsWith('huggy.sbs') || (previewRootDomain && host.endsWith(previewRootDomain))) {
+  if (!pool || host === 'localhost' || host === '127.0.0.1' || host.endsWith('.railway.app') || host.endsWith('.onrender.com') || host.endsWith('huggy.sbs') || (previewRootDomain && host.endsWith(previewRootDomain))) {
     return next();
   }
   
