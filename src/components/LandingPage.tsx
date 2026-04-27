@@ -295,23 +295,23 @@ export default function LandingPage({ accent, onOpenStudio, onLogin, userId }: L
 
       <div id="top" className="overflow-y-auto">
         <div className="max-w-6xl mx-auto px-6">
-          <main className="pt-20 pb-12">
+          <main className="pt-4 pb-12">
             <div className="text-center">
               <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-blue-50 border border-blue-100 text-blue-600 text-xs font-black tracking-wide">
                 <Sparkles size={14} />
                 AI-POWERED APP BUILDER
               </div>
 
-              <h1 className="mt-16 text-4xl sm:text-6xl lg:text-[76px] leading-none font-black tracking-tight">
+              <h1 className="mt-4 text-4xl sm:text-6xl lg:text-[76px] leading-none font-black tracking-tight">
                 <span className="block text-[#0F172A] dark:text-white">Build any SaaS</span>
                 <span className="block text-blue-600 italic">instantly.</span>
               </h1>
 
-              <p className="mt-8 mx-auto max-w-xl text-slate-500 dark:text-slate-400 text-base leading-relaxed">
+              <p className="mt-3 mx-auto max-w-xl text-slate-500 dark:text-slate-400 text-base leading-relaxed">
                 Describe your project, Huggy does the rest. AI-generated code, UI, dashboards, and data tables in seconds.
               </p>
 
-              <div className="mt-14 max-w-3xl mx-auto">
+              <div className="mt-4 max-w-3xl mx-auto">
                 <div className="rounded-3xl overflow-hidden shadow-2xl shadow-slate-900/10 dark:shadow-black/40 bg-white dark:bg-[#111] border border-slate-100 dark:border-white/5">
                   <div className="p-6">
                     <HuggyChatInput
