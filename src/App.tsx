@@ -336,6 +336,8 @@ export default function App() {
   const [showDebugStream, setShowDebugStream] = useState(false);
   const [debugPrompt, setDebugPrompt] = useState("");
   const [activeStudioTab, setActiveStudioTab] = useState<'preview' | 'code' | 'database' | 'analytics'>('preview');
+  const [collabStreamEvents, setCollabStreamEvents] = useState<StreamEvent[]>([]);
+  const [isSpectating, setIsSpectating] = useState(false);
   const [toast, setToast] = useState<{message: string, type: 'success' | 'info'} | null>(null);
 
   const showToast = (message: string, type: 'success' | 'info' = 'success') => {
@@ -663,6 +665,14 @@ export default function App() {
     user?.id,
     studioMode,
     (path, content) => setFilesMap(prev => ({ ...prev, [path]: content })),
+    (event) => {
+      // Received a stream event from a peer — spectate mode
+      setIsSpectating(true);
+      setCollabStreamEvents(prev => [...prev, event]);
+      if (event.type === 'done') {
+        setTimeout(() => setIsSpectating(false), 2000);
+      }
+    },
   );
 
   // ── Version History (hook) ────────────────────────────────────────────
@@ -1105,7 +1115,7 @@ export default function App() {
       </AnimatePresence>
 
       <AnimatePresence>
-        {showMagicStream && (
+        {(showMagicStream || (isSpectating && collabStreamEvents.length > 0)) && (
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
@@ -1113,19 +1123,28 @@ export default function App() {
             className="fixed inset-0 z-[300] bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 sm:p-10"
           >
             <div className="w-full max-w-6xl h-full max-h-[800px] bg-white dark:bg-[#070708] rounded-[40px] shadow-[0_40px_100px_rgba(0,0,0,0.6)] border border-white/10 overflow-hidden relative">
+              {isSpectating && (
+                <div className="absolute top-6 left-6 z-[310] flex items-center gap-2 px-4 py-2 rounded-2xl bg-purple-500/10 border border-purple-500/20 backdrop-blur-sm">
+                  <span className="w-2 h-2 rounded-full bg-purple-400 animate-pulse" />
+                  <span className="text-[10px] font-black text-purple-400 uppercase tracking-widest">Mode Spectateur — Un collaborateur génère…</span>
+                </div>
+              )}
               <button 
-                onClick={() => setShowMagicStream(false)}
+                onClick={() => { setShowMagicStream(false); setIsSpectating(false); setCollabStreamEvents([]); }}
                 className="absolute top-6 right-6 z-[310] p-3 rounded-2xl bg-slate-100 dark:bg-white/5 text-slate-500 hover:text-slate-900 dark:hover:text-white transition-all shadow-xl"
               >
                 <X size={24} />
               </button>
               <FullAppStream 
                 initialPrompt={inputValue}
+                externalEvents={isSpectating ? collabStreamEvents : undefined}
                 onDone={(files) => {
                   setShowMagicStream(false);
+                  setIsSpectating(false);
+                  setCollabStreamEvents([]);
                   showToast('Génération terminée avec succès !', 'success');
                 }}
-                onSend={async (prompt) => {
+                onSend={isSpectating ? undefined : async (prompt) => {
                   return streamAgenticGeneration(prompt, {
                     projectId,
                     userId: user?.id,
@@ -1162,6 +1181,7 @@ export default function App() {
                     let updatedMap = { ...filesMap };
                     for (const f of files) {
                       updatedMap[f.path] = f.content;
+                      broadcastFileUpdate(f.path, f.content);
                     }
                     setFilesMap(updatedMap);
                     showToast('Correction appliquée avec succès !', 'success');
@@ -1270,6 +1290,7 @@ export default function App() {
                   </div>
                 </div>
               </div>
+              </div>
 
               {/* Sub-navigation Tabs — Central Elite Navigation */}
               <div className="hidden md:flex items-center bg-slate-100/50 dark:bg-white/[0.03] p-1 rounded-2xl border border-slate-200/50 dark:border-white/5 mx-4">
@@ -1294,6 +1315,14 @@ export default function App() {
                 ))}
               </div>
 
+
+              {/* Online Collaborators */}
+              {onlineUsers > 1 && (
+                <div className="hidden md:flex items-center gap-2 px-3 py-1.5 rounded-2xl bg-emerald-50 dark:bg-emerald-500/10 border border-emerald-200/50 dark:border-emerald-500/20">
+                  <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
+                  <span className="text-[10px] font-black text-emerald-600 dark:text-emerald-400 uppercase tracking-widest">{onlineUsers} en ligne</span>
+                </div>
+              )}
 
         {/* Right: Actions */}
         <div className="flex items-center gap-2 sm:gap-3">
@@ -2279,10 +2308,10 @@ export default function App() {
               </AnimatePresence>
             </div>
           </div>
+          </main>
 
           {/* Resize Handle (Visual only) */}
           <div className="absolute left-0 top-1/2 -translate-y-1/2 w-1 h-8 bg-slate-200 rounded-full -ml-0.5 cursor-col-resize hover:bg-blue-400 transition-colors z-20" />
-            </div>
           </>
         )}
 

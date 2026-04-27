@@ -8,6 +8,39 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const repoRoot = path.join(__dirname, '..', '..');
 
 /**
+ * Extracts React Router paths from files content.
+ * @param {Array<{ path: string, content: string }>} files
+ * @returns {string[]}
+ */
+function extractRoutesFromFiles(files) {
+  const routes = new Set(['/']);
+  for (const f of files) {
+    if (!f.path.endsWith('.tsx') && !f.path.endsWith('.jsx')) continue;
+    const routeRegex = /<Route[^>]*path=["']([^"']+)["']/g;
+    let match;
+    while ((match = routeRegex.exec(f.content)) !== null) {
+      const p = match[1];
+      if (!p.includes('*') && !p.includes(':')) {
+        routes.add(p.startsWith('/') ? p : `/${p}`);
+      }
+    }
+  }
+  return Array.from(routes);
+}
+
+/**
+ * Generates sitemap.xml content.
+ * @param {string} domain
+ * @param {string[]} routes
+ * @returns {string}
+ */
+function generateSitemapXml(domain, routes) {
+  const baseUrl = domain ? `https://${domain}` : 'https://votre-domaine.com';
+  const urls = routes.map(r => `  <url>\n    <loc>${baseUrl}${r}</loc>\n    <changefreq>daily</changefreq>\n    <priority>${r === '/' ? '1.0' : '0.8'}</priority>\n  </url>`).join('\n');
+  return `<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n${urls}\n</urlset>`;
+}
+
+/**
  * Build user files into {html, bundle} strings.
  * @param {Array<{ path: string, content: string }>} files
  * @param {Array<{key: string, value: string}>} secrets
@@ -91,7 +124,13 @@ export async function buildUserSite(files, secrets = [], showBadge = false) {
 </body>
 </html>`;
 
-    return { html, bundle };
+    // Génération du sitemap
+    const customDomainSecret = secrets.find(s => s.key === 'VITE_CUSTOM_DOMAIN');
+    const domain = customDomainSecret ? customDomainSecret.value : '';
+    const routes = extractRoutesFromFiles(files);
+    const sitemap = generateSitemapXml(domain, routes);
+
+    return { html, bundle, sitemap };
   } finally {
     await fs.rm(workDir, { recursive: true, force: true });
   }
@@ -102,12 +141,13 @@ export async function buildUserSite(files, secrets = [], showBadge = false) {
  * @param {Array<{ path: string, content: string }>} files
  * @param {string} outDir
  * @param {Array<{key: string, value: string}>} secrets
- * @returns {Promise<{html: string, bundle: string}>}
+ * @returns {Promise<{html: string, bundle: string, sitemap: string}>}
  */
 export async function buildUserSiteToDir(files, outDir, secrets = [], showBadge = false) {
-  const { html, bundle } = await buildUserSite(files, secrets, showBadge);
+  const { html, bundle, sitemap } = await buildUserSite(files, secrets, showBadge);
   await fs.mkdir(outDir, { recursive: true });
   await fs.writeFile(path.join(outDir, 'index.html'), html, 'utf8');
   await fs.writeFile(path.join(outDir, 'bundle.js'), bundle, 'utf8');
-  return { html, bundle };
+  await fs.writeFile(path.join(outDir, 'sitemap.xml'), sitemap, 'utf8');
+  return { html, bundle, sitemap };
 }

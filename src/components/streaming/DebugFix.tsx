@@ -177,14 +177,12 @@ interface DebugFixStreamProps {
   onDone?: (files?: { path: string; content: string }[]) => void;
   initialPrompt?: string;
   onSend?: (prompt: string) => Promise<AsyncIterable<StreamEvent> | undefined>;
+  externalEvents?: StreamEvent[];
 }
-
-export function DebugFixStream({ onDone, initialPrompt, streamEvents }: DebugFixStreamProps) {
+ 
+export function DebugFixStream({ onDone, initialPrompt, onSend, externalEvents }: DebugFixStreamProps) {
   const [messages, setMessages] = useState<StreamMessage[]>([]);
-  const [files, setFiles] = useState<FileNode[]>([
-    { path:"src/hooks/useFetch.ts", state:"done" },
-    { path:"src/app/page.tsx", state:"done" },
-  ]);
+  const [files, setFiles] = useState<FileNode[]>([]);
   const [status, setStatus] = useState<AgentStatus>("idle");
   const [showDiagnosis, setShowDiagnosis] = useState(false);
   const [showDiff, setShowDiff] = useState(false);
@@ -192,97 +190,103 @@ export function DebugFixStream({ onDone, initialPrompt, streamEvents }: DebugFix
   const [prompt, setPrompt] = useState(initialPrompt ?? "Mon hook useFetch plante quand le composant est démonté");
   const chatRef = useRef<HTMLDivElement>(null);
   const runningRef = useRef(false);
-
+  const lastProcessedRef = useRef(0);
+ 
   useEffect(() => {
     chatRef.current?.scrollTo({ top:chatRef.current.scrollHeight, behavior:"smooth" });
   }, [messages, status, showDiagnosis, showDiff, showTypecheck]);
-
+ 
+  const handleEvent = useCallback((event: StreamEvent) => {
+    if (event.type === "chunk" || event.type === "text") {
+      const text = event.content || event.delta || "";
+      setStatus("writing");
+      setMessages((p) => {
+        const last = p[p.length - 1];
+        if (last?.role === "agent" && last.tools === undefined) {
+          return [...p.slice(0, -1), { role: "agent", text: (last.text || "") + text, isFixed: status === "fixing" }];
+        }
+        return [...p, { role: "agent", text: text }];
+      });
+    } else if (event.type === "tool_start" || event.type === "agent_start") {
+      const toolName = event.agent || event.tool || "tool";
+      const id = uid();
+      
+      if (toolName === "pm") setStatus("diagnosing");
+      else if (toolName === "coder") setStatus("fixing");
+      else setStatus("reading");
+ 
+      const label = event.label || 
+        (event.input?.path as string) ||
+        (event.input?.command as string) ||
+        toolName;
+ 
+      setMessages((p) => [
+        ...p,
+        { role: "agent", tools: [{ id, name: toolName, label, status: "running" }] },
+      ]);
+ 
+      if (toolName === "coder" || event.tool === "file_edit") {
+        setFiles(p => {
+           const path = (event.input?.path as string) || "file";
+           if (p.find(f => f.path === path)) return p.map(f => f.path === path ? { ...f, state: "editing" } : f);
+           return [...p, { path, state: "editing" }];
+        });
+      }
+    } else if (event.type === "tool_result" || event.type === "agent_done") {
+      const toolName = event.agent || event.tool || "";
+      setMessages((p) => {
+        const newMsg = [...p];
+        for (let i = newMsg.length - 1; i >= 0; i--) {
+          if (newMsg[i].tools) {
+            newMsg[i].tools = newMsg[i].tools!.map(t => t.name === toolName ? { ...t, status: "done" } : t);
+            break;
+          }
+        }
+        return newMsg;
+      });
+      if (toolName === "pm") setShowDiagnosis(true);
+      if (toolName === "coder") {
+         setShowDiff(true);
+         setShowTypecheck(true);
+         setFiles(p => p.map(f => f.state === "editing" ? { ...f, state: "fixed" } : f));
+      }
+    } else if (event.type === "done") {
+      setStatus("done");
+      setFiles((p) => p.map((f) => ({ ...f, state: "done" })));
+      onDone?.(event.files);
+      runningRef.current = false;
+    }
+  }, [status, onDone]);
+ 
+  useEffect(() => {
+    if (externalEvents && externalEvents.length > lastProcessedRef.current) {
+      const newEvents = externalEvents.slice(lastProcessedRef.current);
+      newEvents.forEach(handleEvent);
+      lastProcessedRef.current = externalEvents.length;
+    }
+  }, [externalEvents, handleEvent]);
+ 
   const runRealStream = useCallback(async () => {
     if (runningRef.current || !onSend) return;
     runningRef.current = true;
-
+ 
     setMessages([{ role: "user", text: prompt }]);
     setFiles([]);
     setShowDiagnosis(false);
     setShowDiff(false);
     setShowTypecheck(false);
     setStatus("reading");
-
+ 
     const streamEvents = await onSend(prompt);
     if (!streamEvents) {
       runningRef.current = false;
       return;
     }
-
-    let diagText = "";
-    let agentText = "";
-    const toolMap = new Map<string, string>();
-
+ 
     for await (const event of streamEvents) {
-      if (event.type === "chunk" || event.type === "text") {
-        const text = event.content || event.delta || "";
-        agentText += text;
-        setStatus("writing");
-        setMessages((p) => {
-          const last = p[p.length - 1];
-          if (last?.role === "agent" && last.tools === undefined) {
-            return [...p.slice(0, -1), { role: "agent", text: agentText, isFixed: status === "fixing" }];
-          }
-          return [...p, { role: "agent", text: agentText }];
-        });
-      } else if (event.type === "tool_start" || event.type === "agent_start") {
-        const toolName = event.agent || event.tool || "tool";
-        const id = uid();
-        toolMap.set(toolName, id);
-        
-        if (toolName === "pm") setStatus("diagnosing");
-        else if (toolName === "coder") setStatus("fixing");
-        else setStatus("reading");
-
-        const label = event.label || 
-          (event.input?.path as string) ||
-          (event.input?.command as string) ||
-          toolName;
-
-        setMessages((p) => [
-          ...p,
-          { role: "agent", tools: [{ id, name: toolName, label, status: "running" }] },
-        ]);
-
-        if (toolName === "coder" || event.tool === "file_edit") {
-          setFiles(p => {
-             const path = (event.input?.path as string) || "file";
-             if (p.find(f => f.path === path)) return p.map(f => f.path === path ? { ...f, state: "editing" } : f);
-             return [...p, { path, state: "editing" }];
-          });
-        }
-      } else if (event.type === "tool_result" || event.type === "agent_done") {
-        const toolName = event.agent || event.tool || "";
-        const id = toolMap.get(toolName);
-        setMessages((p) =>
-          p.map((m) =>
-            m.tools
-              ? { ...m, tools: m.tools.map((t) => t.id === id ? { ...t, status: "done" } : t) }
-              : m
-          )
-        );
-        if (toolName === "pm") setShowDiagnosis(true);
-        if (toolName === "coder") {
-           setShowDiff(true);
-           setShowTypecheck(true);
-           setFiles(p => p.map(f => f.state === "editing" ? { ...f, state: "fixed" } : f));
-        }
-      } else if (event.type === "done") {
-        setStatus("done");
-        setFiles((p) => p.map((f) => ({ ...f, state: "done" })));
-        onDone?.(event.files);
-        runningRef.current = false;
-      } else if (event.type === "error") {
-        setStatus("idle");
-        runningRef.current = false;
-      }
+      handleEvent(event);
     }
-  }, [prompt, onSend, onDone, status]);
+  }, [prompt, onSend, handleEvent]);
 
   useEffect(() => {
     if (initialPrompt && onSend && !runningRef.current) {

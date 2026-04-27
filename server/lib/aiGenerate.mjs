@@ -30,6 +30,10 @@ Operate autonomously: plan → code → deliver. Never ask for permission.
 - Framework: React + strict TypeScript
 - Styling: Tailwind CSS — premium SaaS look. Use gradients, glassmorphism, micro-interactions, deep color palettes.
 - Animations: Framer Motion (motion, AnimatePresence). Icons: Lucide React.
+- **SEO & Accessibility**: 
+    - Use semantic HTML5 elements (header, main, section, footer, article).
+    - Implement proper Meta Tags (Title, Description, OpenGraph) within the component logic or as a dedicated Seo.tsx component.
+    - Ensure high contrast and screen reader compatibility.
 - Always handle Loading, Error, and Empty states.
 - FORBIDDEN: implicit any, truncated/partial code, broken imports, "TODO" placeholders.
 

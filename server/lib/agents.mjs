@@ -65,6 +65,7 @@ Single valid JSON object only (no markdown fences):
 - Vague request → assume modern SaaS dashboard
 - Always define at least 1 page
 - "refinedPrompt" is the most important field — be exhaustive and specific
+- **SEO & Accessibility**: Always include SEO strategy in the refinedPrompt (meta tags, semantic structure).
 - Simple UI (landing/portfolio) → empty dataModel, authStrategy "none"
 - Respond ONLY with JSON`;
 

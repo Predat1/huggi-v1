@@ -185,7 +185,19 @@ wss.on('connection', async (ws, req) => {
     }
   });
 });
-
+ 
+ /** Broadcast a message to all connected clients in a project room */
+ function broadcastToProject(projectId, msg, excludeWs = null) {
+   const room = rooms.get(projectId);
+   if (!room) return;
+   const data = JSON.stringify(msg);
+   for (const peer of room) {
+     if (peer !== excludeWs && peer.readyState === 1) {
+       peer.send(data);
+     }
+   }
+ }
+ 
 app.post('/api/webhook/stripe', express.raw({ type: 'application/json' }), async (req, res) => {
   const sig = req.headers['stripe-signature'];
   let event;
@@ -764,7 +776,7 @@ app.post('/api/projects/:id/deploy', async (req, res) => {
           badge = showViralBadge(ownerProfile);
         } catch {}
       }
-      const { html, bundle } = await buildUserSiteToDir(
+      const { html, bundle, sitemap } = await buildUserSiteToDir(
         rows.map((r) => ({ path: r.path, content: r.content })),
         outDir,
         secrets,
@@ -942,7 +954,13 @@ app.post('/api/generate-app/agentic-stream', rateLimiter, async (req, res) => {
   res.flushHeaders();
 
   const emit = (type, data = {}) => {
-    res.write(`data: ${JSON.stringify({ type, ...data })}\n\n`);
+    const payload = { type, ...data };
+    res.write(`data: ${JSON.stringify(payload)}\n\n`);
+    
+    // Broadcast to collaboration room if project exists
+    if (projectId) {
+      broadcastToProject(projectId, { type: 'stream_event', event: payload });
+    }
   };
 
   try {

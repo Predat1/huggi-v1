@@ -19,6 +19,7 @@ export function useCollaboration(
   userId: string | undefined,
   studioMode: boolean,
   onFileUpdate: (path: string, content: string) => void,
+  onStreamEvent?: (event: any) => void,
 ) {
   const [onlineUsers, setOnlineUsers] = useState(1);
   const wsRef = useRef<WebSocket | null>(null);
@@ -53,6 +54,8 @@ export function useCollaboration(
           setOnlineUsers(msg.online ?? 1);
         } else if (msg.type === 'file_update' && msg.path && msg.content !== undefined) {
           onFileUpdate(msg.path, msg.content);
+        } else if (msg.type === 'stream_event' && (msg as any).event && onStreamEvent) {
+          onStreamEvent((msg as any).event);
         }
       };
 

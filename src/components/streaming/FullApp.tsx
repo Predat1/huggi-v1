@@ -134,6 +134,7 @@ interface FullAppStreamProps {
   onDone?: (files: FileNode[]) => void;
   initialPrompt?: string;
   onSend?: (prompt: string) => Promise<AsyncIterable<StreamEvent> | undefined>;
+  externalEvents?: StreamEvent[];
 }
 
 const STEPS: Array<{ name: string; label: string; ms: number; dur: number; file?: { path: string; category: FileNode["category"] } }> = [
@@ -185,7 +186,7 @@ function SchemaSuggestionCard({ sql, tables, applying, onApply, onDismiss }: { s
   );
 }
 
-export function FullAppStream({ onDone, initialPrompt, onSend }: FullAppStreamProps) {
+export function FullAppStream({ onDone, initialPrompt, onSend, externalEvents }: FullAppStreamProps) {
   const [messages, setMessages] = useState<StreamMessage[]>([]);
   const [files, setFiles] = useState<FileNode[]>([]);
   const [status, setStatus] = useState<AgentStatus>("idle");
@@ -195,10 +196,76 @@ export function FullAppStream({ onDone, initialPrompt, onSend }: FullAppStreamPr
   const [prompt, setPrompt] = useState(initialPrompt ?? "Crée une app de gestion de tâches avec DB, API REST et UI complète");
   const chatRef = useRef<HTMLDivElement>(null);
   const runningRef = useRef(false);
+  const lastProcessedRef = useRef(0);
 
   useEffect(() => {
     chatRef.current?.scrollTo({ top:chatRef.current.scrollHeight, behavior:"smooth" });
   }, [messages, status, showArch]);
+
+  const handleEvent = useCallback((event: StreamEvent) => {
+    if ((event.type === "chunk" || event.type === "text") && (event.content || event.delta)) {
+      const text = event.content || event.delta || "";
+      setStatus("writing");
+      setMessages((p) => {
+        const last = p[p.length - 1];
+        if (last?.role === "agent" && last.tools === undefined) {
+          return [...p.slice(0, -1), { role: "agent", text: (last.text || "") + text }];
+        }
+        return [...p, { role: "agent", text: text }];
+      });
+    } else if ((event.type === "tool_start" || event.type === "agent_start") && (event.tool || event.agent)) {
+      setStatus("executing");
+      const id = event.agent || event.tool || uid();
+      const toolName = event.agent || event.tool || "tool";
+      
+      const label = event.label || 
+        (event.input?.path as string) ||
+        (event.input?.command as string) ||
+        (event.input?.packages as string[])?.join(", ") ||
+        toolName;
+
+      setMessages((p) => [
+        ...p,
+        { role: "agent", tools: [{ id, name: toolName, label, status: "running" }] },
+      ]);
+    } else if ((event.type === "tool_result" || event.type === "agent_done") && (event.tool || event.agent)) {
+      const toolName = event.agent || event.tool || "";
+      setMessages((p) => {
+        const newMsg = [...p];
+        for (let i = newMsg.length - 1; i >= 0; i--) {
+          if (newMsg[i].tools) {
+            newMsg[i].tools = newMsg[i].tools!.map(t => t.name === toolName ? { ...t, status: "success" } : t);
+            break;
+          }
+        }
+        return newMsg;
+      });
+      if (toolName === "pm") setStatus("executing");
+    } else if (event.type === "schema_suggestion") {
+      setSchemaSuggestion({ sql: event.sql || "", tables: event.tables || [], applying: false });
+    } else if (event.type === "done") {
+      setProgress(100);
+      setStatus("done");
+      if (event.files) {
+        const newFiles: FileNode[] = event.files.map(f => ({
+          path: f.path,
+          state: "done",
+          category: f.path.includes("types") ? "type" : f.path.includes("components") ? "component" : "config"
+        }));
+        setFiles(newFiles);
+        onDone?.(newFiles);
+      }
+      runningRef.current = false;
+    }
+  }, [onDone]);
+
+  useEffect(() => {
+    if (externalEvents && externalEvents.length > lastProcessedRef.current) {
+      const newEvents = externalEvents.slice(lastProcessedRef.current);
+      newEvents.forEach(handleEvent);
+      lastProcessedRef.current = externalEvents.length;
+    }
+  }, [externalEvents, handleEvent]);
 
   const runRealStream = useCallback(async () => {
     if (!onSend || runningRef.current) return;
@@ -223,75 +290,9 @@ export function FullAppStream({ onDone, initialPrompt, onSend }: FullAppStreamPr
     let fileCount = 0;
 
     for await (const event of streamEvents) {
-      if ((event.type === "chunk" || event.type === "text") && (event.content || event.delta)) {
-        const text = event.content || event.delta || "";
-        agentText += text;
-        setStatus("writing");
-        setMessages((p) => {
-          const last = p[p.length - 1];
-          if (last?.role === "agent" && last.tools === undefined) {
-            return [...p.slice(0, -1), { role: "agent", text: agentText }];
-          }
-          return [...p, { role: "agent", text: agentText }];
-        });
-      } else if ((event.type === "tool_start" || event.type === "agent_start") && (event.tool || event.agent)) {
-        setStatus("executing");
-        const id = event.agent || event.tool || uid();
-        const toolName = event.agent || event.tool || "tool";
-        toolMap.set(toolName, id);
-        
-        const label = event.label || 
-          (event.input?.path as string) ||
-          (event.input?.command as string) ||
-          (event.input?.packages as string[])?.join(", ") ||
-          toolName;
-
-        setMessages((p) => [
-          ...p,
-          { role: "agent", tools: [{ id, name: toolName, label, status: "running" }] },
-        ]);
-        
-        // Simuler des fichiers pour le visuel si c'est le codeur
-        if (toolName === "coder" || event.tool === "file_create") {
-           // On verra plus tard comment extraire les fichiers réels s'ils arrivent progressivement
-        }
-      } else if ((event.type === "tool_result" || event.type === "agent_done") && (event.tool || event.agent)) {
-        const toolName = event.agent || event.tool || "";
-        const id = toolMap.get(toolName);
-        setMessages((p) =>
-          p.map((m) =>
-            m.tools
-              ? { ...m, tools: m.tools.map((t) => t.id === id ? { ...t, status: "success" } : t) }
-              : m
-          )
-        );
-        if (toolName === "pm") setStatus("executing");
-      } else if (event.type === "schema_suggestion") {
-        setSchemaSuggestion({ sql: event.sql || "", tables: event.tables || [], applying: false });
-      } else if (event.type === "done") {
-        setProgress(100);
-        setStatus("done");
-        setFiles((p) => p.map((f) => ({ ...f, state: "done" })));
-        
-        // Mettre à jour les fichiers réels si présents
-        if (event.files) {
-          const newFiles: FileNode[] = event.files.map(f => ({
-            path: f.path,
-            state: "done",
-            category: f.path.includes("types") ? "type" : f.path.includes("components") ? "component" : "config"
-          }));
-          setFiles(newFiles);
-          onDone?.(newFiles);
-        } else {
-          onDone?.(files);
-        }
-        runningRef.current = false;
-      } else if (event.type === "error") {
-        setStatus("idle");
-        runningRef.current = false;
-      }
+      handleEvent(event);
     }
-  }, [onSend, prompt, files, onDone]);
+  }, [onSend, prompt, handleEvent]);
 
   const handleRun = () => {
     if (onSend) runRealStream();
