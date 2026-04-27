@@ -22,6 +22,7 @@ import {
   Moon,
   Sun,
 } from 'lucide-react';
+import { motion } from 'motion/react';
 import HuggyChatInput from './HuggyChatInput';
 import PricingSection from './PricingSection';
 import { useTheme } from '../contexts/ThemeContext';
@@ -296,22 +297,41 @@ export default function LandingPage({ accent, onOpenStudio, onLogin, userId }: L
       <div id="top" className="overflow-y-auto">
         <div className="max-w-6xl mx-auto px-6">
           <main className="pt-8 sm:pt-4 pb-12">
-            <div className="text-center">
-              <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-blue-50 border border-blue-100 text-blue-600 text-xs font-black tracking-wide">
+              <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.6 }}
+                className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-blue-50 border border-blue-100 text-blue-600 text-xs font-black tracking-wide"
+              >
                 <Sparkles size={14} />
                 AI-POWERED APP BUILDER
-              </div>
+              </motion.div>
 
-              <h1 className="mt-4 text-4xl sm:text-6xl lg:text-[76px] leading-none font-black tracking-tight">
+              <motion.h1
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.6, delay: 0.1 }}
+                className="mt-4 text-4xl sm:text-6xl lg:text-[76px] leading-none font-black tracking-tight"
+              >
                 <span className="block text-[#0F172A] dark:text-white">Build any SaaS</span>
                 <span className="block text-blue-600 italic">instantly.</span>
-              </h1>
+              </motion.h1>
 
-              <p className="mt-3 mx-auto max-w-xl text-slate-500 dark:text-slate-400 text-base leading-relaxed">
+              <motion.p
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.6, delay: 0.2 }}
+                className="mt-3 mx-auto max-w-xl text-slate-500 dark:text-slate-400 text-base leading-relaxed"
+              >
                 Describe your project, Huggy does the rest. AI-generated code, UI, dashboards, and data tables in seconds.
-              </p>
+              </motion.p>
 
-              <div className="mt-4 max-w-3xl mx-auto">
+              <motion.div
+                initial={{ opacity: 0, scale: 0.95 }}
+                animate={{ opacity: 1, scale: 1 }}
+                transition={{ duration: 0.6, delay: 0.3 }}
+                className="mt-4 max-w-3xl mx-auto"
+              >
                 <HuggyChatInput
                   onSend={(prompt) => {
                     if (prompt.trim()) setBuildInput(prompt);
@@ -324,12 +344,16 @@ export default function LandingPage({ accent, onOpenStudio, onLogin, userId }: L
               </div>
 
               {/* --- FEATURES SECTION (Redesigned: Glassmorphism) --- */}
-              <div id="features" className="mt-40 scroll-mt-28">
-                <div className="flex items-center gap-3 mb-16 overflow-hidden">
+                <motion.div
+                  initial={{ opacity: 0 }}
+                  whileInView={{ opacity: 1 }}
+                  viewport={{ once: true }}
+                  className="flex items-center gap-3 mb-16 overflow-hidden"
+                >
                   <div className="h-px bg-slate-200 dark:bg-white/10 flex-1" />
                   <span className="text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-[0.3em] whitespace-nowrap">Capabilities</span>
                   <div className="h-px bg-slate-200 dark:bg-white/10 flex-1" />
-                </div>
+                </motion.div>
                 
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-10 text-left">
                   {[
@@ -337,10 +361,15 @@ export default function LandingPage({ accent, onOpenStudio, onLogin, userId }: L
                     { icon: BarChart3, accent: 'indigo', t: 'Analytics & Insights', d: 'Générez des graphiques interactifs et des rapports de données en temps réel.' },
                     { icon: Database, accent: 'emerald', t: 'Gestion de Données', d: 'Connectez instantanément votre stockage sécurisé et vos flux d\'information.' },
                     { icon: Shield, accent: 'rose', t: 'Enterprise Security', d: 'Auth sécurisée, gestion des rôles et protection des données par défaut.' },
-                  ].map((c) => (
-                    <div
+                  ].map((c, i) => (
+                    <motion.div
                       key={c.t}
-                      className="group relative p-10 bg-white dark:bg-white/[0.02] border border-slate-100 dark:border-white/5 rounded-[32px] overflow-hidden transition-all duration-500 hover:shadow-2xl hover:shadow-blue-500/10 dark:hover:shadow-blue-500/5 hover:-translate-y-2"
+                      initial={{ opacity: 0, y: 30 }}
+                      whileInView={{ opacity: 1, y: 0 }}
+                      viewport={{ once: true }}
+                      transition={{ delay: i * 0.1 }}
+                      whileHover={{ y: -10 }}
+                      className="group relative p-10 bg-white dark:bg-white/[0.02] border border-slate-100 dark:border-white/5 rounded-[32px] overflow-hidden transition-all duration-500 hover:shadow-2xl hover:shadow-blue-500/10 dark:hover:shadow-blue-500/5"
                     >
                       <div className={`absolute top-0 right-0 w-32 h-32 bg-${c.accent}-500/5 blur-3xl rounded-full -mr-16 -mt-16 group-hover:bg-${c.accent}-500/10 transition-colors`} />
                       <div className={`w-14 h-14 rounded-2xl bg-${c.accent}-50 flex items-center justify-center text-${c.accent}-600 mb-6 group-hover:scale-110 transition-transform duration-500 border border-${c.accent}-100/50`}>
@@ -348,7 +377,7 @@ export default function LandingPage({ accent, onOpenStudio, onLogin, userId }: L
                       </div>
                       <h3 className="text-lg font-black text-slate-900 dark:text-white leading-tight mb-3 italic">{c.t}</h3>
                       <p className="text-sm font-medium text-slate-500 dark:text-slate-400 leading-relaxed">{c.d}</p>
-                    </div>
+                    </motion.div>
                   ))}
                 </div>
               </div>
@@ -357,8 +386,14 @@ export default function LandingPage({ accent, onOpenStudio, onLogin, userId }: L
             </div>
           </main>
 
-          {/* --- HOW IT WORKS (Redesigned: Visual Timeline) --- */}
-          <section id="how-it-works" className="scroll-mt-28 py-32">
+          {/* --- HOW IT W          <motion.section
+            id="how-it-works"
+            initial={{ opacity: 0, y: 50 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            transition={{ duration: 0.8 }}
+            className="scroll-mt-28 py-32"
+          >
             <div className="relative rounded-[48px] bg-slate-100/50 dark:bg-white/5 border border-slate-200/60 dark:border-white/5 p-16 overflow-hidden">
                <div className="absolute top-0 left-1/2 -translate-x-1/2 w-px h-full bg-gradient-to-b from-blue-500/20 via-blue-200/10 to-transparent hidden lg:block" />
                
@@ -366,22 +401,31 @@ export default function LandingPage({ accent, onOpenStudio, onLogin, userId }: L
                  <h2 className="text-xs font-black uppercase tracking-[0.4em] text-blue-600 mb-4 px-4">Le Processus Huggy</h2>
                  <p className="text-3xl sm:text-4xl font-black text-[#0F172A] dark:text-white tracking-tight">De l'idée au déploiement en 60s.</p>
                </div>
-
+ 
                <div className="grid lg:grid-cols-3 gap-20 relative">
                  {[
                    { n: '01', t: 'Inspiration AI', d: 'Décrivez votre vision en langage naturel. Huggy analyse et structure votre application instantanément.' },
                    { n: '02', t: 'Édition Immersive', d: 'Ajustez votre interface en temps réel dans notre studio de classe mondiale. Code propre et optimisé.' },
                    { n: '03', t: 'Push & Live', d: 'Déployez vers GitHub ou notre cloud sécurisé. Votre SaaS est prêt à accueillir ses utilisateurs.' },
-                 ].map((s) => (
-                   <div key={s.n} className="relative group p-8 rounded-3xl bg-white dark:bg-[#111] border border-slate-100 dark:border-white/5 shadow-sm hover:shadow-xl transition-all duration-500">
+                 ].map((s, i) => (
+                   <motion.div
+                    key={s.n}
+                    initial={{ opacity: 0, x: i % 2 === 0 ? -20 : 20 }}
+                    whileInView={{ opacity: 1, x: 0 }}
+                    viewport={{ once: true }}
+                    transition={{ delay: i * 0.2 }}
+                    className="relative group p-8 rounded-3xl bg-white dark:bg-[#111] border border-slate-100 dark:border-white/5 shadow-sm hover:shadow-xl transition-all duration-500"
+                   >
                      <span className="text-6xl font-black text-slate-100 dark:text-white/5 group-hover:text-blue-50/50 transition-colors absolute -top-4 -left-4 pointer-events-none select-none">{s.n}</span>
                      <div className="relative">
                        <h3 className="text-xl font-bold text-slate-900 dark:text-white mb-3">{s.t}</h3>
                        <p className="text-sm text-slate-500 dark:text-slate-400 leading-relaxed font-medium">{s.d}</p>
                      </div>
-                   </div>
+                   </motion.div>
                  ))}
                </div>
+            </div>
+          </motion.section>        </div>
             </div>
           </section>
         </div>
@@ -401,9 +445,14 @@ export default function LandingPage({ accent, onOpenStudio, onLogin, userId }: L
 
             <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-12">
               {TESTIMONIALS.map((t, idx) => (
-                <article
+                <motion.article
                   key={t.name}
-                  className={`bg-white dark:bg-white/[0.02] p-10 rounded-[40px] border border-slate-100 dark:border-white/5 shadow-sm flex flex-col transition-all duration-500 hover:shadow-2xl hover:-translate-y-2 group ${idx === 1 ? 'md:scale-105 z-10 border-blue-100 dark:border-blue-500/20' : ''}`}
+                  initial={{ opacity: 0, scale: 0.9 }}
+                  whileInView={{ opacity: 1, scale: 1 }}
+                  viewport={{ once: true }}
+                  transition={{ delay: idx * 0.1 }}
+                  whileHover={{ y: -10 }}
+                  className={`bg-white dark:bg-white/[0.02] p-10 rounded-[40px] border border-slate-100 dark:border-white/5 shadow-sm flex flex-col transition-all duration-500 hover:shadow-2xl group ${idx === 1 ? 'md:scale-105 z-10 border-blue-100 dark:border-blue-500/20' : ''}`}
                 >
                   <p className="text-slate-700 dark:text-slate-300 font-bold text-lg leading-relaxed mb-8">&ldquo;{t.quote}&rdquo;</p>
                   <div className="mt-auto pt-8 border-t border-slate-50 dark:border-white/5 flex items-center gap-4">
@@ -415,7 +464,7 @@ export default function LandingPage({ accent, onOpenStudio, onLogin, userId }: L
                       <p className="text-xs font-bold text-blue-600 dark:text-blue-400 uppercase tracking-widest mt-0.5">{t.role}</p>
                     </div>
                   </div>
-                </article>
+                </motion.article>
               ))}
             </div>
           </div>

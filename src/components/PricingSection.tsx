@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { Check, Zap, Star, Building2, Sparkles } from 'lucide-react';
+import { motion, AnimatePresence } from 'motion/react';
 
 const PLANS = [
   {
@@ -104,18 +105,23 @@ export default function PricingSection({ onCheckout, onOpenStudio, userId, isChe
     <div className={compact ? '' : 'py-24'}>
       {/* Header */}
       {!compact && (
-        <div className="text-center mb-14">
-          <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-blue-50 dark:bg-blue-500/10 border border-blue-100 dark:border-blue-500/20 text-blue-600 dark:text-blue-400 text-xs font-black tracking-widest uppercase mb-6">
-            <Sparkles size={12} />
-            Tarification simple
-          </div>
-          <h2 className="text-4xl sm:text-5xl font-black text-slate-900 dark:text-white tracking-tight">
-            Payez pour la <span className="text-blue-600">valeur</span>,<br />pas pour l'usage
-          </h2>
-          <p className="mt-4 text-lg text-slate-500 dark:text-slate-400 max-w-xl mx-auto">
-            Projets illimités sur Pro. Badge retiré dès Starter. Résiliez à tout moment.
-          </p>
-        </div>
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            className="text-center mb-14"
+          >
+            <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-blue-50 dark:bg-blue-500/10 border border-blue-100 dark:border-blue-500/20 text-blue-600 dark:text-blue-400 text-xs font-black tracking-widest uppercase mb-6">
+              <Sparkles size={12} />
+              Tarification simple
+            </div>
+            <h2 className="text-4xl sm:text-5xl font-black text-slate-900 dark:text-white tracking-tight">
+              Payez pour la <span className="text-blue-600">valeur</span>,<br />pas pour l'usage
+            </h2>
+            <p className="mt-4 text-lg text-slate-500 dark:text-slate-400 max-w-xl mx-auto">
+              Projets illimités sur Pro. Badge retiré dès Starter. Résiliez à tout moment.
+            </p>
+          </motion.div>
       )}
 
       {/* Annual toggle */}
@@ -126,7 +132,11 @@ export default function PricingSection({ onCheckout, onOpenStudio, userId, isChe
           onClick={() => setAnnual(a => !a)}
           className={`relative w-12 h-6 rounded-full transition-colors duration-200 ${annual ? 'bg-blue-600' : 'bg-slate-200 dark:bg-white/10'}`}
         >
-          <span className={`absolute top-1 left-1 w-4 h-4 rounded-full bg-white shadow transition-transform duration-200 ${annual ? 'translate-x-6' : ''}`} />
+          <motion.span
+            layout
+            transition={{ type: "spring", stiffness: 500, damping: 30 }}
+            className={`absolute top-1 left-1 w-4 h-4 rounded-full bg-white shadow ${annual ? 'translate-x-6' : ''}`}
+          />
         </button>
         <span className={`text-sm font-bold flex items-center gap-1.5 ${annual ? 'text-slate-900 dark:text-white' : 'text-slate-400'}`}>
           Annuel
@@ -139,8 +149,13 @@ export default function PricingSection({ onCheckout, onOpenStudio, userId, isChe
         {PLANS.map((p) => {
           const Icon = p.icon;
           return (
-            <div
+            <motion.div
               key={p.id}
+              initial={{ opacity: 0, y: 30 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true }}
+              transition={{ delay: PLANS.indexOf(p) * 0.1 }}
+              whileHover={{ y: -8 }}
               className={`relative rounded-3xl p-7 border flex flex-col transition-all duration-300 ${
                 p.hi
                   ? 'border-blue-500 bg-slate-900 dark:bg-[#0F172A] shadow-2xl shadow-blue-900/30 scale-[1.02]'
@@ -172,11 +187,18 @@ export default function PricingSection({ onCheckout, onOpenStudio, userId, isChe
                   </span>
                 )}
               </div>
-              {annual && p.monthlyPrice > 0 && (
-                <p className={`text-[10px] font-semibold mb-2 ${p.hi ? 'text-emerald-400' : 'text-emerald-600 dark:text-emerald-400'}`}>
-                  *facturé {Math.round(p.monthlyPrice * 0.8 * 12)}€/an — 2 mois offerts
-                </p>
-              )}
+              <AnimatePresence mode="wait">
+                {annual && p.monthlyPrice > 0 && (
+                  <motion.p
+                    initial={{ opacity: 0, height: 0 }}
+                    animate={{ opacity: 1, height: 'auto' }}
+                    exit={{ opacity: 0, height: 0 }}
+                    className={`text-[10px] font-semibold mb-2 ${p.hi ? 'text-emerald-400' : 'text-emerald-600 dark:text-emerald-400'}`}
+                  >
+                    *facturé {Math.round(p.monthlyPrice * 0.8 * 12)}€/an — 2 mois offerts
+                  </motion.p>
+                )}
+              </AnimatePresence>
               <p className={`text-xs leading-relaxed mb-6 ${p.hi ? 'text-slate-400' : 'text-slate-500 dark:text-slate-400'}`}>{p.desc}</p>
 
               {/* Features */}
@@ -192,14 +214,15 @@ export default function PricingSection({ onCheckout, onOpenStudio, userId, isChe
               </div>
 
               {/* CTA */}
-              <button
+              <motion.button
+                whileTap={{ scale: 0.95 }}
                 type="button"
                 disabled={isCheckingOut}
                 onClick={() => {
                   if (p.ctaAction === 'free') { onOpenStudio?.(); return; }
                   onCheckout(p.id);
                 }}
-                className={`mt-8 w-full py-3.5 rounded-2xl text-xs font-black transition-all active:scale-[0.98] disabled:opacity-60 ${
+                className={`mt-8 w-full py-3.5 rounded-2xl text-xs font-black transition-all disabled:opacity-60 ${
                   p.hi
                     ? 'bg-blue-600 text-white shadow-xl shadow-blue-900/40 hover:bg-blue-500'
                     : p.id === 'free'
@@ -208,8 +231,8 @@ export default function PricingSection({ onCheckout, onOpenStudio, userId, isChe
                 }`}
               >
                 {isCheckingOut ? 'Chargement...' : p.cta}
-              </button>
-            </div>
+              </motion.button>
+            </motion.div>
           );
         })}
       </div>
