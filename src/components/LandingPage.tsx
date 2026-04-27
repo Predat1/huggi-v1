@@ -197,7 +197,7 @@ export default function LandingPage({ accent, onOpenStudio, onLogin, userId }: L
   return (
     <div className="min-h-screen bg-white dark:bg-[#0A0A0A] text-slate-900 dark:text-slate-100 font-sans antialiased transition-colors duration-300">
       <div className="sticky top-0 z-[110] border-b border-slate-100/80 dark:border-white/5 bg-white/85 dark:bg-black/85 backdrop-blur-md supports-[backdrop-filter]:bg-white/70 transition-[background,box-shadow] duration-300 shadow-[0_1px_0_rgba(15,23,42,0.04)] dark:shadow-none">
-        <div className="max-w-6xl mx-auto px-6 h-16 grid grid-cols-2 md:grid-cols-[1fr_auto_1fr] items-center">
+        <div className="max-w-6xl mx-auto px-6 h-16 grid grid-cols-3 items-center">
           {/* Left Side: Logo */}
           <div className="flex items-center justify-start gap-3">
             <button
@@ -217,11 +217,11 @@ export default function LandingPage({ accent, onOpenStudio, onLogin, userId }: L
             </button>
           </div>
 
-          {/* Center Side: Navigation */}
-          <nav className="hidden md:flex items-center justify-center gap-10 text-sm font-bold text-slate-500 dark:text-slate-400">
+          {/* Center Side: Navigation - Centered globally */}
+          <nav className="hidden md:flex items-center justify-center gap-8 text-[13px] font-bold text-slate-500 dark:text-slate-400">
             <a href="#features" onClick={go('features')} className="hover:text-slate-900 dark:hover:text-white transition-colors duration-200">Features</a>
             <a href="#how-it-works" onClick={go('how-it-works')} className="hover:text-slate-900 dark:hover:text-white transition-colors duration-200">How it works</a>
-            <a href="#testimonials" onClick={go('testimonials')} className="hover:text-slate-900 dark:hover:text-white transition-colors duration-200">Community</a>
+            <a href="#testimonials" onClick={go('testimonials')} className="hover:text-slate-900 dark:hover:text-white transition-colors duration-200 whitespace-nowrap">Community</a>
             <a href="#pricing" onClick={go('pricing')} className="hover:text-slate-900 dark:hover:text-white transition-colors duration-200">Pricing</a>
             <a href="#about" onClick={go('about')} className="hover:text-slate-900 dark:hover:text-white transition-colors duration-200">About</a>
           </nav>
