@@ -69,7 +69,7 @@ export function ChatWindow({
       <div className="absolute bottom-0 left-0 w-64 h-64 bg-indigo-600/5 rounded-full blur-[120px] pointer-events-none" />
 
       {/* Messages */}
-      <div className="flex-1 overflow-y-auto px-6 py-8 space-y-8 scrollbar-hide relative z-10">
+      <div className="flex-1 overflow-y-auto px-6 py-4 space-y-6 scrollbar-hide relative z-10">
         <AnimatePresence mode="popLayout">
           {messages.length === 0 ? (
             <motion.div
@@ -104,7 +104,7 @@ export function ChatWindow({
       </div>
 
       {/* Input Area */}
-      <div className="p-6 bg-[#09090B]/80 backdrop-blur-3xl border-t border-white/[0.03] relative z-20">
+      <div className="p-4 bg-[#09090B]/80 backdrop-blur-3xl border-t border-white/[0.03] relative z-20">
         <div className="max-w-4xl mx-auto">
           <div className="relative group">
             <div className="absolute -inset-0.5 bg-gradient-to-r from-blue-600 to-indigo-600 rounded-2xl opacity-0 group-focus-within:opacity-20 transition-opacity blur-sm" />

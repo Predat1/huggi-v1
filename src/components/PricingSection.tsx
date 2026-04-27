@@ -79,14 +79,14 @@ export default function PricingSection({ onCheckout, onOpenStudio, userId, isChe
   };
 
   return (
-    <div className={compact ? '' : 'py-24'}>
+    <div className={compact ? '' : 'py-12'}>
       {/* Header */}
       {!compact && (
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
-            className="text-center mb-14"
+            className="text-center mb-8"
           >
             <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-blue-50 dark:bg-blue-500/10 border border-blue-100 dark:border-blue-500/20 text-blue-600 dark:text-blue-400 text-xs font-black tracking-widest uppercase mb-6">
               <Sparkles size={12} />
@@ -122,7 +122,7 @@ export default function PricingSection({ onCheckout, onOpenStudio, userId, isChe
       </div>
 
       {/* Cards */}
-      <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-5 max-w-7xl mx-auto px-4">
+      <div className="flex flex-wrap justify-center gap-6 max-w-6xl mx-auto px-4">
         {PLANS.map((p) => {
           const Icon = p.icon;
           return (

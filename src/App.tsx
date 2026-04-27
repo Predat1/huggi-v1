@@ -1218,13 +1218,14 @@ export default function App() {
         userId={user?.id}
       />
 
-      <AnimatePresence mode="wait" initial={false}>
+      <AnimatePresence mode="wait">
         {studioMode ? (
           <motion.div
             key="studio"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
+            initial={{ opacity: 0, scale: 0.99, y: 5 }}
+            animate={{ opacity: 1, scale: 1, y: 0 }}
+            exit={{ opacity: 0, scale: 1.01, y: -5 }}
+            transition={{ type: 'spring', damping: 25, stiffness: 180 }}
             className={`flex flex-col h-screen bg-slate-50 dark:bg-[#070708] text-slate-900 dark:text-slate-300 font-sans overflow-hidden transition-colors duration-300`}
           >
             {/* Show skeleton/loader if project data isn't ready yet but we have a projectId */}
@@ -1400,7 +1401,7 @@ export default function App() {
         {activeStudioTab === 'preview' && (
           <>
             {/* Left Sidebar */}
-        <aside className={`${isSidebarCollapsed ? 'w-16' : 'w-[400px]'} border-r border-slate-200 bg-white flex flex-col shrink-0 transition-all duration-300 ease-in-out`}>
+        <aside className={`${isSidebarCollapsed ? 'w-16' : 'w-[320px]'} border-r border-slate-200 bg-white flex flex-col shrink-0 transition-all duration-300 ease-in-out`}>
           <div className="p-4 border-b border-slate-100 flex items-center justify-between relative min-h-[57px]">
             {!isSidebarCollapsed && (
               <div className="flex items-center gap-2">
@@ -1482,7 +1483,7 @@ export default function App() {
                             )}
                           </div>
                         )}
-                        <div className={`rounded-2xl px-4 py-3 text-[14px] leading-relaxed group/msg relative ${
+                        <div className={`rounded-2xl px-4 py-2.5 text-[13px] leading-relaxed group/msg relative ${
                           msg.sender === 'VOUS'
                             ? 'bg-gradient-to-br from-blue-600 to-blue-700 text-white rounded-tr-md shadow-lg shadow-blue-600/15'
                             : 'bg-white dark:bg-[#1E1E1E] text-slate-700 dark:text-slate-300 border border-slate-100 dark:border-white/5 rounded-tl-md shadow-sm'
@@ -1564,13 +1565,13 @@ export default function App() {
                         )}
                         {/* Streaming text or thinking shimmer */}
                         {streamingMessage ? (
-                          <div className="bg-white text-slate-700 border border-slate-100 rounded-2xl rounded-tl-md px-4 py-3 text-[14px] leading-relaxed shadow-sm">
+                          <div className="bg-white text-slate-700 border border-slate-100 rounded-2xl rounded-tl-md px-4 py-2.5 text-[13px] leading-relaxed shadow-sm">
                             {streamingMessage}
                             <span className="inline-block w-[2px] h-4 bg-blue-500 ml-0.5 align-text-bottom huggy-stream-caret" />
                           </div>
                         ) : (
-                          <div className="bg-white border border-slate-100 rounded-2xl rounded-tl-md px-4 py-3 flex items-center gap-1 shadow-sm">
-                            <div className="huggy-thinking-shimmer rounded-lg h-4 w-32" />
+                          <div className="bg-white border border-slate-100 rounded-2xl rounded-tl-md px-4 py-2.5 flex items-center gap-1 shadow-sm">
+                            <div className="huggy-thinking-shimmer rounded-lg h-3 w-32" />
                           </div>
                         )}
                       </div>
@@ -2413,17 +2414,24 @@ export default function App() {
           onLogout={() => signOut().then(() => setUser(null))} 
         />
       </motion.div>
-    ) : (
-      <motion.div key="landing" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="h-screen overflow-y-auto">
-        <LandingPage 
-          onOpenStudio={(p) => { 
-            setStudioMode(true); 
-            if (p) setInputValue(p); 
-          }} 
-          onLogin={() => { setAuthMode('login'); setShowAuthModal(true); }} 
-        />
-      </motion.div>
-    )}
+      ) : (
+        <motion.div 
+          key="landing" 
+          initial={{ opacity: 0 }} 
+          animate={{ opacity: 1 }} 
+          exit={{ opacity: 0 }} 
+          transition={{ duration: 0.5 }}
+          className="h-screen overflow-y-auto bg-[#030304]"
+        >
+          <LandingPage 
+            onOpenStudio={(p) => { 
+              setStudioMode(true); 
+              if (p) setInputValue(p); 
+            }} 
+            onLogin={() => { setAuthMode('login'); setShowAuthModal(true); }} 
+          />
+        </motion.div>
+      )}
   </AnimatePresence>
 
       {/* Publishing Modal */}

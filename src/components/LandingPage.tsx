@@ -196,10 +196,9 @@ export default function LandingPage({ accent, onOpenStudio, onLogin, userId }: L
 
   return (
     <div className="min-h-screen bg-[#030304] text-slate-100 font-sans antialiased transition-colors duration-300 relative overflow-x-hidden">
-      {/* Immersive Mesh Gradients */}
       <div className="fixed inset-0 pointer-events-none z-0">
-        <div className="absolute top-[-10%] left-[-10%] w-[40%] h-[40%] bg-blue-600/10 rounded-full blur-[120px] animate-pulse" />
-        <div className="absolute bottom-[10%] right-[-5%] w-[35%] h-[35%] bg-indigo-600/10 rounded-full blur-[120px]" />
+        <div className="absolute top-0 left-0 w-full h-full bg-[#030304]" />
+        <div className="absolute top-[-10%] left-[-10%] w-[40%] h-[40%] bg-blue-600/5 rounded-full blur-[120px]" />
       </div>
 
       <div className="sticky top-0 z-[110] border-b border-white/5 bg-black/40 backdrop-blur-3xl supports-[backdrop-filter]:bg-black/20 transition-all duration-300">
@@ -261,7 +260,7 @@ export default function LandingPage({ accent, onOpenStudio, onLogin, userId }: L
       </div>
 
       <div id="top" className="relative z-10">
-        <main className="pt-24 pb-32">
+        <main className="pt-12 pb-16">
           <div className="max-w-6xl mx-auto px-6 text-center">
             <motion.div
               initial={{ opacity: 0, y: 20 }}
@@ -273,22 +272,22 @@ export default function LandingPage({ accent, onOpenStudio, onLogin, userId }: L
             </motion.div>
 
             <motion.h1
-              initial={{ opacity: 0, y: 20 }}
+              initial={{ opacity: 0, y: 15 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.1 }}
-              className="text-5xl sm:text-7xl lg:text-[100px] leading-[0.95] font-black tracking-tighter text-white"
+              className="text-4xl sm:text-6xl lg:text-[72px] leading-tight font-black tracking-tight text-white"
             >
               Générez votre <br />
-              <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-500 via-indigo-400 to-emerald-400 italic">SaaS d'élite</span> en 60s.
+              <span className="text-blue-500">SaaS</span> en 60 secondes.
             </motion.h1>
 
             <motion.p
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.2 }}
-              className="mt-10 mx-auto max-w-2xl text-slate-400 text-lg sm:text-xl leading-relaxed font-medium"
+              className="mt-8 mx-auto max-w-xl text-slate-400 text-base sm:text-lg leading-relaxed font-medium"
             >
-              Décrivez votre projet en français. Huggy construit l'interface, la base de données et le déploiement. Le futur du développement est arrivé.
+              Décrivez votre projet. Huggy génère l'architecture, le code et le déploiement.
             </motion.p>
 
             <motion.div
@@ -297,7 +296,6 @@ export default function LandingPage({ accent, onOpenStudio, onLogin, userId }: L
               transition={{ delay: 0.3 }}
               className="mt-16 max-w-3xl mx-auto relative group"
             >
-              <div className="absolute -inset-1 bg-gradient-to-r from-blue-600 to-indigo-600 rounded-[32px] blur-xl opacity-20 group-hover:opacity-40 transition-opacity" />
               <HuggyChatInput
                 onSend={(prompt) => {
                   if (prompt.trim()) setBuildInput(prompt);
@@ -309,7 +307,7 @@ export default function LandingPage({ accent, onOpenStudio, onLogin, userId }: L
               />
             </motion.div>
 
-            <div className="mt-40 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8 text-left">
+            <div className="mt-20 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 text-left">
               {[
                 { icon: FileCode, color: 'blue', t: 'SaaS Builder', d: 'Architectures complexes générées instantanément avec React & Tailwind.' },
                 { icon: BarChart3, color: 'indigo', t: 'Elite Analytics', d: 'Visualisations de données immersives et rapports interactifs intégrés.' },
@@ -323,7 +321,7 @@ export default function LandingPage({ accent, onOpenStudio, onLogin, userId }: L
                   viewport={{ once: true }}
                   transition={{ delay: i * 0.1 }}
                   whileHover={{ y: -10 }}
-                  className="group relative p-8 bg-white/[0.03] border border-white/5 rounded-[40px] hover:bg-white/[0.05] transition-all duration-500"
+                  className="group relative p-8 bg-transparent border border-white/[0.03] rounded-[40px] hover:bg-white/[0.02] transition-all duration-500"
                 >
                    <div className={`w-12 h-12 rounded-2xl bg-${c.color}-500/10 flex items-center justify-center text-${c.color}-400 mb-6 group-hover:scale-110 transition-transform`}>
                      <c.icon size={22} />
@@ -336,7 +334,7 @@ export default function LandingPage({ accent, onOpenStudio, onLogin, userId }: L
           </div>
         </main>
 
-        <section id="how-it-works" className="py-40 bg-white/[0.01] border-y border-white/[0.03]">
+        <section id="how-it-works" className="py-12 border-y border-white/5">
           <div className="max-w-6xl mx-auto px-6">
             <div className="flex flex-col lg:flex-row gap-20 items-center">
               <div className="flex-1 text-left">
@@ -370,15 +368,15 @@ export default function LandingPage({ accent, onOpenStudio, onLogin, userId }: L
           </div>
         </section>
 
-        <section id="testimonials" className="py-40">
+        <section id="testimonials" className="py-12">
            <div className="max-w-6xl mx-auto px-6">
-             <div className="text-center mb-24">
+             <div className="text-center mb-12">
                 <h2 className="text-xs font-black text-blue-500 uppercase tracking-[0.5em] mb-4">Elite Community</h2>
                 <p className="text-4xl sm:text-5xl font-black text-white tracking-tight leading-none italic">
                   Ils bâtissent le futur <br /> avec Huggy.
                 </p>
              </div>
-             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                {TESTIMONIALS.map((t, i) => (
                  <motion.div
                    key={t.name}
@@ -386,7 +384,7 @@ export default function LandingPage({ accent, onOpenStudio, onLogin, userId }: L
                    whileInView={{ opacity: 1, y: 0 }}
                    viewport={{ once: true }}
                    transition={{ delay: i * 0.1 }}
-                   className="p-10 rounded-[48px] bg-white/[0.02] border border-white/5 hover:border-blue-500/20 transition-all group"
+                   className="p-10 rounded-[48px] bg-transparent border border-white/[0.03] hover:border-blue-500/20 transition-all group"
                  >
                    <div className="flex gap-1 mb-8">
                       {[1,2,3,4,5].map(s => <Star key={s} size={12} className="fill-blue-500 text-blue-500" />)}
@@ -407,7 +405,7 @@ export default function LandingPage({ accent, onOpenStudio, onLogin, userId }: L
            </div>
         </section>
 
-        <section id="pricing" className="py-40 bg-white/[0.01]">
+        <section id="pricing" className="py-12 border-t border-white/5">
           <PricingSection
             onCheckout={handleCheckout}
             onOpenStudio={() => onOpenStudio?.()}
@@ -416,22 +414,66 @@ export default function LandingPage({ accent, onOpenStudio, onLogin, userId }: L
           />
         </section>
 
-        <footer className="py-20 px-6 border-t border-white/5">
-           <div className="max-w-6xl mx-auto flex flex-col md:flex-row justify-between items-center gap-10">
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 bg-white rounded-2xl flex items-center justify-center text-black">
-                   <Zap size={20} fill="currentColor" />
+        <footer className="py-24 px-6 bg-[#030304] overflow-hidden">
+          <div className="max-w-7xl mx-auto relative">
+            <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[150%] aspect-square bg-blue-600/[0.03] rounded-full blur-[120px] pointer-events-none" />
+            
+            <div className="relative z-10">
+              <div className="flex flex-col lg:flex-row lg:items-start lg:justify-between gap-16 lg:gap-10">
+                <header className="max-w-sm">
+                  <div className="flex items-center gap-2 mb-6">
+                    <FooterStarIcon className="text-blue-500" />
+                    <span className="text-xs font-black uppercase tracking-[0.4em] text-white/40">Studio</span>
+                  </div>
+                  <h2 className="text-2xl sm:text-3xl font-black text-white italic tracking-tighter leading-tight">
+                    Prêt à bâtir votre <span className="text-blue-500">empire digital ?</span>
+                  </h2>
+                </header>
+
+                <div className="flex flex-col gap-8 lg:flex-row lg:items-center lg:justify-between lg:gap-10">
+                  <div>
+                    <p className="text-sm font-normal text-slate-500 leading-normal">Contactez-nous :</p>
+                    <a
+                      href="mailto:contact@huggy.sbs"
+                      className="mt-2 inline-flex items-center gap-2 text-base font-bold text-white hover:text-blue-400 transition-colors"
+                    >
+                      contact@huggy.sbs
+                      <ExternalLink size={15} className="text-slate-500" />
+                    </a>
+                  </div>
+                  <nav className="flex flex-wrap items-center gap-x-8 gap-y-2 text-sm font-medium text-slate-500 lg:justify-end">
+                    <a href="#about" onClick={go('about')} className="hover:text-white transition-colors duration-200">À propos</a>
+                    <a href="#pricing" onClick={go('pricing')} className="hover:text-white transition-colors duration-200">Tarifs</a>
+                    <a href="#features" onClick={go('features')} className="hover:text-white transition-colors duration-200">Templates</a>
+                    <a href="#contact" onClick={go('contact')} className="hover:text-white transition-colors duration-200">Contact</a>
+                  </nav>
                 </div>
-                <span className="text-xl font-black text-white italic uppercase tracking-tighter">Huggy</span>
+
+                <div className="mt-16 flex justify-center">
+                  <span className="select-none text-[clamp(3rem,10vw,6rem)] font-black tracking-tighter text-white lowercase leading-none opacity-20 italic">
+                    huggy
+                  </span>
+                </div>
+
+                <div className="mt-14 pt-6 border-t border-white/5 flex flex-col gap-5 sm:flex-row sm:items-center sm:justify-between">
+                  <p className="text-[11px] text-slate-500 font-bold uppercase tracking-widest">
+                    © 2026 Huggy. Tous droits réservés.
+                  </p>
+                  <div className="flex flex-wrap items-center justify-center gap-x-4 gap-y-2 text-xs text-slate-500">
+                    <a href="#" className="hover:text-white transition-colors">CGU</a>
+                    <span className="text-white/10">|</span>
+                    <a href="#" className="hover:text-white transition-colors">Confidentialité</a>
+                    <span className="text-white/10">|</span>
+                    <span className="flex items-center gap-4">
+                      <a href="#" className="hover:text-white transition-colors"><Linkedin size={16} /></a>
+                      <a href="#" className="hover:text-white transition-colors"><Twitter size={16} /></a>
+                      <a href="#" className="hover:text-white transition-colors"><Github size={16} /></a>
+                    </span>
+                  </div>
+                </div>
               </div>
-              <nav className="flex gap-10 text-[10px] font-black text-slate-600 uppercase tracking-[0.2em]">
-                <a href="#" className="hover:text-white transition-colors">GitHub</a>
-                <a href="#" className="hover:text-white transition-colors">Twitter</a>
-                <a href="#" className="hover:text-white transition-colors">LinkedIn</a>
-                <a href="#" className="hover:text-white transition-colors">Discord</a>
-              </nav>
-              <p className="text-[10px] font-bold text-slate-700 uppercase tracking-widest">© 2026 Elite SaaS Lab. All rights reserved.</p>
-           </div>
+            </div>
+          </div>
         </footer>
       </div>
 
