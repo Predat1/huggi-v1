@@ -89,32 +89,32 @@ const TESTIMONIALS = [
 
 const FAQ_ITEMS = [
   {
-    q: 'What can I build with Huggy?',
-    a: 'SaaS dashboards, landing pages, outils internes, prototypes multi-écrans : tout ce qui peut être imaginé. Huggy génère et organise tout pour vous.',
+    q: 'Que puis-je construire avec Huggy ?',
+    a: 'Des tableaux de bord SaaS, des pages d\'atterrissage, des outils internes, des prototypes multi-écrans : tout ce que vous pouvez imaginer. Huggy génère et organise tout pour vous.',
   },
   {
-    q: 'Do I need to know how to code?',
+    q: 'Dois-je savoir coder ?',
     a: 'Non pour démarrer : décrivez votre idée en langage naturel. Le code reste accessible pour affiner quand vous le souhaitez.',
   },
   {
-    q: 'How are projects saved?',
-    a: 'Avec une infrastructure de données configurée, vos éléments et déploiements sont persistés par projet. Le studio reste accessible pour explorer vos idées localement.',
+    q: 'Comment les projets sont-ils sauvegardés ?',
+    a: 'Avec une infrastructure de données configurée, vos fichiers et déploiements sont persistés par projet. Le studio reste accessible pour explorer vos idées localement.',
   },
   {
-    q: 'Can I publish my app publicly?',
-    a: 'Oui. Le déploiement produit une version statique servie sous un slug (`/live/{slug}/`) ou un sous-domaine si vous configurez le DNS.',
+    q: 'Puis-je publier mon application publiquement ?',
+    a: 'Oui. Le déploiement produit une version statique servie sous un lien unique (`/live/{slug}/`) ou un sous-domaine si vous configurez le DNS.',
   },
   {
-    q: 'Which AI models are used?',
-    a: 'Claude (Anthropic) est utilisé en priorité ; Gemini peut servir de secours si la clé Anthropic est absente.',
+    q: 'Quels modèles d\'IA sont utilisés ?',
+    a: 'Claude (Anthropic) est utilisé en priorité ; Gemini peut servir de secours si nécessaire pour garantir une disponibilité maximale.',
   },
   {
-    q: 'Is my data secure?',
-    a: 'Les clés API restent côté serveur. Ne commitez jamais vos secrets ; utilisez les variables d’environnement.',
+    q: 'Mes données sont-elles sécurisées ?',
+    a: 'Les clés API restent côté serveur. Vos secrets ne sont jamais exposés ; nous utilisons des variables d’environnement sécurisées.',
   },
   {
-    q: 'Is there a free tier?',
-    a: 'Vous pouvez démarrer sans carte bancaire en auto-hébergeant ou en local. Les coûts viennent surtout de votre usage des APIs IA.',
+    q: 'Existe-t-il une version gratuite ?',
+    a: 'Vous pouvez démarrer gratuitement pour explorer le studio. Les coûts viennent ensuite de votre usage des ressources IA pour générer des projets complexes.',
   },
 ] as const;
 
@@ -219,11 +219,11 @@ export default function LandingPage({ accent, onOpenStudio, onLogin, userId }: L
 
           {/* Center Side: Navigation - Centered globally */}
           <nav className="hidden md:flex items-center justify-center gap-8 text-[13px] font-bold text-slate-500 dark:text-slate-400">
-            <a href="#features" onClick={go('features')} className="hover:text-slate-900 dark:hover:text-white transition-colors duration-200">Features</a>
-            <a href="#how-it-works" onClick={go('how-it-works')} className="hover:text-slate-900 dark:hover:text-white transition-colors duration-200">How it works</a>
-            <a href="#testimonials" onClick={go('testimonials')} className="hover:text-slate-900 dark:hover:text-white transition-colors duration-200 whitespace-nowrap">Community</a>
-            <a href="#pricing" onClick={go('pricing')} className="hover:text-slate-900 dark:hover:text-white transition-colors duration-200">Pricing</a>
-            <a href="#about" onClick={go('about')} className="hover:text-slate-900 dark:hover:text-white transition-colors duration-200">About</a>
+            <a href="#features" onClick={go('features')} className="hover:text-slate-900 dark:hover:text-white transition-colors duration-200">Fonctionnalités</a>
+            <a href="#how-it-works" onClick={go('how-it-works')} className="hover:text-slate-900 dark:hover:text-white transition-colors duration-200">Concept</a>
+            <a href="#testimonials" onClick={go('testimonials')} className="hover:text-slate-900 dark:hover:text-white transition-colors duration-200 whitespace-nowrap">Communauté</a>
+            <a href="#pricing" onClick={go('pricing')} className="hover:text-slate-900 dark:hover:text-white transition-colors duration-200">Tarifs</a>
+            <a href="#about" onClick={go('about')} className="hover:text-slate-900 dark:hover:text-white transition-colors duration-200">À propos</a>
           </nav>
 
           {/* Right Side: Actions */}
@@ -232,7 +232,7 @@ export default function LandingPage({ accent, onOpenStudio, onLogin, userId }: L
               onClick={() => onLogin && onLogin()}
               className="hidden sm:inline-block text-[11px] font-black uppercase tracking-widest text-slate-400 dark:text-slate-500 hover:text-slate-900 dark:hover:text-white transition-all active:scale-95"
             >
-              Log in
+              Connexion
             </button>
             
             <div className="h-4 w-px bg-slate-200 dark:bg-white/10 hidden sm:block" />
@@ -253,7 +253,7 @@ export default function LandingPage({ accent, onOpenStudio, onLogin, userId }: L
                 className={`hidden sm:flex items-center gap-2 px-5 py-2.5 ${accent.bg} hover:brightness-110 text-white rounded-xl text-xs font-black transition-all shadow-xl shadow-blue-600/20 active:scale-[0.96] uppercase tracking-widest`}
               >
                 <Sparkles size={14} />
-                Build Now
+                Lancer le Build
               </button>
             </div>
             <button
@@ -301,11 +301,11 @@ export default function LandingPage({ accent, onOpenStudio, onLogin, userId }: L
 
                 <nav className="flex flex-col gap-1">
                   {[
-                    ['Features', 'features'],
-                    ['How it works', 'how-it-works'],
-                    ['Community', 'testimonials'],
-                    ['Pricing', 'pricing'],
-                    ['About', 'about'],
+                    ['Fonctionnalités', 'features'],
+                    ['Concept', 'how-it-works'],
+                    ['Communauté', 'testimonials'],
+                    ['Tarifs', 'pricing'],
+                    ['À propos', 'about'],
                   ].map(([label, id], i) => (
                     <motion.a
                       key={id}
@@ -329,7 +329,7 @@ export default function LandingPage({ accent, onOpenStudio, onLogin, userId }: L
                     }}
                     className="w-full py-3.5 text-sm font-bold text-slate-600 dark:text-slate-400 bg-slate-50 dark:bg-white/5 rounded-xl transition-all"
                   >
-                    Log in
+                    Connexion
                   </button>
                   <button
                     type="button"
@@ -339,7 +339,7 @@ export default function LandingPage({ accent, onOpenStudio, onLogin, userId }: L
                     }}
                     className={`w-full py-4 ${accent.bg} text-white rounded-xl text-sm font-black shadow-lg shadow-blue-600/20 active:scale-[0.98] uppercase tracking-widest`}
                   >
-                    Build Now
+                    C'est parti !
                   </button>
                 </div>
               </motion.div>
@@ -368,8 +368,8 @@ export default function LandingPage({ accent, onOpenStudio, onLogin, userId }: L
                 transition={{ duration: 0.6, delay: 0.1 }}
                 className="mt-3 text-4xl sm:text-6xl lg:text-[72px] leading-[1.1] font-black tracking-tight"
               >
-                <span className="block text-[#0F172A] dark:text-white">Build any SaaS</span>
-                <span className="block text-blue-600 italic">instantly.</span>
+                <span className="block text-[#0F172A] dark:text-white">Créez n'importe quel SaaS</span>
+                <span className="block text-blue-600 italic">instantanément.</span>
               </motion.h1>
 
               <motion.p
@@ -378,7 +378,7 @@ export default function LandingPage({ accent, onOpenStudio, onLogin, userId }: L
                 transition={{ duration: 0.6, delay: 0.2 }}
                 className="mt-3 mx-auto max-w-lg text-slate-500 dark:text-slate-400 text-sm sm:text-base leading-relaxed"
               >
-                Describe your project, Huggy does the rest. AI-generated code, UI, dashboards, and data tables in seconds.
+                Décrivez votre projet, Huggy fait le reste. Code généré par IA, interfaces, dashboards et bases de données en quelques secondes.
               </motion.p>
 
               <motion.div
@@ -392,7 +392,7 @@ export default function LandingPage({ accent, onOpenStudio, onLogin, userId }: L
                     if (prompt.trim()) setBuildInput(prompt);
                     openStudio();
                   }}
-                  placeholder="Build a CRM for real estate with client tracking..."
+                  placeholder="Crée un CRM immobilier avec suivi des clients..."
                   modelLabel="Huggy AI"
                   className="shadow-2xl shadow-slate-900/10 dark:shadow-black/40"
                 />
@@ -406,7 +406,7 @@ export default function LandingPage({ accent, onOpenStudio, onLogin, userId }: L
                   className="flex items-center gap-3 mb-16 overflow-hidden"
                 >
                   <div className="h-px bg-slate-200 dark:bg-white/10 flex-1" />
-                  <span className="text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-[0.3em] whitespace-nowrap">Capabilities</span>
+                  <span className="text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-[0.3em] whitespace-nowrap">Capacités</span>
                   <div className="h-px bg-slate-200 dark:bg-white/10 flex-1" />
                 </motion.div>
                 
@@ -437,7 +437,7 @@ export default function LandingPage({ accent, onOpenStudio, onLogin, userId }: L
                 </div>
               </div>
 
-              <p className="mt-12 text-center text-[10px] font-bold text-slate-400 uppercase tracking-widest animate-bounce">Scroll for more</p>
+              <p className="mt-12 text-center text-[10px] font-bold text-slate-400 uppercase tracking-widest animate-bounce">Scrollez pour en savoir plus</p>
             </div>
           </main>
 

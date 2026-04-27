@@ -43,14 +43,14 @@ interface Project {
 }
 
 const TEMPLATES = [
-  { id: '1', title: 'SaaS Dashboard', desc: 'Admin dashboard with charts and KPIs.', prompt: 'Crée un SaaS dashboard avec sidebar, graphiques de revenus, KPIs et table des utilisateurs récents', image: 'https://images.unsplash.com/photo-1551288049-bebda4e38f71?auto=format&fit=crop&w=400&q=80' },
-  { id: '2', title: 'Landing Page', desc: 'High-converting startup landing page.', prompt: 'Crée une landing page startup premium avec hero animé, section features, pricing et CTA', image: 'https://images.unsplash.com/photo-1460925895917-afdab827c52f?auto=format&fit=crop&w=400&q=80' },
-  { id: '3', title: 'E-commerce', desc: 'Minimalist storefront with cart.', prompt: 'Crée une boutique e-commerce minimaliste avec grille de produits, panier et checkout', image: 'https://images.unsplash.com/photo-1556742049-0cfed4f6a45d?auto=format&fit=crop&w=400&q=80' },
-  { id: '4', title: 'Portfolio', desc: 'Sleek personal portfolio.', prompt: 'Crée un portfolio personnel élégant avec section hero, projets en grille et formulaire de contact', image: 'https://images.unsplash.com/photo-1499951360447-b19be8fe80f5?auto=format&fit=crop&w=400&q=80' },
-  { id: '5', title: 'CRM System', desc: 'Customer management interface.', prompt: 'Crée un CRM avec liste de contacts, pipeline de ventes, timeline et notes', image: 'https://images.unsplash.com/photo-1552664730-d307ca884978?auto=format&fit=crop&w=400&q=80' },
-  { id: '6', title: 'Link in Bio', desc: 'Mobile-first social link page.', prompt: 'Crée une page Link in Bio mobile-first avec avatar, liens stylés et stats', image: 'https://images.unsplash.com/photo-1611162617474-5b21e879e113?auto=format&fit=crop&w=400&q=80' },
-  { id: '7', title: 'Analytics Board', desc: 'Data visualization dashboard.', prompt: 'Crée un tableau de bord analytics avec graphiques en temps réel, heatmap et filtres par période', image: 'https://images.unsplash.com/photo-1639762681485-074b7f938ba0?auto=format&fit=crop&w=400&q=80' },
-  { id: '8', title: 'Kanban Board', desc: 'Project management with drag & drop.', prompt: 'Crée un tableau Kanban avec colonnes Todo/In Progress/Done, cartes de tâches et drag & drop', image: 'https://images.unsplash.com/photo-1611224923853-80b023f02d71?auto=format&fit=crop&w=400&q=80' },
+  { id: '1', title: 'Dashboard SaaS', desc: 'Interface d\'administration avec graphiques et KPIs.', prompt: 'Crée un SaaS dashboard avec sidebar, graphiques de revenus, KPIs et table des utilisateurs récents', image: 'https://images.unsplash.com/photo-1551288049-bebda4e38f71?auto=format&fit=crop&w=400&q=80' },
+  { id: '2', title: 'Landing Page', desc: 'Page d\'atterrissage haute conversion pour startup.', prompt: 'Crée une landing page startup premium avec hero animé, section features, pricing et CTA', image: 'https://images.unsplash.com/photo-1460925895917-afdab827c52f?auto=format&fit=crop&w=400&q=80' },
+  { id: '3', title: 'E-commerce', desc: 'Boutique minimaliste avec panier.', prompt: 'Crée une boutique e-commerce minimaliste avec grille de produits, panier et checkout', image: 'https://images.unsplash.com/photo-1556742049-0cfed4f6a45d?auto=format&fit=crop&w=400&q=80' },
+  { id: '4', title: 'Portfolio', desc: 'Portfolio personnel élégant.', prompt: 'Crée un portfolio personnel élégant avec section hero, projets en grille et formulaire de contact', image: 'https://images.unsplash.com/photo-1499951360447-b19be8fe80f5?auto=format&fit=crop&w=400&q=80' },
+  { id: '5', title: 'Système CRM', desc: 'Interface de gestion client.', prompt: 'Crée un CRM avec liste de contacts, pipeline de ventes, timeline et notes', image: 'https://images.unsplash.com/photo-1552664730-d307ca884978?auto=format&fit=crop&w=400&q=80' },
+  { id: '6', title: 'Link in Bio', desc: 'Page de liens sociaux mobile-first.', prompt: 'Crée une page Link in Bio mobile-first avec avatar, liens stylés et stats', image: 'https://images.unsplash.com/photo-1611162617474-5b21e879e113?auto=format&fit=crop&w=400&q=80' },
+  { id: '7', title: 'Board Analytics', desc: 'Visualisation de données avancée.', prompt: 'Crée un tableau de bord analytics avec graphiques en temps réel, heatmap et filtres par période', image: 'https://images.unsplash.com/photo-1639762681485-074b7f938ba0?auto=format&fit=crop&w=400&q=80' },
+  { id: '8', title: 'Tableau Kanban', desc: 'Gestion de projet avec drag & drop.', prompt: 'Crée un tableau Kanban avec colonnes Todo/In Progress/Done, cartes de tâches et drag & drop', image: 'https://images.unsplash.com/photo-1611224923853-80b023f02d71?auto=format&fit=crop&w=400&q=80' },
 ];
 
 const SHORTCUTS = [
@@ -209,9 +209,9 @@ export default function UserDashboard({ user, credits, onOpenStudio, onLogout }:
         {/* Navigation */}
         <nav className="flex-1 px-4 py-4 space-y-2.5">
           {[
-            { id: 'home', label: 'Dashboard', icon: Home },
+            { id: 'home', label: 'Accueil', icon: Home },
             { id: 'template', label: 'Templates', icon: LayoutTemplate },
-            { id: 'gallery', label: 'Galerie Publique', icon: Globe },
+            { id: 'gallery', label: 'Communauté', icon: Globe },
             { id: 'projects', label: 'Mes projets', icon: Folder },
             { id: 'shortcuts', label: 'Raccourcis', icon: Keyboard },
           ].map(({ id, label, icon: Icon }) => (

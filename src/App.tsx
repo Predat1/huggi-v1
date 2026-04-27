@@ -1685,7 +1685,7 @@ export default function App() {
                   setTimeout(() => {
                     setIsSaving(false);
                     setLastSaved(new Date());
-                    showToast('Refresh successful', 'info');
+                    showToast('Aperçu actualisé', 'info');
                   }, 800);
                 }}
                 className={`p-2 rounded-xl transition-all ${isSaving ? 'text-blue-600 bg-blue-50' : 'text-slate-400 hover:text-blue-600 hover:bg-slate-50'}`}
@@ -1697,7 +1697,7 @@ export default function App() {
               <button 
                 onClick={() => window.open(window.location.href, '_blank')}
                 className="p-2 text-slate-400 hover:text-blue-600 hover:bg-slate-50 rounded-xl transition-all"
-                title="Open in new tab"
+                title="Ouvrir dans un nouvel onglet"
               >
                 <ExternalLink size={15} />
               </button>
@@ -1726,7 +1726,7 @@ export default function App() {
                         <h4 className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Espace Cloud</h4>
                         <div className="flex items-center gap-1.5 px-2 py-0.5 bg-emerald-50 rounded-full border border-emerald-100">
                           <div className="w-1 h-1 rounded-full bg-emerald-500 animate-pulse" />
-                          <span className="text-[9px] font-black text-emerald-600 uppercase tracking-tighter">Operational</span>
+                          <span className="text-[9px] font-black text-emerald-600 uppercase tracking-tighter">Opérationnel</span>
                         </div>
                       </div>
                       
@@ -1740,7 +1740,7 @@ export default function App() {
                             <div className="h-full bg-blue-500 w-[42%]" />
                           </div>
                           <div className="flex justify-between text-[9px] font-bold text-slate-400 uppercase">
-                            <span>Usage</span>
+                            <span>Utilisation</span>
                             <span>42%</span>
                           </div>
                         </div>
@@ -1762,7 +1762,7 @@ export default function App() {
                                 <div className="flex items-center gap-2">
                                   <div className="px-1.5 py-0.5 bg-blue-50 rounded text-[8px] font-black text-blue-600 uppercase tracking-widest">Production</div>
                                   <div className="w-1 h-1 rounded-full bg-emerald-500" />
-                                  <span className="text-[9px] font-bold text-slate-400 group-hover:text-slate-600">Active</span>
+                                  <span className="text-[9px] font-bold text-slate-400 group-hover:text-slate-600">Actif</span>
                                 </div>
                               </div>
                             ))

@@ -116,10 +116,10 @@ export default function PricingSection({ onCheckout, onOpenStudio, userId, isChe
               Tarification simple
             </div>
             <h2 className="text-4xl sm:text-5xl font-black text-slate-900 dark:text-white tracking-tight">
-              Payez pour la <span className="text-blue-600">valeur</span>,<br />pas pour l'usage
+              Passez au niveau <span className="text-blue-600 italic">Supérieur.</span>
             </h2>
             <p className="mt-4 text-lg text-slate-500 dark:text-slate-400 max-w-xl mx-auto">
-              Projets illimités sur Pro. Badge retiré dès Starter. Résiliez à tout moment.
+              Choisissez le plan qui correspond à votre ambition. Pas de frais cachés, juste de la puissance.
             </p>
           </motion.div>
       )}

@@ -34,11 +34,11 @@ const AVATAR_COLORS = [
 ];
 
 const TYPEWRITER_EXAMPLES = [
-  "Build a SaaS dashboard for startups...",
-  "Create a CRM for real estate with client tracking...",
-  "Design a premium portfolio with dark mode...",
-  "Generate a full-stack e-commerce store...",
-  "Build a collaboration tool like Slack...",
+  "Créez un dashboard SaaS pour startups...",
+  "Bâtissez un CRM immobilier avec suivi client...",
+  "Générez un portfolio premium avec mode sombre...",
+  "Créez une boutique e-commerce full-stack...",
+  "Développez un outil collaboratif comme Slack...",
 ];
 
 function TagPill(props: any) {
