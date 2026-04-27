@@ -190,7 +190,7 @@ export default function HuggyChatInput({
         )}
 
         {/* Textarea Area */}
-        <div className="px-5 pt-4 sm:px-6 sm:pt-5 pb-2">
+        <div className="px-3 pt-2 sm:px-4 sm:pt-3 pb-1">
           <textarea
             ref={textareaRef}
             value={value}
@@ -205,11 +205,11 @@ export default function HuggyChatInput({
         </div>
 
         {/* ── Toolbar (Minimal) ── */}
-        <div className="flex items-center justify-between px-3 pb-3 sm:px-4 sm:pb-4 pt-1">
+        <div className="flex items-center justify-between px-2 pb-2 sm:px-3 sm:pb-3 pt-0.5">
           {/* Left Toolbar */}
           <div className="flex items-center">
             {/* Plus */}
-            <button className="w-10 h-10 rounded-full flex items-center justify-center text-slate-400 dark:text-slate-500 hover:text-slate-900 dark:hover:text-white hover:bg-slate-50 dark:hover:bg-white/5 transition-all">
+            <button className="w-8 h-8 rounded-full flex items-center justify-center text-slate-400 dark:text-slate-500 hover:text-slate-900 dark:hover:text-white hover:bg-slate-50 dark:hover:bg-white/5 transition-all">
               <Plus size={20} strokeWidth={2} />
             </button>
           </div>
@@ -219,7 +219,7 @@ export default function HuggyChatInput({
             {/* Mic */}
             <button
               onClick={() => setIsListening(!isListening)}
-              className={`w-10 h-10 rounded-xl flex items-center justify-center border transition-all ${
+              className={`w-8 h-8 rounded-lg flex items-center justify-center border transition-all ${
                 isListening 
                 ? 'bg-rose-50 dark:bg-rose-500/10 border-rose-200 dark:border-rose-500/30 text-rose-500 shadow-inner' 
                 : 'bg-slate-50 dark:bg-white/5 border-slate-200 dark:border-white/10 text-slate-400 dark:text-slate-500 hover:text-slate-900 dark:hover:text-white hover:border-slate-300 dark:hover:border-white/20'
@@ -240,7 +240,7 @@ export default function HuggyChatInput({
             <button
               onClick={handleSend}
               disabled={!canSend}
-              className={`w-10 h-10 sm:w-11 sm:h-11 min-w-[40px] sm:min-w-[44px] min-h-[40px] sm:min-h-[44px] rounded-full flex items-center justify-center transition-all ${
+              className={`w-8 h-8 sm:w-9 sm:h-9 min-w-[32px] sm:min-w-[36px] min-h-[32px] sm:min-h-[36px] rounded-full flex items-center justify-center transition-all ${
                 canSend 
                 ? 'bg-[#4F46E5] hover:bg-[#3730A3] text-white shadow-lg shadow-indigo-500/20 active:scale-95' 
                 : 'bg-slate-100 dark:bg-white/5 text-slate-300 dark:text-slate-600 cursor-not-allowed'
