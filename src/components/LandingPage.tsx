@@ -295,7 +295,7 @@ export default function LandingPage({ accent, onOpenStudio, onLogin, userId }: L
 
       <div id="top" className="overflow-y-auto">
         <div className="max-w-6xl mx-auto px-6">
-          <main className="pt-4 pb-12">
+          <main className="pt-8 sm:pt-4 pb-12">
             <div className="text-center">
               <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-blue-50 border border-blue-100 text-blue-600 text-xs font-black tracking-wide">
                 <Sparkles size={14} />
@@ -471,7 +471,7 @@ export default function LandingPage({ accent, onOpenStudio, onLogin, userId }: L
             </div>
           </section>
 
-          <section id="cta" className="scroll-mt-28 py-32 relative overflow-hidden">
+          <section id="cta" className="scroll-mt-28 py-16 sm:py-32 relative overflow-hidden">
             {/* Decorative Background Glows */}
             <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-full h-full pointer-events-none opacity-50 dark:opacity-100">
               <div className="absolute bottom-0 left-1/4 w-[500px] h-[300px] bg-blue-600/20 blur-[120px] rounded-full" />
