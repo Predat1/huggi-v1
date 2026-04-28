@@ -1248,1085 +1248,281 @@ export default function App() {
               </div>
             )}
 
-            {/* Top Navigation Bar — Premium Elite Studio */}
-            <header className="h-16 border-b border-slate-200 dark:border-white/[0.03] bg-white/80 dark:bg-[#070708]/80 backdrop-blur-2xl flex items-center justify-between px-6 z-10 shrink-0">
-              {/* Left: Brand & Breadcrumbs */}
-              <div className="flex items-center gap-6 min-w-0">
-                <motion.button 
-                  whileHover={{ x: -3 }}
-                  onClick={() => {
-                    setStudioMode(false);
-                    window.history.replaceState({}, '', window.location.pathname);
-                  }}
-                  className="flex items-center gap-2 text-slate-400 hover:text-slate-900 dark:hover:text-white transition-colors"
-                  title="Dashboard"
-                >
-                  <ChevronLeft size={20} />
-                </motion.button>
-                
-                <div className="h-8 w-px bg-slate-200 dark:bg-white/10" />
-                
-                <div className="flex items-center gap-4 min-w-0">
-                  <div className="flex items-center gap-2 text-[10px] font-black text-slate-400 uppercase tracking-widest">
-                    <Folder size={14} className="text-slate-300 dark:text-slate-600" />
-                    <span className="hidden sm:inline">Projets</span>
-                    <ChevronRight size={12} className="text-slate-300 dark:text-slate-700" />
+            {/* Top Navigation Bar — Professional Studio Aesthetic */}
+            <header className="h-12 border-b border-white/[0.08] bg-[#0a0a0a] flex items-center justify-between px-4 z-20 shrink-0">
+              {/* Left: Branding & Project context */}
+              <div className="flex items-center gap-4 min-w-0">
+                <div className="flex items-center gap-2.5">
+                  <div className="w-7 h-7 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-lg flex items-center justify-center shadow-lg shadow-blue-500/20">
+                    <Zap size={16} className="text-white" fill="currentColor" />
                   </div>
-
-                  <div className="flex flex-col min-w-0">
-                    <input
-                      type="text"
-                      value={projectName}
-                      onChange={(e) => setProjectName(e.target.value)}
-                      onBlur={(e) => handleRenameProject(e.target.value)}
-                      className="bg-transparent border-none p-0 text-sm font-black text-slate-900 dark:text-white focus:ring-0 w-32 sm:w-auto min-w-[100px] truncate hover:bg-slate-100 dark:hover:bg-white/5 rounded px-1 transition-colors"
-                      placeholder="Nom du projet..."
-                    />
-                    <div className="flex items-center gap-2 mt-0.5">
-                      <span className="text-[9px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-tighter truncate max-w-[150px]">
-                        {activeFilePath.split('/').pop()}
-                      </span>
-                      <div className="w-1 h-1 rounded-full bg-slate-300 dark:bg-slate-700" />
-                      <span className="text-[8px] font-black text-blue-500 uppercase tracking-widest">V1.0</span>
+                  <div className="flex items-center gap-2">
+                    <span className="text-[13px] font-black text-white tracking-tighter uppercase italic">Huggy</span>
+                    <ChevronRight size={12} className="text-white/20" />
+                    <div className="flex flex-col">
+                      <input
+                        type="text"
+                        value={projectName}
+                        onChange={(e) => setProjectName(e.target.value)}
+                        onBlur={(e) => handleRenameProject(e.target.value)}
+                        className="bg-transparent border-none p-0 text-[11px] font-bold text-white/90 focus:ring-0 focus:outline-none w-auto min-w-[80px] truncate"
+                      />
+                      <div className="flex items-center gap-1.5 -mt-0.5">
+                        <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+                        <span className="text-[9px] text-white/40 font-black uppercase tracking-widest">Active Studio</span>
+                      </div>
+                    </div>
                   </div>
                 </div>
-              </div>
-              </div>
 
-              {/* Sub-navigation Tabs — Central Elite Navigation */}
-              <div className="hidden md:flex items-center bg-slate-100/50 dark:bg-white/[0.03] p-1 rounded-2xl border border-slate-200/50 dark:border-white/5 mx-4">
-                {[
-                  { id: 'preview', label: 'Aperçu', icon: <Eye size={16} /> },
-                  { id: 'code', label: 'Code', icon: <Code2 size={16} /> },
-                  { id: 'database', label: 'Données', icon: <Database size={16} /> },
-                  { id: 'analytics', label: 'Analytics', icon: <BarChart3 size={16} /> },
-                ].map((tab) => (
-                  <button
-                    key={tab.id}
-                    onClick={() => setActiveStudioTab(tab.id as any)}
-                    className={`flex items-center justify-center w-10 h-10 rounded-xl transition-all ${
-                      activeStudioTab === tab.id 
-                        ? 'bg-white dark:bg-white/10 text-blue-600 dark:text-blue-400 shadow-sm border border-slate-200/50 dark:border-white/10' 
-                        : 'text-slate-400 hover:text-slate-600 dark:hover:text-slate-200'
-                    }`}
-                    title={tab.label}
+                <div className="flex items-center gap-1 ml-6 border-l border-white/10 pl-4">
+                  {[
+                    { id: 'preview', icon: <Monitor size={15} />, label: 'Preview' },
+                    { id: 'code', icon: <Code2 size={15} />, label: 'Editor' },
+                  ].map(item => (
+                    <button 
+                      key={item.id}
+                      onClick={() => setActiveStudioTab(item.id as any)} 
+                      className={`flex items-center gap-2 px-3 py-1.5 rounded-lg transition-all ${activeStudioTab === item.id ? 'bg-white/10 text-white shadow-inner' : 'text-white/40 hover:text-white/60'}`}
+                    >
+                      {item.icon}
+                      <span className="text-[10px] font-bold uppercase tracking-widest hidden lg:inline">{item.label}</span>
+                    </button>
+                  ))}
+                  <button 
+                    onClick={() => setIsTerminalOpen(!isTerminalOpen)} 
+                    className={`flex items-center gap-2 px-3 py-1.5 rounded-lg transition-all ${isTerminalOpen ? 'bg-white/10 text-white shadow-inner' : 'text-white/40 hover:text-white/60'}`}
                   >
-                    {tab.icon}
+                    <TerminalIcon size={15} />
+                    <span className="text-[10px] font-bold uppercase tracking-widest hidden lg:inline">Terminal</span>
                   </button>
-                ))}
-              </div>
-
-
-              {/* Online Collaborators */}
-              {onlineUsers > 1 && (
-                <div className="hidden md:flex items-center gap-2 px-3 py-1.5 rounded-2xl bg-emerald-50 dark:bg-emerald-500/10 border border-emerald-200/50 dark:border-emerald-500/20">
-                  <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
-                  <span className="text-[10px] font-black text-emerald-600 dark:text-emerald-400 uppercase tracking-widest">{onlineUsers} en ligne</span>
                 </div>
-              )}
-
-        {/* Right: Actions */}
-        <div className="flex items-center gap-2 sm:gap-3">
-          {credits !== null && (
-            <div className="hidden lg:flex items-center gap-2 px-3 py-1.5 bg-amber-50 dark:bg-amber-500/5 rounded-xl border border-amber-200/50 dark:border-amber-500/20">
-              <Sparkles size={12} className="text-amber-500" />
-              <div className="flex flex-col">
-                <span className="text-[10px] font-black text-amber-700 dark:text-amber-400 leading-none">
-                  {Number.isInteger(credits) ? credits : credits.toFixed(1)} <span className="text-[8px] opacity-60">CREDITS</span>
-                </span>
               </div>
-            </div>
-          )}
 
-          <div className="h-6 w-px bg-slate-200 dark:bg-white/10 hidden sm:block" />
+              {/* Center: Status Pill */}
+              <div className="hidden xl:flex items-center px-4 py-1.5 bg-white/5 border border-white/10 rounded-full gap-3">
+                 <div className="flex items-center gap-2">
+                    <div className="w-2 h-2 rounded-full bg-blue-500" />
+                    <span className="text-[10px] font-black text-white/60 uppercase tracking-tighter">Engine v2.4</span>
+                 </div>
+                 <div className="w-px h-3 bg-white/10" />
+                 <div className="flex items-center gap-2">
+                    <Cloud size={12} className="text-white/30" />
+                    <span className="text-[10px] font-black text-white/60 uppercase tracking-tighter">Cloud Sync</span>
+                 </div>
+              </div>
 
-          {/* Secondary Actions Group */}
-          <div className="flex items-center gap-1.5">
-            <button
-              type="button"
-              onClick={() => setShowSecretsModal(true)}
-              className="p-2 text-slate-500 hover:text-violet-600 hover:bg-violet-50 dark:hover:bg-violet-500/10 rounded-xl transition-all"
-              title="Secrets & Env"
-            >
-              <Shield size={18} />
-            </button>
-            
-            <div className="relative group/menu">
-              <button
-                className="flex items-center gap-1.5 px-3 py-2 text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-white/5 rounded-xl transition-all text-xs font-bold"
-              >
-                <Download size={14} />
-                <span className="hidden md:inline">Exporter</span>
-                <ChevronDown size={12} />
-              </button>
-              
-              <div className="absolute top-full right-0 mt-2 w-48 bg-white dark:bg-[#111] rounded-2xl border border-slate-200 dark:border-white/10 shadow-2xl opacity-0 translate-y-2 pointer-events-none group-hover/menu:opacity-100 group-hover/menu:translate-y-0 group-hover/menu:pointer-events-auto transition-all z-50 p-1.5">
-                <button onClick={handleExportZip} className="w-full flex items-center gap-3 px-3 py-2 hover:bg-slate-50 dark:hover:bg-white/5 rounded-xl text-xs font-bold text-slate-600 dark:text-slate-400 transition-colors">
-                  <HardDrive size={14} /> Télécharger .ZIP
+              {/* Right: Actions */}
+              <div className="flex items-center gap-3">
+                <div className="flex items-center gap-1 mr-2">
+                   <button className="p-2 text-white/30 hover:text-white hover:bg-white/5 rounded-lg transition-all" title="Settings" onClick={() => setShowSettingsModal(true)}>
+                      <Settings size={18} />
+                   </button>
+                   <button className="p-2 text-white/30 hover:text-white hover:bg-white/5 rounded-lg transition-all" title="Share" onClick={() => setShowExportModal(true)}>
+                      <ExternalLink size={18} />
+                   </button>
+                </div>
+
+                <button
+                  onClick={() => setShowPricingModal(true)}
+                  className="group flex items-center gap-2 px-4 py-1.5 bg-gradient-to-r from-violet-600 to-indigo-600 hover:from-violet-500 hover:to-indigo-500 text-white rounded-lg text-[11px] font-black uppercase tracking-wider transition-all active:scale-95 shadow-lg shadow-violet-600/20"
+                >
+                  <Sparkles size={14} className="group-hover:rotate-12 transition-transform" fill="currentColor" />
+                  Upgrade
                 </button>
-                <button onClick={() => setShowExportModal(true)} className="w-full flex items-center gap-3 px-3 py-2 hover:bg-slate-50 dark:hover:bg-white/5 rounded-xl text-xs font-bold text-slate-600 dark:text-slate-400 transition-colors">
-                  <Github size={14} /> Push vers GitHub
+
+                <button
+                  onClick={handlePublish}
+                  className="px-5 py-1.5 bg-blue-600 hover:bg-blue-500 text-white rounded-lg text-[11px] font-black uppercase tracking-wider transition-all active:scale-95 shadow-lg shadow-blue-600/20"
+                >
+                  Publish
                 </button>
               </div>
-            </div>
-          </div>
-
-          {/* Primary Action: Publish */}
-          <button
-            onClick={handlePublish}
-            disabled={isPublishing}
-            className="relative flex items-center gap-2 px-5 py-2.5 bg-slate-900 dark:bg-white text-white dark:text-slate-900 disabled:opacity-50 rounded-2xl text-xs font-black transition-all active:scale-95 shadow-xl shadow-slate-900/20 dark:shadow-white/10 overflow-hidden group/pub"
-          >
-            <div className="absolute inset-0 bg-gradient-to-r from-blue-600 to-indigo-600 opacity-0 group-hover/pub:opacity-100 transition-opacity" />
-            <Globe size={14} className={`relative z-10 ${isPublishing ? 'animate-spin' : ''}`} />
-            <span className="relative z-10">{isPublishing ? 'PUBLICATION...' : 'PUBLIER'}</span>
-          </button>
-
-          <div className="h-6 w-px bg-slate-200 dark:bg-white/10" />
-
-          {/* User Avatar */}
-          {user && (
-            <button
-              onClick={() => signOut().then(() => setUser(null))}
-              className="w-9 h-9 rounded-2xl bg-gradient-to-br from-slate-100 to-slate-200 dark:from-white/10 dark:to-white/5 border border-slate-200 dark:border-white/10 flex items-center justify-center text-xs font-black text-slate-600 dark:text-white hover:ring-4 hover:ring-blue-500/10 transition-all shrink-0 active:scale-90"
-              title={user.email || 'Mon compte'}
-            >
-              {(user.email || 'U')[0].toUpperCase()}
-            </button>
-          )}
-        </div>
-      </header>
+            </header>
 
       <div className="flex flex-1 overflow-hidden relative">
+        {/* ── PREVIEW TAB ────────────────────────────────────────────────────────── */}
         {activeStudioTab === 'preview' && (
-          <>
-            {/* Left Sidebar */}
-        <aside className={`${isSidebarCollapsed ? 'w-16' : 'w-[300px]'} border-r border-slate-200 bg-white flex flex-col shrink-0 transition-all duration-300 ease-in-out`}>
-          <div className="p-4 border-b border-slate-100 flex items-center justify-between relative min-h-[57px]">
-            {!isSidebarCollapsed && (
-              <div className="flex items-center gap-2">
-                <div className={`w-4 h-4 ${ACCENT_COLORS[activeAccentColor].bg} rounded-sm`} />
-                <span className="font-bold text-sm text-slate-700">Huggy Studio</span>
-              </div>
-            )}
-            
-            <button
-              onClick={() => setIsSidebarCollapsed(!isSidebarCollapsed)}
-              className={`p-1.5 rounded-lg hover:bg-slate-100 text-slate-400 hover:text-slate-900 transition-all ${isSidebarCollapsed ? 'mx-auto' : ''}`}
-              title={isSidebarCollapsed ? 'Expand sidebar' : 'Collapse sidebar'}
-            >
-              {isSidebarCollapsed ? <Plus size={18} /> : <Maximize2 size={16} className="rotate-45" />}
-            </button>
-
-
-
-            {!isSidebarCollapsed && (
-              <div className="flex items-center gap-3 text-slate-400 dark:text-slate-500">
-              <button 
-                onClick={() => setActiveSidebarTab('chat')}
-                className={`p-1.5 rounded transition-colors ${activeSidebarTab === 'chat' ? 'text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-500/10' : 'hover:text-slate-600 dark:hover:text-slate-300'}`}
-                title="Chat"
-              >
-                <MessageSquare size={18} />
-              </button>
-              <button 
-                onClick={() => setActiveSidebarTab('history')}
-                className={`p-1.5 rounded transition-colors ${activeSidebarTab === 'history' ? 'text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-500/10' : 'hover:text-slate-600 dark:hover:text-slate-300'}`}
-                title="History"
-              >
-                <History size={18} />
-              </button>
-              </div>
-            )}
-          </div>
-
-          <div className={`flex-1 flex flex-col min-h-0 ${isSidebarCollapsed ? 'hidden' : 'flex'}`}>
-            {activeSidebarTab === 'chat' ? (
-              <>
-                {/* ── Chat Messages ── */}
-                <div className="flex-1 overflow-y-auto p-2.5 space-y-2.5 scrollbar-hide">
-                  {messages.length === 0 && !isGenerating && (
-                    <div className="flex flex-col items-center justify-center h-full gap-5 text-center px-4">
-                      <div className="relative">
-                        <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-blue-600 to-blue-700 flex items-center justify-center shadow-2xl shadow-blue-600/30">
-                          <Zap size={28} className="text-white" fill="currentColor" />
-                        </div>
-                        <div className="absolute -bottom-1 -right-1 w-5 h-5 rounded-full bg-emerald-400 border-2 border-white flex items-center justify-center">
-                          <Check size={10} className="text-white" />
-                        </div>
-                      </div>
-                      <div>
-                        <p className="text-base font-black text-slate-800 dark:text-white">Huggy Studio</p>
-                        <p className="text-xs text-slate-500 dark:text-slate-400 mt-1.5 max-w-[260px] leading-relaxed">Décrivez l'application que vous souhaitez créer. L'IA construira tout pour vous.</p>
-                      </div>
-
+          <div className="flex-1 flex overflow-hidden relative">
+             <aside className="w-[340px] flex flex-col bg-[#0d0d0d] border-r border-white/[0.05] shrink-0 overflow-hidden">
+               <div className="flex-1 flex flex-col min-h-0 border-b border-white/[0.05]">
+                 <div className="px-5 py-4 border-b border-white/[0.03] flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                     <History size={16} className="text-blue-500" />
+                     <span className="text-[11px] font-black text-white/90 uppercase tracking-[0.2em]">Flux d'activité</span>
                     </div>
-                  )}
+                    <div className="flex items-center gap-1">
+                      <button 
+                        onClick={() => setActiveSidebarTab('chat')}
+                        className={`p-1.5 rounded-lg transition-all ${activeSidebarTab === 'chat' ? 'bg-white/10 text-white' : 'text-white/40 hover:text-white/60'}`}
+                      >
+                        <MessageSquare size={14} />
+                      </button>
+                      <button 
+                        onClick={() => setActiveSidebarTab('history')}
+                        className={`p-1.5 rounded-lg transition-all ${activeSidebarTab === 'history' ? 'bg-white/10 text-white' : 'text-white/40 hover:text-white/60'}`}
+                      >
+                        <FileCode size={14} />
+                      </button>
+                    </div>
+                 </div>
 
-                  {messages.map((msg) => (
-                    <motion.div
-                      key={msg.id}
-                      initial={{ opacity: 0, y: 8 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      transition={{ duration: 0.2, ease: [0.22, 1, 0.36, 1] }}
-                      className={`flex ${msg.sender === 'VOUS' ? 'justify-end' : 'justify-start'}`}
-                    >
-                      <div className={`max-w-[88%] ${msg.sender === 'VOUS' ? 'items-end' : 'items-start'} flex flex-col gap-1.5`}>
-                        {msg.sender === 'HUGGY' && (
-                          <div className="flex items-center gap-1.5 px-1">
-                            <div className="w-5 h-5 rounded-lg bg-gradient-to-br from-blue-600 to-blue-700 flex items-center justify-center shadow-sm">
-                              <Zap size={10} className="text-white" fill="currentColor" />
+                 <div className="flex-1 overflow-y-auto scrollbar-hide p-5">
+                   {messages.length === 0 && (
+                     <div className="flex flex-col items-center justify-center h-full text-center opacity-10">
+                        <Box size={48} strokeWidth={1} className="mb-6" />
+                        <p className="text-[10px] font-black uppercase tracking-[0.3em]">System Standby</p>
+                     </div>
+                   )}
+                   <div className="space-y-6">
+                      {messages.map((msg) => (
+                         <div key={msg.id} className="group relative">
+                            <div className="flex items-center justify-between mb-2">
+                               <div className="flex items-center gap-2">
+                                  <div className={`w-1 h-3 rounded-full ${msg.sender === 'VOUS' ? 'bg-blue-500' : 'bg-violet-500'}`} />
+                                  <span className="text-[9px] font-black text-white/40 uppercase tracking-widest">{msg.sender === 'VOUS' ? 'Requête' : 'Agent'}</span>
+                               </div>
+                               <span className="text-[8px] text-white/20 tracking-widest">{msg.timestamp.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
                             </div>
-                            <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Huggy</span>
-                            {msg.durationMs && (
-                              <span className="text-[9px] text-slate-300 font-medium ml-0.5">· {(msg.durationMs / 1000).toFixed(1)}s</span>
-                            )}
-                          </div>
-                        )}
-                        <div className={`rounded-2xl px-4 py-2.5 text-[13px] leading-relaxed group/msg relative ${
-                          msg.sender === 'VOUS'
-                            ? 'bg-gradient-to-br from-blue-600 to-blue-700 text-white rounded-tr-md shadow-lg shadow-blue-600/15'
-                            : 'bg-white dark:bg-[#1E1E1E] text-slate-700 dark:text-slate-300 border border-slate-100 dark:border-white/5 rounded-tl-md shadow-sm'
-                        }`}>
-                          {msg.text}
-                          {/* Copy button */}
-                          {msg.sender === 'HUGGY' && (
-                            <button
-                              onClick={() => { navigator.clipboard.writeText(msg.text); showToast('Copié !', 'success'); }}
-                              className="absolute top-2 right-2 p-1 rounded-md text-slate-300 hover:text-slate-600 hover:bg-slate-50 opacity-0 group-hover/msg:opacity-100 transition-all"
-                              title="Copier"
-                            >
-                              <Copy size={11} />
-                            </button>
-                          )}
-                        </div>
-                        {msg.changedFiles && msg.changedFiles.length > 0 && (
-                          <div className="flex items-center gap-1.5 px-1 mt-0.5">
-                            <div className="flex items-center gap-1 px-2 py-1 bg-emerald-50 text-emerald-600 rounded-lg text-[10px] font-bold border border-emerald-100/80">
-                              <FileCode size={10} />
-                              {msg.changedFiles.length} fichier(s) modifié(s)
-                            </div>
-                            <button
-                              onClick={() => handleRestore(msg)}
-                              disabled={isRestoring}
-                              className="flex items-center gap-1 px-2 py-1 bg-blue-50 text-blue-600 rounded-lg text-[10px] font-bold border border-blue-100/80 hover:bg-blue-100 transition-colors disabled:opacity-50"
-                            >
-                              <RotateCcw size={10} className={isRestoring ? 'animate-spin' : ''} />
-                              Restaurer
-                            </button>
-                          </div>
-                        )}
-                      </div>
-                    </motion.div>
-                  ))}
-
-                  {/* ── Streaming / Generating state ── */}
-                  {isGenerating && (
-                    <motion.div
-                      initial={{ opacity: 0, y: 10 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      className="flex justify-start"
-                    >
-                      <div className="max-w-[88%] flex flex-col gap-2 items-start">
-                        <div className="flex items-center gap-1.5 px-1">
-                          <div className="w-5 h-5 rounded-lg bg-gradient-to-br from-blue-600 to-blue-700 flex items-center justify-center shadow-sm">
-                            <Zap size={10} className="text-white animate-pulse" fill="currentColor" />
-                          </div>
-                          <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Huggy</span>
-                          <span className="text-[9px] text-blue-500 font-semibold animate-pulse">en réflexion...</span>
-                        </div>
-                        {/* Agent task cards */}
-                        {agentTasks.length > 0 && (
-                          <div className="flex flex-col gap-1.5 w-full">
-                            {agentTasks.map((task) => (
-                              <motion.div
-                                key={task.id}
-                                initial={{ opacity: 0, x: -8 }}
-                                animate={{ opacity: 1, x: 0 }}
-                                className={`flex items-center gap-2 px-3 py-2 rounded-xl text-[11px] font-medium border backdrop-blur-sm ${
-                                  task.status === 'running'
-                                    ? 'bg-amber-50/80 border-amber-200/60 text-amber-800'
-                                    : task.status === 'error'
-                                    ? 'bg-red-50/80 border-red-200/60 text-red-700'
-                                    : 'bg-emerald-50/60 border-emerald-100/60 text-emerald-700'
-                                }`}
-                              >
-                                {task.status === 'running' ? (
-                                  <Loader2 size={12} className="animate-spin text-amber-500 shrink-0" />
-                                ) : task.status === 'success' ? (
-                                  <Check size={12} className="text-emerald-500 shrink-0" />
-                                ) : (
-                                  <X size={12} className="text-red-500 shrink-0" />
-                                )}
-                                <span className="truncate">{task.label}</span>
-                              </motion.div>
-                            ))}
-                          </div>
-                        )}
-                        {/* Streaming text or thinking shimmer */}
-                        {streamingMessage ? (
-                          <div className="bg-white text-slate-700 border border-slate-100 rounded-2xl rounded-tl-md px-4 py-2.5 text-[13px] leading-relaxed shadow-sm">
-                            {streamingMessage}
-                            <span className="inline-block w-[2px] h-4 bg-blue-500 ml-0.5 align-text-bottom huggy-stream-caret" />
-                          </div>
-                        ) : (
-                          <div className="bg-white border border-slate-100 rounded-2xl rounded-tl-md px-4 py-2.5 flex items-center gap-1 shadow-sm">
-                            <div className="huggy-thinking-shimmer rounded-lg h-3 w-32" />
-                          </div>
-                        )}
-                      </div>
-                    </motion.div>
-                  )}
-                </div>
-
-                {/* ── Schema Suggestion Panel ── */}
-                {schemaSuggestion && (
-                  <div className="shrink-0 mx-3 mb-2 rounded-xl border border-blue-200 dark:border-blue-500/30 bg-blue-50 dark:bg-blue-950/40 overflow-hidden">
-                    <div className="flex items-center justify-between px-3 py-2 border-b border-blue-100 dark:border-blue-500/20">
-                      <div className="flex items-center gap-2">
-                        <div className="w-4 h-4 rounded bg-blue-600 flex items-center justify-center"><Database size={10} className="text-white" /></div>
-                        <span className="text-[11px] font-bold text-blue-700 dark:text-blue-300">Schéma BD suggéré</span>
-                        <span className="text-[9px] text-blue-500 bg-blue-100 dark:bg-blue-900/50 px-1.5 py-0.5 rounded-full font-semibold">{schemaSuggestion.tables.join(', ')}</span>
-                      </div>
-                      <div className="flex items-center gap-1.5">
-                        <button
-                          onClick={async () => {
-                            if (!projectId || !user?.id) return;
-                            setSchemaSuggestion(s => s ? { ...s, applying: true } : null);
-                            try {
-                              const r = await fetch(`/api/projects/${projectId}/apply-schema`, {
-                                method: 'POST',
-                                headers: { 'Content-Type': 'application/json' },
-                                body: JSON.stringify({ sql: schemaSuggestion.sql, userId: user.id }),
-                              });
-                              const d = await r.json();
-                              if (!r.ok) throw new Error(d.error || 'Erreur');
-                              showToast('Schéma appliqué ✓', 'success');
-                              setSchemaSuggestion(null);
-                            } catch (e: any) {
-                              showToast(e.message || 'Erreur lors de l\'application', 'info');
-                              setSchemaSuggestion(s => s ? { ...s, applying: false } : null);
-                            }
-                          }}
-                          disabled={schemaSuggestion.applying || !projectId}
-                          className="text-[10px] font-bold px-2.5 py-1 rounded-lg bg-blue-600 text-white hover:bg-blue-700 disabled:opacity-50 transition-colors"
-                        >
-                          {schemaSuggestion.applying ? 'Application…' : 'Appliquer à Supabase'}
-                        </button>
-                        <button onClick={() => setSchemaSuggestion(null)} className="text-[10px] text-blue-400 hover:text-blue-600 px-1">✕</button>
-                      </div>
-                    </div>
-                    <pre className="text-[9px] text-blue-800 dark:text-blue-200 font-mono px-3 py-2 overflow-x-auto max-h-32 leading-relaxed">{schemaSuggestion.sql}</pre>
-                  </div>
-                )}
-
-                {/* ── Chat Input ── */}
-                <div className="shrink-0 p-3 bg-gradient-to-t from-white via-white to-white/80 dark:from-[#0d0d0d] dark:via-[#0d0d0d] dark:to-transparent border-t border-slate-100/50 dark:border-white/5">
-                  <div className="flex items-center gap-1.5 mb-2">
-                    <button
-                      type="button"
-                      onClick={() => setIsMagicMode(!isMagicMode)}
-                      className={`flex items-center gap-1.5 px-2.5 py-1 text-[10px] font-bold border rounded-lg transition-all ${
-                        isMagicMode 
-                          ? 'bg-blue-600 border-blue-600 text-white shadow-lg shadow-blue-600/20' 
-                          : 'bg-slate-50 dark:bg-white/5 border-slate-200 dark:border-white/10 text-slate-500 dark:text-slate-400'
-                      }`}
-                    >
-                      <Zap size={10} fill={isMagicMode ? "currentColor" : "none"} />
-                      Magic Mode {isMagicMode ? 'ON' : 'OFF'}
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => setShowTemplates(true)}
-                      className="flex items-center gap-1.5 px-2.5 py-1 text-[10px] font-bold text-slate-500 dark:text-slate-400 hover:text-blue-600 dark:hover:text-blue-400 bg-slate-50 dark:bg-white/5 border border-slate-200 dark:border-white/10 rounded-lg transition-colors"
-                    >
-                      <Layout size={10} />
-                      Templates
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => setShowPricingModal(true)}
-                      className="flex items-center gap-1.5 px-2.5 py-1 text-[10px] font-bold text-slate-500 dark:text-slate-400 hover:text-amber-600 dark:hover:text-amber-400 bg-slate-50 dark:bg-white/5 border border-slate-200 dark:border-white/10 rounded-lg transition-colors"
-                    >
-                      <Sparkles size={10} />
-                      Upgrade
-                    </button>
-                  </div>
-                  <div className="px-2 pb-2">
-                    <HuggyChatInput
-                    onSend={(prompt) => {
-                      if (prompt) {
-                        setInputValue(prompt);
-                        setTimeout(() => handleSendMessage(), 0);
-                      }
-                    }}
-                    isLoading={isGenerating}
-                    placeholder="Décrivez ce que vous voulez construire..."
-                    modelLabel="Huggy AI"
-                  />
-                  </div>
-                </div>
-              </>
-            ) : activeSidebarTab === 'history' ? (
-              <div className="flex-1 overflow-y-auto p-4 space-y-4 scrollbar-hide">
-                {/* Version History */}
-                <div className="flex items-center justify-between">
-                  <h2 className="text-xs font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest">Versions</h2>
-                  <button
-                    onClick={loadVersions}
-                    disabled={isLoadingVersions}
-                    className="p-1.5 rounded hover:bg-slate-100 dark:hover:bg-white/5 text-slate-400 transition-colors"
-                    title="Actualiser"
-                  >
-                    <RefreshCw size={13} className={isLoadingVersions ? 'animate-spin' : ''} />
-                  </button>
-                </div>
-
-                {versions.length === 0 && !isLoadingVersions && (
-                  <p className="text-xs text-slate-400 dark:text-slate-500 italic text-center py-4">
-                    Aucune version sauvegardée.<br />Les snapshots sont créés automatiquement avant chaque génération IA et chaque déploiement.
-                  </p>
-                )}
-
-                <div className="space-y-2">
-                  {versions.map((v) => (
-                    <div key={v.id} className="p-3 rounded-xl bg-slate-50 dark:bg-white/5 border border-slate-100 dark:border-white/10 group">
-                      <div className="flex items-start justify-between gap-2">
-                        <div className="min-w-0">
-                          <p className="text-xs font-semibold text-slate-700 dark:text-slate-200 truncate">{v.label}</p>
-                          <p className="text-[10px] text-slate-400 dark:text-slate-500 mt-0.5">
-                            {new Date(v.created_at).toLocaleString('fr-FR', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' })} · {v.file_count} fichier{v.file_count > 1 ? 's' : ''}
-                          </p>
-                        </div>
-                        <button
-                          onClick={() => handleRestoreVersion(v.id)}
-                          disabled={isRestoringVersion}
-                          className="shrink-0 flex items-center gap-1 px-2 py-1 bg-blue-50 dark:bg-blue-500/10 text-blue-600 dark:text-blue-400 rounded-lg text-[10px] font-bold border border-blue-100 dark:border-blue-500/20 hover:bg-blue-100 dark:hover:bg-blue-500/20 transition-colors disabled:opacity-50"
-                        >
-                          <RotateCcw size={10} className={isRestoringVersion ? 'animate-spin' : ''} />
-                          Restore
-                        </button>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-
-                {/* Chat Timeline */}
-                <div className="pt-2 border-t border-slate-100 dark:border-white/10">
-                  <h2 className="text-xs font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest mb-3">Timeline Chat</h2>
-                  <div className="space-y-3 relative before:absolute before:left-[11px] before:top-2 before:bottom-2 before:w-[2px] before:bg-slate-100 dark:before:bg-white/10">
-                    {messages.filter((m: any) => m.sender === 'VOUS' || m.changedFiles).map((m: any) => (
-                      <div key={m.id} className="relative pl-8 group">
-                        <div className={`absolute left-0 top-1.5 w-[24px] h-[24px] rounded-full border-4 border-white dark:border-[#1a1a2e] shadow-sm flex items-center justify-center z-10 ${
-                          m.sender === 'VOUS' ? 'bg-slate-200 dark:bg-slate-700 text-slate-500 dark:text-slate-300' : 'bg-blue-500 text-white'
-                        }`}>
-                          {m.sender === 'VOUS' ? <Search size={10} /> : <Zap size={10} fill="currentColor" />}
-                        </div>
-                        <div className="space-y-1">
-                          <div className="flex items-center justify-between">
-                            <span className="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider">
-                              {m.sender === 'VOUS' ? 'Requête' : 'Agent'}
-                            </span>
-                            <span className="text-[9px] text-slate-300 dark:text-slate-600 font-medium">
-                              {m.timestamp.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                            </span>
-                          </div>
-                          <p className="text-xs text-slate-600 dark:text-slate-300 font-medium line-clamp-2 group-hover:line-clamp-none transition-all break-words">
-                            {m.text}
-                          </p>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              </div>
-            ) : (
-              <div className="flex-1 flex items-center justify-center text-slate-400 text-xs italic">
-                No other tabs available.
-              </div>
-            )}
-            
-            {agentTasks.map(task => (
-                <motion.div 
-                  key={task.id}
-                  initial={{ opacity: 0, y: 10 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  className="absolute bottom-4 right-4 bg-white px-3 py-2 rounded-xl shadow-lg border border-slate-100 flex items-center gap-2 z-50 text-xs text-slate-600"
-                >
-                  <Loader2 size={14} className="animate-spin text-blue-500" />
-                  Code compilation in progress...
-                </motion.div>
-            ))}
-          </div>
-        </aside>
-
-        {/* Main Content Area */}
-        <main className="flex-1 flex flex-col overflow-hidden relative bg-[#F8F9FB]">
-          {/* Main Toolbar (Browser Bar Mode) */}
-          <div className="h-14 px-4 flex items-center gap-4 bg-white border-b border-slate-200 shrink-0">
-            {/* Left: Device Toggles */}
-            <div className="flex items-center gap-1 bg-slate-50 p-1 rounded-xl border border-slate-100">
-              <button 
-                onClick={() => setPreviewMode('desktop')}
-                className={`p-1.5 rounded-lg transition-all ${previewMode === 'desktop' ? 'bg-white text-blue-600 shadow-sm border border-slate-200' : 'text-slate-400 hover:text-slate-600'}`}
-                title="Desktop"
-              >
-                <Monitor size={14} />
-              </button>
-              <button 
-                onClick={() => setPreviewMode('tablet')}
-                className={`p-1.5 rounded-lg transition-all ${previewMode === 'tablet' ? 'bg-white text-blue-600 shadow-sm border border-slate-200' : 'text-slate-400 hover:text-slate-600'}`}
-                title="Tablet"
-              >
-                <TabletIcon size={14} />
-              </button>
-              <button 
-                onClick={() => setPreviewMode('mobile')}
-                className={`p-1.5 rounded-lg transition-all ${previewMode === 'mobile' ? 'bg-white text-blue-600 shadow-sm border border-slate-200' : 'text-slate-400 hover:text-slate-600'}`}
-                title="Mobile"
-              >
-                <Smartphone size={14} />
-              </button>
-            </div>
-
-            {/* Center: URL Bar (Restored & Clean) */}
-            <div className="flex-1 max-w-xl mx-auto hidden sm:flex items-center gap-3 px-4 py-1.5 bg-slate-50 border border-slate-100 rounded-xl group hover:border-slate-200 transition-all">
-              <div className="flex items-center gap-2 text-slate-400">
-                <Globe size={14} className="group-hover:text-blue-500 transition-colors" />
-                <span className="text-[11px] font-bold tracking-tight text-slate-400/80">https://</span>
-              </div>
-              <span className="text-xs font-semibold text-slate-500 truncate flex-1">
-                project-preview.huggy.studio
-              </span>
-              <div className="flex items-center gap-1.5 pl-2 border-l border-slate-200">
-                <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
-                <span className="text-[10px] font-black uppercase tracking-widest text-emerald-600">Live</span>
-              </div>
-            </div>
-
-            {/* Right: Actions */}
-            <div className="flex items-center gap-3">
-              <button 
-                onClick={() => {
-                  setIsSaving(true);
-                  setTimeout(() => {
-                    setIsSaving(false);
-                    setLastSaved(new Date());
-                    showToast('Aperçu actualisé', 'info');
-                  }, 800);
-                }}
-                className={`p-2 rounded-xl transition-all ${isSaving ? 'text-blue-600 bg-blue-50' : 'text-slate-400 hover:text-blue-600 hover:bg-slate-50'}`}
-                title="Refresh preview"
-              >
-                <RotateCw size={15} className={isSaving ? 'animate-spin' : ''} />
-              </button>
-              
-              <button 
-                onClick={() => window.open(window.location.href, '_blank')}
-                className="p-2 text-slate-400 hover:text-blue-600 hover:bg-slate-50 rounded-xl transition-all"
-                title="Ouvrir dans un nouvel onglet"
-              >
-                <ExternalLink size={15} />
-              </button>
-
-              <div className="h-6 w-[1px] bg-slate-100 mx-1" />
-
-              {/* Cloud Menu Toggle */}
-              <div className="relative">
-                <button 
-                  type="button"
-                  onClick={() => setShowCloudMenu(!showCloudMenu)}
-                  className={`p-2 rounded-xl transition-colors ${showCloudMenu ? 'bg-blue-50 text-blue-600' : 'text-slate-400 hover:bg-slate-50'}`}
-                  title="Espace Cloud"
-                >
-                  <Cloud size={16} />
-                </button>
-                <AnimatePresence>
-                  {showCloudMenu && (
-                    <motion.div 
-                      initial={{ opacity: 0, y: 10, scale: 0.95 }}
-                      animate={{ opacity: 1, y: 0, scale: 1 }}
-                      exit={{ opacity: 0, y: 10, scale: 0.95 }}
-                      className="absolute top-full right-0 mt-2 w-64 bg-white rounded-2xl border border-slate-200 shadow-2xl p-4 z-50 text-left"
-                    >
-                      <div className="flex items-center justify-between mb-4">
-                        <h4 className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Espace Cloud</h4>
-                        <div className="flex items-center gap-1.5 px-2 py-0.5 bg-emerald-50 rounded-full border border-emerald-100">
-                          <div className="w-1 h-1 rounded-full bg-emerald-500 animate-pulse" />
-                          <span className="text-[9px] font-black text-emerald-600 uppercase tracking-tighter">Opérationnel</span>
-                        </div>
-                      </div>
-                      
-                      <div className="space-y-4">
-                        <div className="p-3 bg-slate-50 rounded-xl border border-slate-100 space-y-2">
-                          <div className="flex items-center gap-2 text-xs font-bold text-slate-700">
-                            <Database size={14} className="text-blue-500" />
-                            <span>Database Cluster</span>
-                          </div>
-                          <div className="h-1 bg-slate-200 rounded-full overflow-hidden">
-                            <div className="h-full bg-blue-500 w-[42%]" />
-                          </div>
-                          <div className="flex justify-between text-[9px] font-bold text-slate-400 uppercase">
-                            <span>Utilisation</span>
-                            <span>42%</span>
-                          </div>
-                        </div>
-
-                        <h4 className="text-[10px] font-black text-slate-400 uppercase tracking-widest pt-2">Déploiements Récents</h4>
-                        <div className="space-y-2 max-h-48 overflow-y-auto pr-1 custom-scrollbar">
-                          {deployments.length === 0 ? (
-                            <p className="text-[11px] text-slate-400 italic">En attente du premier push...</p>
-                          ) : (
-                            deployments.map(dep => (
-                              <div key={dep.id} className="p-2.5 rounded-xl border border-slate-100 bg-white hover:border-blue-200 hover:shadow-md transition-all cursor-pointer group">
-                                <div className="flex items-center justify-between mb-2">
-                                  <div className="flex items-center gap-2 overflow-hidden">
-                                    <Globe size={12} className="text-slate-400 group-hover:text-blue-500 transition-colors" />
-                                    <span className="text-[10px] font-bold text-slate-600 truncate">{dep.url}</span>
-                                  </div>
-                                  <span className="text-[9px] font-medium text-slate-400">{dep.date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
-                                </div>
-                                <div className="flex items-center gap-2">
-                                  <div className="px-1.5 py-0.5 bg-blue-50 rounded text-[8px] font-black text-blue-600 uppercase tracking-widest">Production</div>
-                                  <div className="w-1 h-1 rounded-full bg-emerald-500" />
-                                  <span className="text-[9px] font-bold text-slate-400 group-hover:text-slate-600">Actif</span>
-                                </div>
-                              </div>
-                            ))
-                          )}
-                        </div>
-                      </div>
-                    </motion.div>
-                  )}
-                </AnimatePresence>
-              </div>
-
-              {/* Design Menu */}
-               <div className="relative">
-                <button 
-                  type="button"
-                  onClick={() => setShowDesignMenu(!showDesignMenu)}
-                  className={`p-2 rounded-xl transition-colors ${showDesignMenu ? 'bg-blue-50 text-blue-600' : 'text-slate-400 hover:bg-slate-50'}`}
-                  title="Thème & Design"
-                >
-                  <Palette size={16} />
-                </button>
-                <AnimatePresence>
-                  {showDesignMenu && (
-                    <motion.div 
-                      initial={{ opacity: 0, y: 10, scale: 0.95 }}
-                      animate={{ opacity: 1, y: 0, scale: 1 }}
-                      exit={{ opacity: 0, y: 10, scale: 0.95 }}
-                      className="absolute top-full right-0 mt-2 w-56 bg-white rounded-2xl border border-slate-200 shadow-2xl p-4 z-50"
-                    >
-                      <h4 className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-4">Palettes Studio</h4>
-                      <div className="grid grid-cols-2 gap-2">
-                        {(Object.keys(ACCENT_COLORS) as Array<keyof typeof ACCENT_COLORS>).map((key) => (
-                          <button
-                            key={key}
-                            onClick={() => {
-                              setActiveAccentColor(key);
-                              showToast(`Thème ${key} activé`, 'info');
-                            }}
-                            className={`flex items-center gap-2 p-2 rounded-xl border transition-all ${activeAccentColor === key ? 'border-slate-900 bg-slate-50 shadow-sm' : 'border-slate-100 hover:bg-slate-50'}`}
-                          >
-                            <div className={`w-4 h-4 rounded-full ${ACCENT_COLORS[key].bg} border border-white/20`} />
-                            <span className="text-[11px] font-bold text-slate-600 capitalize">{key}</span>
-                          </button>
-                        ))}
-                      </div>
-                      <div className="mt-4 pt-4 border-t border-slate-100">
-                        <p className="text-[10px] text-slate-400 font-medium italic">Personnalise l'identité visuelle de votre SaaS Huggy en un clic.</p>
-                      </div>
-                    </motion.div>
-                  )}
-                </AnimatePresence>
-              </div>
-            </div>
-          </div>
-
-
-
-
-
-          {/* Preview & Terminal Area */}
-          <div className="flex-1 flex flex-col overflow-hidden relative">
-            {/* Preview Window */}
-            <div className="flex-1 flex items-center justify-center overflow-hidden relative min-h-0 bg-white">
-              <motion.div 
-                layout
-                className={`relative transition-all duration-500 ease-in-out ${getPreviewSize().container} ${getPreviewSize().frame} overflow-hidden bg-white flex flex-col`}
-              >
-                {/* Device Camera/Notch Layout for mobile viewports */}
-                {previewMode === 'mobile' && (
-                  <div className="absolute top-0 left-1/2 -translate-x-1/2 w-32 h-6 bg-slate-900 rounded-b-2xl z-50 flex items-center justify-center gap-2">
-                    <div className="w-1 h-1 rounded-full bg-slate-800" />
-                    <div className="w-8 h-1 rounded-full bg-slate-800" />
-                  </div>
-                )}
-
-
-                
-                <div className={`flex-1 ${getPreviewSize().inner} overflow-hidden relative`}>
-                  <PreviewContent
-                    mode={previewMode}
-                    filesMap={filesMap}
-                    onCodeError={handleAutoCorrection}
-                  />
-                </div>
-              </motion.div>
-
-              {/* Floating Terminal Overlay */}
-              <AnimatePresence>
-                {isTerminalOpen && (
-                  <motion.div 
-                    initial={{ y: '100%' }}
-                    animate={{ y: 0 }}
-                    exit={{ y: '100%' }}
-                    transition={{ type: 'spring', damping: 25, stiffness: 200 }}
-                    className={`absolute bottom-0 left-0 right-0 h-[300px] ${TERMINAL_THEMES[terminalTheme].bg} border-t ${TERMINAL_THEMES[terminalTheme].border} shadow-2xl z-30 flex flex-col overflow-hidden`}
-                  >
-                    {/* Terminal Header */}
-                    <div className={`h-10 border-b ${TERMINAL_THEMES[terminalTheme].border} flex items-center justify-between px-4 ${TERMINAL_THEMES[terminalTheme].accent}`}>
-                      <div className="flex items-center gap-2 h-full overflow-x-auto scrollbar-hide">
-                        {terminalTabs.map(tab => (
-                          <div 
-                            key={tab.id}
-                            onClick={() => setActiveTabId(tab.id)}
-                            className={`flex items-center gap-2 h-full px-3 cursor-pointer transition-all border-b-2 text-xs font-medium ${activeTabId === tab.id ? 'border-blue-600 text-blue-600' : 'border-transparent text-slate-400 hover:text-slate-600'}`}
-                          >
-                            <TerminalIcon size={12} />
-                            <span>{tab.name}</span>
-                            {terminalTabs.length > 1 && (
-                              <button 
-                                onClick={(e) => removeTerminalTab(tab.id, e)}
-                                className="hover:bg-slate-200 rounded p-0.5"
-                              >
-                                <Plus size={10} className="rotate-45" />
-                              </button>
-                            )}
-                          </div>
-                        ))}
-                        <button 
-                          onClick={addTerminalTab}
-                          className="p-1 hover:bg-slate-200 rounded text-slate-400 transition-colors"
-                        >
-                          <Plus size={14} />
-                        </button>
-                      </div>
-
-                      <div className="flex items-center gap-3">
-                        {/* Theme Switcher */}
-                        <div className="flex items-center gap-1 bg-slate-200/50 p-0.5 rounded-lg">
-                          {(Object.keys(TERMINAL_THEMES) as TerminalTheme[]).map(t => (
-                            <button
-                              key={t}
-                              onClick={() => setTerminalTheme(t)}
-                              className={`w-4 h-4 rounded-full border border-white/20 transition-all ${t === terminalTheme ? 'ring-2 ring-blue-500 scale-110' : 'opacity-50 hover:opacity-100'} ${TERMINAL_THEMES[t].bg}`}
-                              title={t}
-                            />
-                          ))}
-                        </div>
-                        <div className="h-4 w-[1px] bg-slate-300" />
-                        <button 
-                          onClick={() => setIsHistorySearchOpen(!isHistorySearchOpen)}
-                          className={`p-1.5 rounded hover:bg-slate-200 transition-colors ${isHistorySearchOpen ? 'text-blue-600' : 'text-slate-400'}`}
-                        >
-                          <Search size={14} />
-                        </button>
-                        <button 
-                          onClick={() => setIsTerminalOpen(false)}
-                          className="p-1.5 rounded hover:bg-slate-200 text-slate-400 transition-colors"
-                        >
-                          <ChevronDown size={16} />
-                        </button>
-                      </div>
-                    </div>
-
-                    {/* History Search Bar */}
-                    <AnimatePresence>
-                      {isHistorySearchOpen && (
-                        <motion.div 
-                          initial={{ height: 0, opacity: 0 }}
-                          animate={{ height: 'auto', opacity: 1 }}
-                          exit={{ height: 0, opacity: 0 }}
-                          className={`px-4 py-2 border-b ${TERMINAL_THEMES[terminalTheme].border} ${TERMINAL_THEMES[terminalTheme].accent} flex items-center gap-2`}
-                        >
-                          <Search size={12} className="text-slate-400" />
-                          <input 
-                            type="text"
-                            value={historySearchQuery}
-                            onChange={(e) => setHistorySearchQuery(e.target.value)}
-                            placeholder="Search command history..."
-                            className="bg-transparent outline-none text-[11px] text-slate-500 flex-1"
-                            autoFocus
-                          />
-                          {historySearchQuery && (
-                          <div className="absolute top-full left-0 right-0 max-h-32 overflow-y-auto bg-white border border-slate-200 shadow-xl z-40 rounded-b-xl">
-                            {commandHistory
-                              .filter(h => h.toLowerCase().includes(historySearchQuery.toLowerCase()))
-                              .map((h, i) => (
-                                <div 
-                                  key={i}
-                                  onClick={() => {
-                                    setCommandInput(h);
-                                    setIsHistorySearchOpen(false);
-                                    setHistorySearchQuery('');
-                                  }}
-                                  className="px-4 py-2 text-xs text-slate-600 hover:bg-blue-50 cursor-pointer border-b border-slate-50 last:border-0"
-                                >
-                                  {h}
-                                </div>
-                              ))
-                            }
-                          </div>
-                          )}
-                        </motion.div>
-                      )}
-                    </AnimatePresence>
-
-                    {/* Terminal Content */}
-                    <div className={`flex-1 p-4 font-mono text-sm ${TERMINAL_THEMES[terminalTheme].text} space-y-1 overflow-y-auto scrollbar-hide`}>
-                      {activeTab.lines.map((line, i) => (
-                        <p key={i} className={line.startsWith('$') ? `font-bold ${TERMINAL_THEMES[terminalTheme].text.replace('text-', 'text-opacity-100 ')}` : 'italic opacity-60'}>
-                          {line}
-                        </p>
+                            <p className="text-[12px] text-white/70 font-medium pl-3 border-l border-white/5">{msg.text}</p>
+                         </div>
                       ))}
-                      <div ref={terminalEndRef} />
-                    </div>
+                   </div>
+                 </div>
+               </div>
 
-                    {/* Terminal Input */}
-                    <form onSubmit={handleTerminalCommand} className={`h-10 border-t ${TERMINAL_THEMES[terminalTheme].border} flex items-center justify-between px-4 ${TERMINAL_THEMES[terminalTheme].accent}`}>
-                      <div className="flex items-center gap-2 flex-1">
-                        <span className={`${TERMINAL_THEMES[terminalTheme].prompt} font-bold`}>$</span>
-                        <input 
-                          type="text" 
-                          value={commandInput}
-                          onChange={(e) => setCommandInput(e.target.value)}
-                          onKeyDown={handleKeyDown}
-                          placeholder="Type a command..." 
-                          className={`flex-1 bg-transparent outline-none text-xs ${TERMINAL_THEMES[terminalTheme].text} placeholder:text-slate-500`}
-                        />
+               <div className="h-[280px] flex flex-col bg-[#080809] p-5 relative border-t border-white/[0.05]">
+                 <div className="flex-1 flex flex-col">
+                   <div className="flex items-center justify-between mb-4">
+                      <span className="text-[10px] font-black text-white/20 uppercase tracking-[0.3em]">HUGGY COMMAND</span>
+                      <div className="flex items-center gap-1.5 px-2 py-0.5 bg-blue-500/10 rounded-md border border-blue-500/20">
+                         <div className="w-1 h-1 rounded-full bg-blue-500 animate-pulse" />
+                         <span className="text-[8px] font-black text-blue-500 uppercase tracking-widest">Auto-Scale</span>
                       </div>
-                      <div className="flex items-center gap-2">
-                        <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Local</span>
-                        <div className="w-2 h-2 rounded-full bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.5)]" />
-                      </div>
-                    </form>
-                  </motion.div>
-                )}
-              </AnimatePresence>
-
-              {/* Floating Code Overlay */}
-              <AnimatePresence>
-                {activeBottomTab === 'code' && (
-                  <motion.div 
-                    initial={{ y: '100%' }}
-                    animate={{ y: 0 }}
-                    exit={{ y: '100%' }}
-                    className="absolute bottom-0 left-0 right-0 h-[min(420px,55vh)] bg-white border-t border-slate-200 shadow-2xl z-30 flex flex-col overflow-hidden"
-                  >
-                    <div className="h-10 border-b border-slate-100 flex items-center justify-between px-2 sm:px-4 bg-slate-50/50 gap-2 overflow-x-auto scrollbar-hide">
-                      <div className="flex items-center gap-2 h-full min-w-0">
-                        <div className="flex items-center gap-2 h-full border-b-2 border-blue-600 px-1 shrink-0">
-                          <Code2 size={14} className="text-slate-400" />
-                          <span className="text-xs font-medium text-slate-700 truncate max-w-[140px] sm:max-w-[220px]" title={activeFilePath}>
-                            {activeFilePath}
-                          </span>
-                        </div>
-                        <button
-                          type="button"
-                          onClick={addProjectFile}
-                          className="shrink-0 p-1 rounded text-slate-400 hover:text-blue-600 hover:bg-blue-50"
-                          title="Nouveau fichier"
-                        >
-                          <Plus size={16} />
+                   </div>
+                   <div className="flex-1 relative mb-4">
+                     <HuggyChatInput
+                       onSend={(prompt) => {
+                         if (prompt) {
+                           setInputValue(prompt);
+                           setTimeout(() => handleSendMessage(), 0);
+                         }
+                       }}
+                       isLoading={isGenerating}
+                       placeholder="Décrivez votre vision..."
+                       className="!p-0 !bg-transparent"
+                       modelLabel="Huggy Elite"
+                     />
+                   </div>
+                   <div className="flex items-center justify-between">
+                     <div className="flex items-center gap-2">
+                        <button className="p-2 rounded-xl bg-white/5 text-white/40 hover:text-white/80 hover:bg-white/10 transition-all border border-white/5">
+                           <Plus size={14} />
                         </button>
-                        
-                        <div className="flex items-center gap-1 bg-slate-200/50 p-0.5 rounded-md">
-                          <button 
-                            onClick={() => setEditorTheme('vs-light')}
-                            className={`px-2 py-0.5 rounded text-[10px] font-medium transition-colors ${editorTheme === 'vs-light' ? 'bg-white text-blue-600 shadow-sm' : 'text-slate-500'}`}
-                          >
-                            Light
-                          </button>
-                          <button 
-                            onClick={() => setEditorTheme('vs-dark')}
-                            className={`px-2 py-0.5 rounded text-[10px] font-medium transition-colors ${editorTheme === 'vs-dark' ? 'bg-slate-800 text-white shadow-sm' : 'text-slate-500'}`}
-                          >
-                            Dark
-                          </button>
-                        </div>
-
-                        <div className="h-4 w-[1px] bg-slate-200 mx-1" />
-
-                        <div className="flex items-center gap-1">
-                          <button 
-                            onClick={handleUndo}
-                            className="p-1.5 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded-md transition-all"
-                            title="Undo (Ctrl+Z)"
-                          >
-                            <Undo size={14} />
-                          </button>
-                          <button 
-                            onClick={handleRedo}
-                            className="p-1.5 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded-md transition-all"
-                            title="Redo (Ctrl+Y)"
-                          >
-                            <Redo size={14} />
-                          </button>
-                        </div>
-                      </div>
-                      <div className="flex items-center gap-2">
-                        {isSaving ? (
-                          <div className="flex items-center gap-1.5 text-[10px] text-blue-500 font-medium">
-                            <Loader2 size={10} className="animate-spin" />
-                            Saving...
-                          </div>
-                        ) : lastSaved ? (
-                          <div className="flex items-center gap-1.5 text-[10px] text-slate-400 font-medium">
-                            <Check size={10} className="text-emerald-500" />
-                            Saved {lastSaved.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' })}
-                          </div>
-                        ) : null}
-                        
-                        <div className="relative">
-                          <button 
-                            onClick={() => setShowAutoSaveSettings(!showAutoSaveSettings)}
-                            className={`p-1.5 rounded hover:bg-slate-200 transition-colors ${showAutoSaveSettings ? 'text-blue-600 bg-slate-200' : 'text-slate-400'}`}
-                            title="Auto-save Settings"
-                          >
-                            <Settings size={14} />
-                          </button>
-                          
-                          <AnimatePresence>
-                            {showAutoSaveSettings && (
-                              <motion.div 
-                                initial={{ opacity: 0, y: 10, scale: 0.95 }}
-                                animate={{ opacity: 1, y: 0, scale: 1 }}
-                                exit={{ opacity: 0, y: 10, scale: 0.95 }}
-                                className="absolute bottom-full right-0 mb-2 w-48 bg-white rounded-xl border border-slate-200 shadow-xl p-3 z-50"
-                              >
-                                <div className="space-y-3">
-                                  <div className="flex items-center justify-between">
-                                    <span className="text-[11px] font-semibold text-slate-700">Auto-save</span>
-                                    <button 
-                                      onClick={() => setAutoSaveEnabled(!autoSaveEnabled)}
-                                      className={`w-8 h-4 rounded-full transition-colors relative ${autoSaveEnabled ? 'bg-blue-500' : 'bg-slate-300'}`}
-                                    >
-                                      <div className={`absolute top-0.5 w-3 h-3 bg-white rounded-full transition-all ${autoSaveEnabled ? 'left-4.5' : 'left-0.5'}`} />
-                                    </button>
-                                  </div>
-                                  
-                                  <div className="flex items-center justify-between">
-                                    <span className="text-[11px] font-semibold text-slate-700">Minimap</span>
-                                    <button 
-                                      onClick={() => setShowMinimap(!showMinimap)}
-                                      className={`w-8 h-4 rounded-full transition-colors relative ${showMinimap ? 'bg-blue-500' : 'bg-slate-300'}`}
-                                    >
-                                      <div className={`absolute top-0.5 w-3 h-3 bg-white rounded-full transition-all ${showMinimap ? 'left-4.5' : 'left-0.5'}`} />
-                                    </button>
-                                  </div>
-                                  
-                                  <div className="space-y-1.5">
-                                    <span className="text-[10px] text-slate-500 font-medium">Interval</span>
-                                    <div className="grid grid-cols-2 gap-1">
-                                      {[1000, 5000, 10000, 30000].map(interval => (
-                                        <button
-                                          key={interval}
-                                          onClick={() => setAutoSaveInterval(interval)}
-                                          className={`px-2 py-1 rounded text-[10px] font-medium border transition-all ${autoSaveInterval === interval ? 'bg-blue-50 border-blue-200 text-blue-600' : 'bg-slate-50 border-slate-100 text-slate-500 hover:bg-slate-100'}`}
-                                        >
-                                          {interval / 1000}s
-                                        </button>
-                                      ))}
-                                    </div>
-                                  </div>
-                                </div>
-                              </motion.div>
-                            )}
-                          </AnimatePresence>
-                        </div>
-
-                        <div className="h-4 w-[1px] bg-slate-200 mx-1" />
-                        <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest hidden sm:inline">
-                          {databaseEnabled ? 'Sync Postgres' : 'Local'}
-                        </span>
-                        <button 
-                          onClick={() => setActiveBottomTab('terminal')}
-                          className="p-1.5 rounded hover:bg-slate-200 text-slate-400 transition-colors"
-                        >
-                          <ChevronDown size={16} />
+                        <button className="p-2 rounded-xl bg-white/5 text-white/40 hover:text-white/80 hover:bg-white/10 transition-all border border-white/5" onClick={() => setIsTerminalOpen(!isTerminalOpen)}>
+                           <TerminalIcon size={14} />
                         </button>
-                      </div>
+                     </div>
+                     <div className="flex items-center gap-2 px-3 py-1.5 bg-white/5 rounded-xl border border-white/10 cursor-pointer hover:bg-white/10 transition-all group">
+                        <span className="text-[10px] font-black text-white/40 uppercase tracking-widest group-hover:text-white/70">Build Engine</span>
+                        <ChevronDown size={12} className="text-white/20 group-hover:text-white/50" />
+                     </div>
+                   </div>
+                 </div>
+               </div>
+             </aside>
+
+             <main className="flex-1 flex flex-col overflow-hidden relative bg-[#070708] huggy-dot-grid">
+               <div className="h-12 px-4 flex items-center justify-between border-b border-white/[0.05] shrink-0">
+                 <div className="flex items-center gap-1">
+                   {[
+                     { id: 'desktop', icon: <Monitor size={13} /> },
+                     { id: 'tablet', icon: <TabletIcon size={13} /> },
+                     { id: 'mobile', icon: <Smartphone size={13} /> },
+                   ].map(device => (
+                     <button 
+                       key={device.id}
+                       onClick={() => setPreviewMode(device.id as any)}
+                       className={`p-1.5 rounded-md transition-all ${previewMode === device.id ? 'bg-white/10 text-white' : 'text-white/20 hover:text-white/40'}`}
+                     >
+                       {device.icon}
+                     </button>
+                   ))}
+                 </div>
+                 <div className="flex items-center gap-2 px-4 py-1 bg-white/5 border border-white/10 rounded-lg max-w-md w-full mx-4">
+                    <Globe size={12} className="text-white/20" />
+                    <span className="text-[11px] font-medium text-white/40 truncate flex-1">preview.huggy.studio</span>
+                    <div className="flex items-center gap-1.5 px-2 py-0.5 bg-emerald-500/10 rounded-full border border-emerald-500/20">
+                       <div className="w-1 h-1 rounded-full bg-emerald-500 animate-pulse" />
+                       <span className="text-[9px] font-black uppercase text-emerald-500">Live</span>
                     </div>
-                    <div className="flex gap-0.5 px-2 py-1 border-b border-slate-100 overflow-x-auto scrollbar-hide bg-slate-50/80 shrink-0">
-                      {Object.keys(filesMap)
-                        .sort()
-                        .map((p) => (
-                          <button
-                            key={p}
-                            type="button"
-                            onClick={() => openProjectFile(p)}
-                            className={`shrink-0 max-w-[160px] truncate px-2 py-1 rounded-md text-[10px] font-bold transition-colors ${
-                              p === activeFilePath
-                                ? 'bg-blue-600 text-white'
-                                : 'bg-white text-slate-500 border border-slate-200 hover:border-blue-200'
-                            }`}
-                            title={p}
-                          >
-                            {p.replace(/^src\//, '')}
+                 </div>
+                 <div className="flex items-center gap-2">
+                   <button className="p-2 text-white/20 hover:text-white/60 transition-colors" onClick={() => window.location.reload()}>
+                     <RefreshCw size={14} />
+                   </button>
+                   <button className="p-2 text-white/20 hover:text-white/60 transition-colors" onClick={() => window.open(publishedUrl || '#', '_blank')}>
+                     <ExternalLink size={14} />
+                   </button>
+                 </div>
+               </div>
+
+               <div className="flex-1 flex items-center justify-center overflow-hidden relative min-h-0">
+                 <motion.div 
+                   layout
+                   className={`relative transition-all duration-500 ease-in-out ${getPreviewSize().container} ${getPreviewSize().frame} overflow-hidden bg-white flex flex-col shadow-2xl shadow-black/40`}
+                 >
+                   <div className={`flex-1 ${getPreviewSize().inner} overflow-hidden relative`}>
+                     <PreviewContent mode={previewMode} filesMap={filesMap} onCodeError={handleAutoCorrection} />
+                   </div>
+                 </motion.div>
+
+                 {/* Console / Terminal Overlay */}
+                 <AnimatePresence>
+                   {isTerminalOpen && (
+                     <motion.div 
+                       initial={{ y: '100%' }} animate={{ y: 0 }} exit={{ y: '100%' }}
+                       transition={{ type: 'spring', damping: 30, stiffness: 300 }}
+                       className="absolute bottom-0 left-0 right-0 h-[280px] bg-[#0d0d0d] border-t border-white/[0.05] z-30 flex flex-col"
+                     >
+                       <div className="h-10 border-b border-white/[0.05] flex items-center justify-between px-4 bg-[#0a0a0a]">
+                          <div className="flex items-center gap-2">
+                             <TerminalIcon size={12} className="text-white/40" />
+                             <span className="text-[10px] font-black text-white/40 uppercase tracking-widest">Huggy Console</span>
+                          </div>
+                          <button onClick={() => setIsTerminalOpen(false)} className="p-1.5 text-white/20 hover:text-white/60">
+                             <ChevronDown size={14} />
                           </button>
-                        ))}
-                    </div>
-                    <div className="flex-1 relative bg-white min-h-0">
-                      <Editor
-                        height="100%"
-                        language={editorLanguage}
-                        theme={editorTheme}
-                        value={filesMap[activeFilePath] ?? ''}
-                        onMount={handleEditorDidMount}
-                        onChange={(value) =>
-                          setFilesMap((f) => ({
-                            ...f,
-                            [activeFilePath]: value || '',
-                          }))
-                        }
-                        options={{
-                          minimap: { enabled: showMinimap },
-                          fontSize: 12,
-                          fontFamily: "'JetBrains Mono', monospace",
-                          folding: true,
-                          bracketPairColorization: { enabled: true },
-                          automaticLayout: true,
-                          scrollBeyondLastLine: false,
-                          lineNumbers: 'on',
-                          renderLineHighlight: 'all',
-                          padding: { top: 10, bottom: 10 }
-                        }}
-                      />
-                    </div>
-                  </motion.div>
-                )}
-              </AnimatePresence>
-            </div>
+                       </div>
+                       <div className="flex-1 p-4 font-mono text-[12px] text-white/60 overflow-y-auto scrollbar-hide">
+                         {activeTab.lines.map((line, i) => <div key={i} className="mb-1">{line}</div>)}
+                         <div ref={terminalEndRef} />
+                       </div>
+                       <form onSubmit={handleTerminalCommand} className="h-10 border-t border-white/[0.05] flex items-center px-4 bg-[#0a0a0a]">
+                         <span className="text-emerald-500 font-bold mr-2">$</span>
+                         <input 
+                           type="text" 
+                           value={commandInput}
+                           onChange={(e) => setCommandInput(e.target.value)}
+                           placeholder="Type a command..." 
+                           className="flex-1 bg-transparent outline-none text-[12px] text-white/80 placeholder:text-white/10"
+                         />
+                       </form>
+                     </motion.div>
+                   )}
+                 </AnimatePresence>
+               </div>
+             </main>
           </div>
-          </main>
-
-          {/* Resize Handle (Visual only) */}
-          <div className="absolute left-0 top-1/2 -translate-y-1/2 w-1 h-8 bg-slate-200 rounded-full -ml-0.5 cursor-col-resize hover:bg-blue-400 transition-colors z-20" />
-          </>
         )}
 
+        {/* ── CODE TAB ─────────────────────────────────────────────────────────── */}
         {activeStudioTab === 'code' && (
           <div className="flex-1 flex h-full overflow-hidden bg-[#1e1e1e] text-[#cccccc]">
-             <div className="w-[280px] border-r border-[#2b2b2b] bg-[#252526] overflow-y-auto shrink-0 py-4">
+             <div className="w-[260px] border-r border-[#2b2b2b] bg-[#252526] overflow-y-auto shrink-0 py-4">
                 <div className="px-6 mb-4 text-[10px] font-black text-[#858585] uppercase tracking-[0.2em] flex items-center justify-between">
                   <span>EXPLORATEUR</span>
-                  <div className="flex gap-1.5">
-                    <Plus size={12} className="cursor-pointer hover:text-white transition-colors" />
-                    <RefreshCw size={12} className="cursor-pointer hover:text-white transition-colors" />
-                  </div>
+                  <Plus size={12} className="cursor-pointer hover:text-white" onClick={addProjectFile} />
                 </div>
                 <div className="space-y-[1px]">
                   {Object.keys(filesMap).sort().map(path => (
@@ -2336,13 +1532,9 @@ export default function App() {
                         setActiveFilePath(path);
                         setEditorLanguage(path.endsWith('.tsx') ? 'typescript' : path.endsWith('.css') ? 'css' : 'javascript');
                       }}
-                      className={`w-full text-left px-6 py-1.5 text-[13px] font-medium transition-colors flex items-center gap-2 group ${
-                        activeFilePath === path 
-                          ? 'text-white bg-[#37373d]' 
-                          : 'text-[#858585] hover:bg-[#2a2d2e] hover:text-[#cccccc]'
-                      }`}
+                      className={`w-full text-left px-6 py-1.5 text-[13px] font-medium flex items-center gap-2 group ${activeFilePath === path ? 'text-white bg-[#37373d]' : 'text-[#858585] hover:bg-[#2a2d2e]'}`}
                     >
-                      <FileCode size={14} className={activeFilePath === path ? 'text-blue-400' : 'text-[#858585] group-hover:text-[#cccccc]'} />
+                      <FileCode size={14} className={activeFilePath === path ? 'text-blue-400' : 'text-[#858585]'} />
                       <span className="truncate">{path.split('/').pop()}</span>
                     </button>
                   ))}
@@ -2357,32 +1549,15 @@ export default function App() {
                 </div>
                 <div className="flex-1 relative">
                   <Editor
-                    height="100%"
-                    language={editorLanguage}
-                    value={filesMap[activeFilePath] || ''}
-                    theme="vs-dark"
-                    onChange={(val) => {
-                      if (val !== undefined) {
-                        setFilesMap(prev => ({ ...prev, [activeFilePath]: val }));
-                      }
-                    }}
-                    options={{
-                      minimap: { enabled: showMinimap },
-                      fontSize: 13,
-                      fontFamily: "'Fira Code', 'JetBrains Mono', monospace",
+                    height="100%" language={editorLanguage}
+                    value={filesMap[activeFilePath] || ''} theme="vs-dark"
+                    onChange={(val) => setFilesMap(prev => ({ ...prev, [activeFilePath]: val || '' }))}
+                    options={{ 
+                      minimap: { enabled: false }, 
+                      fontSize: 13, 
+                      fontFamily: "'Fira Code', monospace", 
                       padding: { top: 20 },
-                      smoothScrolling: true,
-                      roundedSelection: true,
-                      cursorBlinking: 'smooth',
-                      cursorSmoothCaretAnimation: 'on',
-                      backgroundColor: '#1e1e1e',
-                      scrollbar: {
-                        vertical: 'visible',
-                        horizontal: 'visible',
-                        useShadows: false,
-                        verticalScrollbarSize: 10,
-                        horizontalScrollbarSize: 10
-                      }
+                      automaticLayout: true
                     }}
                   />
                 </div>
@@ -2390,12 +1565,14 @@ export default function App() {
           </div>
         )}
 
+        {/* ── DATABASE TAB ────────────────────────────────────────────────────── */}
         {activeStudioTab === 'database' && (
           <div className="flex-1 overflow-hidden">
             <DatabaseInterface projectId={projectId} />
           </div>
         )}
 
+        {/* ── ANALYTICS TAB ───────────────────────────────────────────────────── */}
         {activeStudioTab === 'analytics' && (
           <div className="flex-1 overflow-hidden">
             <ProjectAnalytics />

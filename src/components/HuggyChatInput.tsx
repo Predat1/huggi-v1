@@ -145,124 +145,47 @@ export default function HuggyChatInput({
   const canSend = (value.trim().length > 0 || tags.length > 0) && !isLoading;
 
   return (
-    <div className={`flex flex-col items-center gap-1.5 w-full ${className}`}>
-      {/* ── Main input card ── */}
-      <div className="relative w-full p-[2px] rounded-[32px] overflow-hidden shadow-xl group/input">
-        <div className="absolute inset-[-1000%] animate-[spin_8s_linear_infinite] bg-[conic-gradient(from_0deg,#4285F4,#9B72CB,#D96570,#F4AF40,#9B72CB,#4285F4)] opacity-50 group-focus-within/input:opacity-100 transition-opacity duration-700" />
-        <div
-          className="w-full h-full rounded-[30px] overflow-hidden relative bg-white dark:bg-[#1E1E1E] border border-slate-200 dark:border-white/10 transition-colors duration-300"
-        >
-        {/* Branding (Subtle) */}
-        {!disclaimer && (
-          <div className="absolute top-3 right-5 select-none pointer-events-none opacity-5 dark:opacity-20">
-            <span className="text-[9px] font-black tracking-[0.2em] text-slate-900 dark:text-white uppercase italic">HUGGY</span>
-          </div>
-        )}
+    <div className={`flex flex-col w-full ${className}`}>
+      <div className="relative w-full rounded-2xl bg-white/5 border border-white/5 focus-within:border-white/10 transition-all p-3">
+        <textarea
+          ref={textareaRef}
+          value={value}
+          onChange={(e) => setValue(e.target.value)}
+          onKeyDown={handleKeyDown}
+          disabled={isLoading}
+          placeholder={placeholderText}
+          rows={1}
+          className="w-full bg-transparent text-white text-[13px] font-medium placeholder-white/20 resize-none focus:outline-none leading-relaxed disabled:opacity-50 min-h-[60px]"
+          style={{ caretColor: '#6366F1' }}
+        />
+        
+        <div className="flex items-center justify-between mt-2">
+           <div className="flex items-center gap-1">
+              <button className="p-1.5 text-white/20 hover:text-white/60 transition-colors">
+                 <Plus size={16} />
+              </button>
+              <button className={`p-1.5 transition-colors ${isListening ? 'text-rose-500' : 'text-white/20 hover:text-white/60'}`} onClick={() => setIsListening(!isListening)}>
+                 <Mic size={16} />
+              </button>
+           </div>
 
-        {/* Tag row (Compact) */}
-        {tags.length > 0 && (
-          <div className="flex flex-wrap gap-1.5 px-5 pt-4">
-            {tags.map((tag) => (
-              <div
-                key={tag.id}
-                className="flex items-center gap-1.5 py-1 pl-1 pr-2 rounded-full border border-slate-200 dark:border-white/10 border-dashed bg-slate-50 dark:bg-white/5 text-[13px] font-medium text-slate-700 dark:text-slate-300 group/tag transition-all hover:bg-slate-100 dark:hover:bg-white/10"
-              >
-                <div 
-                  className="w-6 h-6 rounded-full flex items-center justify-center overflow-hidden shrink-0 border border-slate-200 dark:border-white/10 shadow-sm"
-                  style={{ background: tag.color ?? '#378ADD' }}
-                >
-                  {tag.avatar ? (
-                    <img src={tag.avatar} alt="" className="w-full h-full object-cover" />
-                  ) : (
-                    <span className="text-[10px] font-bold text-white uppercase">{tag.label.slice(0, 1)}</span>
-                  )}
-                </div>
-                <span>{tag.label}</span>
-                <button 
-                  onClick={() => removeTag(tag.id)}
-                  className="text-slate-400 dark:text-slate-500 hover:text-slate-900 dark:hover:text-white transition-colors"
-                >
-                  <X size={12} />
-                </button>
-              </div>
-            ))}
-          </div>
-        )}
-
-        {/* Textarea Area */}
-        <div className="px-3 pt-2 sm:px-4 sm:pt-3 pb-1">
-          <textarea
-            ref={textareaRef}
-            value={value}
-            onChange={(e) => setValue(e.target.value)}
-            onKeyDown={handleKeyDown}
-            disabled={isLoading}
-            placeholder={placeholderText}
-            rows={1}
-            className="w-full bg-transparent text-slate-900 dark:text-white text-[14px] sm:text-[15px] font-medium placeholder-slate-400 dark:placeholder-slate-500 resize-none focus:outline-none leading-relaxed disabled:opacity-50"
-            style={{ caretColor: '#6366F1', minHeight: '32px' }}
-          />
-        </div>
-
-        {/* ── Toolbar (Minimal) ── */}
-        <div className="flex items-center justify-between px-2 pb-2 sm:px-3 sm:pb-3 pt-0.5">
-          {/* Left Toolbar */}
-          <div className="flex items-center">
-            {/* Plus */}
-            <button className="w-8 h-8 rounded-full flex items-center justify-center text-slate-400 dark:text-slate-500 hover:text-slate-900 dark:hover:text-white hover:bg-slate-50 dark:hover:bg-white/5 transition-all">
-              <Plus size={20} strokeWidth={2} />
-            </button>
-          </div>
-
-          {/* Right Controls */}
-          <div className="flex items-center gap-2">
-            {/* Mic */}
-            <button
-              onClick={() => setIsListening(!isListening)}
-              className={`w-8 h-8 rounded-lg flex items-center justify-center border transition-all ${
-                isListening 
-                ? 'bg-rose-50 dark:bg-rose-500/10 border-rose-200 dark:border-rose-500/30 text-rose-500 shadow-inner' 
-                : 'bg-slate-50 dark:bg-white/5 border-slate-200 dark:border-white/10 text-slate-400 dark:text-slate-500 hover:text-slate-900 dark:hover:text-white hover:border-slate-300 dark:hover:border-white/20'
-              }`}
-            >
-              <div className="flex items-center gap-[1.5px]">
-                {[2, 4, 2].map((h, i) => (
-                  <div 
-                    key={i} 
-                    className={`w-[2px] rounded-full transition-all duration-300 ${isListening ? 'bg-rose-400 animate-pulse' : 'bg-current'}`} 
-                    style={{ height: isListening ? `${Math.random() * 10 + 5}px` : `${h * 3}px` }} 
-                  />
-                ))}
-              </div>
-            </button>
-
-            {/* Send */}
-            <button
-              onClick={handleSend}
-              disabled={!canSend}
-              className={`w-8 h-8 sm:w-9 sm:h-9 min-w-[32px] sm:min-w-[36px] min-h-[32px] sm:min-h-[36px] rounded-full flex items-center justify-center transition-all ${
-                canSend 
-                ? 'bg-[#4F46E5] hover:bg-[#3730A3] text-white shadow-lg shadow-indigo-500/20 active:scale-95' 
-                : 'bg-slate-100 dark:bg-white/5 text-slate-300 dark:text-slate-600 cursor-not-allowed'
-              }`}
-            >
-              {isLoading ? (
-                <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-              ) : (
-                <ArrowUp size={22} strokeWidth={3} />
-              )}
-            </button>
-          </div>
-        </div>
+           <button
+             onClick={handleSend}
+             disabled={!canSend}
+             className={`w-8 h-8 rounded-xl flex items-center justify-center transition-all ${
+               canSend 
+               ? 'bg-white/10 text-white hover:bg-white/20' 
+               : 'text-white/10 cursor-not-allowed'
+             }`}
+           >
+             {isLoading ? (
+               <Loader2 size={14} className="animate-spin" />
+             ) : (
+               <ArrowUp size={18} />
+             )}
+           </button>
         </div>
       </div>
-
-      {/* Premium Disclaimer (Compact) */}
-      {disclaimer && (
-        <p className="text-[12px] text-slate-400 dark:text-slate-500 text-center leading-relaxed mt-1 font-medium tracking-tight px-4 max-w-sm">
-          {disclaimer.replace('Acme', 'Huggy')}
-        </p>
-      )}
     </div>
   );
 }
